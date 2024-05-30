@@ -14,11 +14,9 @@ BENCH := bench
 # set tutorial folder
 TUTO := tuto
 
-REALPATH := realpath
 # note : $(MAKE) variable is broken on Windows, use make instead
 ifeq ($(OS),Windows_NT)
 MAKE = make
-REALPATH  = 
 endif
 
 all:

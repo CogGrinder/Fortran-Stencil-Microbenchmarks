@@ -42,5 +42,4 @@ clean_tuto:
 # note 2 : xargs removes each file
 #          if doing to subdirectory, use $$ xargs -I file rm $(SUBDIR)/file
 	ls | grep -v "\." | grep -v Makefile | xargs rm
-# TODO : simpler $$ find version
 endif
