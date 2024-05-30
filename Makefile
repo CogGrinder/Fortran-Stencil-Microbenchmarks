@@ -1,8 +1,12 @@
 
 # thank you to https://makefiletutorial.com/
 
-# set PerfRegions folder (https://github.com/schreiberx/perf_regions)
-PERF_REGIONS := perf_regions
+# set PerfRegions folder (https://github.com/schreiberx/perf_regions) - relative to main folder
+PERF_REGIONS_FOLDER:=perf_regions
+## make option PERF_REGIONS ##
+ifdef PERF_REGIONS
+	PERF_REGIONS_FOLDER = $(PERF_REGIONS)
+endif
 
 # set bench folder
 BENCH := bench
@@ -10,15 +14,17 @@ BENCH := bench
 # set tutorial folder
 TUTO := tuto
 
+REALPATH := realpath
 # note : $(MAKE) variable is broken on Windows, use make instead
 ifeq ($(OS),Windows_NT)
 MAKE = make
+REALPATH  = 
 endif
 
 all:
 	@echo make: $(MAKE)
-	-cd $(PERF_REGIONS) && $(MAKE)
-	-cd $(BENCH) && $(MAKE)
+	-cd $(PERF_REGIONS_FOLDER) && $(MAKE)
+	-cd $(BENCH) && $(MAKE) PERF_REGIONS=../$(PERF_REGIONS_FOLDER)
 	-cd $(TUTO) && $(MAKE)
 
 run:

@@ -18,6 +18,8 @@ Timing libraries
 - ``run`` to do ``make run`` in all subdirectories, executing the main files and scripts
     - ``run_bench`` and ``run_tuto`` to ``make run`` specifically the bench folder or the tuto folder
 - ``clean`` to clean all executable files and temporary files in the subdirectories from the current OS
+- set ``PERF_REGIONS=<relative directory of PerfRegions>`` if PerfRegions is not installed in the main folder 
+Other options:
 - use preprocessing macro ``DEBUG=1`` in ``main.f90`` if you are debugging
 
 ## Current roadmap

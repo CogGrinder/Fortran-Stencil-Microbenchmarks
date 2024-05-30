@@ -1,7 +1,9 @@
 ### bench makefile ###
 
-all: bench
-run: run_all_bench
+FC:=gfortran
+
+all: build_bench
+run: run_main
 clean: clean_bench
 
 MAIN:= main
@@ -13,28 +15,51 @@ endif
 
 EXECS := $(MAIN) # add new executables here
 
-bench: $(EXECS)
+
+
+
+
+PAPI_LIB:=-L. -lpapi
+
+# set PERF_REGIONS_FOLDER, default is in the folder next to 
+PERF_REGIONS_FOLDER:=../perf_regions
+ifdef PERF_REGIONS
+	PERF_REGIONS_FOLDER = $(PERF_REGIONS)
+endif
+
+PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
+PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
+CFLAGS_PERFREGION:=-I$(PERFREGION_SRC)
+LINKFLAGS_PERFREGION:=${PAPI_LIB} ${PERFREGION_LIB}
+
+all:	build
+
+build:
+	make -C $(PERFREGION_SRC)
+	make $(MAIN)
 
 $(MAIN) : main.f90
-	gfortran main.f90 -cpp -o $(MAIN)
-# -cpp option does preprocessing
+# TODO : ./instrumentation.py cleanup
+# ./instrumentation.py preprocess
+	${FC} -g -o $(MAIN) main.f90 ${CFLAGS_PERFREGION} ${LINKFLAGS_PERFREGION}
+# TODO : put back -cpp option does preprocessing
 
-run_all_bench: run_main
-run_main : $(MAIN)
+run_main : build
+# TODO : here replace by a ./run_benches.sh
 	./$(MAIN)
+
+#main.o:
+#	${FC} -c main.F90 ${CFLAGS_PERFREGION} ${LINKFLAGS_PERFREGION}
 
 
 # clean depending on OS
 ifeq ($(OS),Windows_NT)
 clean_bench:
 	rm *.exe
+	rm *.o
 else
 clean_bench:
-# grep version
-# note 1 : grep -v "\." removes from ls all files containing a dot
-#          indeed, "." is a metacharacter ie regex for one character
-# note 2 : xargs removes each file
-#          if doing to subdirectory, use $$ xargs -I file rm $(SUBDIR)/file
-	ls | grep -v "\." | grep -v Makefile | xargs rm
-# TODO : simpler $$ find version
+# ./instrumentation.py cleanup
+	rm -f main main_perf_region main.o
+	rm -f perf_region_list.txt
 endif
