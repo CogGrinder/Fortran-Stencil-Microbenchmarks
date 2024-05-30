@@ -16,13 +16,15 @@ The goal is to develop microbenchmarks in Fortran to assess the performance of d
 - ``clean`` to clean all executable files and temporary files in the subdirectories from the current OS
 
 ## Current roadmap
-Done on 04/29 :
+Done on 05/28 :
 - [X] hello world in Fortran
     - [X] global Makefile and ``tuto`` folder containing hello worlds (works on Linux and windows)
 
-To do on 05/29 :
+To do on 05/30 :
 - [ ] write objectives and problematique in ``README.md``
+    - [X] basic roadmap
 - [ ] make a first complete "template" benchmark, using simple basic allocation and a simple stencil operation
+    - note : will not yet make a benchmark selector switch, all basic imperative programming
     - [ ] allocate an array (precise type TBD) randomly and display a value
     - [ ] import timing library and output time
         - [ ] in the ``make run`` make the output get saved in a ``.csv`` file
