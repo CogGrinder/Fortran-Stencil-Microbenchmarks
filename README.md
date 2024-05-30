@@ -7,6 +7,10 @@ The goal is to develop microbenchmarks in Fortran to assess the performance of d
 
 ``tuto/`` subdirectory :
 - contains hello world and tutorial files used to learn Fortran
+## Requirements
+Timing libraries
+- PAPI
+- Code annotation library https://github.com/schreiberx/perf_regions, installed in main folder
 
 ### Compilation
 
@@ -29,3 +33,6 @@ To do on 05/30 :
     - [X] allocate an array (precise type TBD) randomly and display a value
     - [ ] import timing library and output time
         - [ ] in the ``make run`` make the output get saved in a ``.csv`` file
+- [ ] make a way to have more than one benchmark
+    - [ ] investigate adding subroutines
+    - [ ] get inspired by Martin's OpenMP benchmarking from the HPC course

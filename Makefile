@@ -1,6 +1,9 @@
 
 # thank you to https://makefiletutorial.com/
 
+# set PerfRegions folder (https://github.com/schreiberx/perf_regions)
+PERF_REGIONS := perf_regions
+
 # set bench folder
 BENCH := bench
 
@@ -14,6 +17,7 @@ endif
 
 all:
 	@echo make: $(MAKE)
+	-cd $(PERF_REGIONS) && $(MAKE)
 	-cd $(BENCH) && $(MAKE)
 	-cd $(TUTO) && $(MAKE)
 
