@@ -13,7 +13,7 @@ endif
 
 EXECS := $(MAIN)
 
-bench: $(TUTO_EXEC)
+bench: $(EXECS)
 
 $(MAIN) : main.f90
 	gfortran main.f90 -o $(MAIN)

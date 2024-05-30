@@ -10,7 +10,7 @@ PROGRAM main
     end do
     
     do i = 1, 5
-        PRINT *, 'array(', i, ')', thread_num
+        PRINT *, 'array(', i, ')', array(i)
     end do
   
 end PROGRAM main
