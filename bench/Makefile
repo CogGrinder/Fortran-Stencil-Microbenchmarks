@@ -11,12 +11,13 @@ ifeq ($(OS),Windows_NT)
 MAIN:= $(MAIN).exe
 endif
 
-EXECS := $(MAIN)
+EXECS := $(MAIN) # add new executables here
 
 bench: $(EXECS)
 
 $(MAIN) : main.f90
-	gfortran main.f90 -o $(MAIN)
+	gfortran main.f90 -cpp -o $(MAIN)
+# -cpp option does preprocessing
 
 run_all_bench: run_main
 run_main : $(MAIN)

@@ -14,6 +14,7 @@ The goal is to develop microbenchmarks in Fortran to assess the performance of d
 - ``run`` to do ``make run`` in all subdirectories, executing the main files and scripts
     - ``run_bench`` and ``run_tuto`` to ``make run`` specifically the bench folder or the tuto folder
 - ``clean`` to clean all executable files and temporary files in the subdirectories from the current OS
+- use preprocessing macro ``DEBUG=1`` in ``main.f90`` if you are debugging
 
 ## Current roadmap
 Done on 05/28 :
@@ -23,8 +24,8 @@ Done on 05/28 :
 To do on 05/30 :
 - [ ] write objectives and problematique in ``README.md``
     - [X] basic roadmap
-- [ ] make a first complete "template" benchmark, using simple basic allocation and a simple stencil operation
+- [X] make a first complete "template" benchmark, using simple basic allocation and a simple stencil operation
     - note : will not yet make a benchmark selector switch, all basic imperative programming
-    - [ ] allocate an array (precise type TBD) randomly and display a value
+    - [X] allocate an array (precise type TBD) randomly and display a value
     - [ ] import timing library and output time
         - [ ] in the ``make run`` make the output get saved in a ``.csv`` file
