@@ -32,19 +32,18 @@ PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 CFLAGS_PERFREGION:=-I$(PERFREGION_SRC)
 LINKFLAGS_PERFREGION:=${PAPI_LIB} ${PERFREGION_LIB}
 
-all:	build
 
-build:
+build_bench:
 	make -C $(PERFREGION_SRC)
 	make $(MAIN)
 
 $(MAIN) : main.f90
 # TODO : ./instrumentation.py cleanup
 # ./instrumentation.py preprocess
-	${FC} -g -o $(MAIN) main.f90 ${CFLAGS_PERFREGION} ${LINKFLAGS_PERFREGION}
+	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS_PERFREGION} ${LINKFLAGS_PERFREGION}
 # TODO : put back -cpp option does preprocessing
 
-run_main : build
+run_main : build_bench
 # TODO : here replace by a ./run_benches.sh
 	./$(MAIN)
 
