@@ -1,20 +1,28 @@
 !#define DEBUG
 
+#define ARRAY_LEN 1024
+#ifdef ARRAY_LEN_OVERRIDE
+    #define ARRAY_LEN ARRAY_LEN_OVERRIDE
+#endif
+
 PROGRAM main
     ! thank you to https://www.tutorialspoint.com/fortran/fortran_arrays.htm
 
-    real, dimension(10) :: array
-    real, dimension(10) :: result
+USE perf_regions_fortran
+
+#include "perf_regions_defines.h"
+
+    integer :: iters
+    real, dimension(ARRAY_LEN) :: array
+    real, dimension(ARRAY_LEN) :: result
     integer, dimension(3) :: stencil
-    integer :: stencil_sum, len
+    integer :: sten_sum, sten_len
+    iters = 1024
     stencil = (/ 1, 0, 1/)
-    len = 3 ! must be odd
-    stencil_sum = 2
+    sten_len = 3 ! must be odd
+    sten_sum = 2
 
 
-    do i = 1, 10
-        call RANDOM_NUMBER(array(i))
-    end do
     
     ! example for formatting :
     ! I5 for a 5-digit integer.
@@ -23,37 +31,55 @@ PROGRAM main
     ! 100 format(I5, F10.4, A)
     
 #ifdef DEBUG
-    1 format(I2, I2)
+1 format(I2, I2)
 #endif
-
-    do i = 1, 10-len+1
-        result(i + len/2) = 0
-        do j = 1,len
-#ifdef DEBUG
-            write(6, 1, advance="no") j, i-len/2 + j
-#endif
-            ! TODO : is there a += operator ?
-            result(i + len/2) = result(i + len/2) + stencil(j) * array(i-len/2 + j)
+    
+    WRITE(*,*) "**************************************"
+    WRITE(*,*) "Mem size: ", ARRAY_LEN*0.001 ," KByte"
+    WRITE(*,*) "Iterations: ", iters
+    
+    ! initialize timing here
+    CALL perf_regions_init()
+    do k = 1, iters
+        do i = 1, ARRAY_LEN
+            call RANDOM_NUMBER(array(i))
         end do
-#ifdef DEBUG        
-        write(*,*) " at index " , i + len/2
+        
+        ! start timing here
+        CALL perf_region_start(0, "TEST_BENCH"//achar(0))
+        
+        
+        do i = 1, ARRAY_LEN-sten_len+1
+            result(i + sten_len/2) = 0
+            do j = 1,sten_len
+#ifdef DEBUG
+            write(6, 1, advance="no") j, i-sten_len/2 + j
 #endif
-    end do
-    ! we ignore edges in the computation which explains the shift in indexes
+                ! TODO : is there a += operator ?
+                result(i + sten_len/2) = result(i + sten_len/2) + stencil(j) * array(i-sten_len/2 + j)
+            end do
+#ifdef DEBUG        
+        write(*,*) " at index " , i + sten_len/2
+#endif
+        end do
+        ! we ignore edges in the computation which explains the shift in indexes
+    
+        ! normalize by sten_sum
+        do i = 1, ARRAY_LEN
+            result(i) = result(i)/sten_sum
+        end do
 
-    ! normalize by stencil_sum
-    do i = 1, 10
-        result(i) = result(i)/stencil_sum
+        ! end timing here
+        CALL perf_region_stop(0)
+
     end do
     
+    ! finalize timing here
+    CALL perf_regions_finalize()
     
 
-    do i = 1, 10
-        PRINT *, 'array(', i, ')', array(i)
-    end do
-
-    do i = 1, 10
-        PRINT *, 'result(', i, ')', result(i)
-    end do
+    PRINT *, 'array(', modulo(42,ARRAY_LEN) , ')', array(modulo(42,ARRAY_LEN))
+    
+    PRINT *, 'result(', modulo(42,ARRAY_LEN) , ')', result(modulo(42,ARRAY_LEN))
   
 end PROGRAM main

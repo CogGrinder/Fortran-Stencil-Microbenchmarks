@@ -13,8 +13,6 @@ ifeq ($(OS),Windows_NT)
 MAIN:= $(MAIN).exe
 endif
 
-EXECS := $(MAIN) # add new executables here
-
 
 
 
@@ -38,14 +36,16 @@ build_bench:
 	make $(MAIN)
 
 $(MAIN) : main.f90
-# TODO : ./instrumentation.py cleanup
-# ./instrumentation.py preprocess
+	./perf_regions_instrumentation.py cleanup
+# ./perf_regions_instrumentation.py preprocess
 	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS_PERFREGION} ${LINKFLAGS_PERFREGION}
 # -cpp option does preprocessing
 
 run_main : build_bench
-# TODO : here replace by a ./run_benches.sh
-	./$(MAIN)
+# TODO : fix environment variable passing to script
+# export BENCH_EXECUTABLE='$(MAIN)'
+# export PERF_REGIONS='$(PERF_REGIONS_FOLDER)'
+	./run_benches.sh
 
 #main.o:
 #	${FC} -c main.F90 ${CFLAGS_PERFREGION} ${LINKFLAGS_PERFREGION}
@@ -58,7 +58,7 @@ clean_bench:
 	rm *.o
 else
 clean_bench:
-# ./instrumentation.py cleanup
+	./perf_regions_instrumentation.py cleanup
 	rm -f main main_perf_region main.o
 	rm -f perf_region_list.txt
 endif
