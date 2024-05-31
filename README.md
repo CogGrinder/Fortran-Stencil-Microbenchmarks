@@ -37,9 +37,11 @@ To do on 05/30 :
     - timing not finished as of 05/30, but included ``perf_regions`` in the make compilation
 
 To do on 05/31
-- [ ] import timing library and output time
+- [X] import timing library and output time
     - [X] included ``perf_regions`` in the make compilation
-    - [ ] in the ``make run`` make the output get saved in a ``.csv`` file
+    - [X] in the ``make run`` make the output get saved in a ``.csv`` file
 - [ ] make a way to have more than one benchmark
-    - [ ] investigate adding subroutines
+    - [X] investigate adding subroutines
+    - [ ] implement a second benchmark, array type to be determined
     - [ ] get inspired by Martin's OpenMP benchmarking from the HPC course
+- [ ] transform into modules for clearer code organisation

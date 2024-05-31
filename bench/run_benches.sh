@@ -8,5 +8,7 @@ export LD_LIBRARY_PATH="$PERF_REGIONS/build:$LD_LIBRARY_PATH"
 export PERF_REGIONS_COUNTERS=""
 export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
+# ./$BENCH_EXECUTABLE
+# TODO : add all new benchmarks to file.csv
 ./$BENCH_EXECUTABLE |  grep TEST_BENCH | paste -sd ',\t' >> file.csv
 cat file.csv

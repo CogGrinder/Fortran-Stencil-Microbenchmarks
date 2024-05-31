@@ -1,5 +1,7 @@
 !#define DEBUG
 
+#define MAX_SIZE 1024*1024*128
+
 #define ARRAY_LEN 1024
 #ifdef ARRAY_LEN_OVERRIDE
     #define ARRAY_LEN ARRAY_LEN_OVERRIDE
@@ -13,15 +15,61 @@ USE perf_regions_fortran
 #include "perf_regions_defines.h"
 
     integer :: iters
-    real, dimension(ARRAY_LEN) :: array
-    real, dimension(ARRAY_LEN) :: result
-    integer, dimension(3) :: stencil
+    ! stencil must be odd length
+    integer, dimension(1:3) :: stencil
     integer :: sten_sum, sten_len
+    INTERFACE
+        SUBROUTINE TEST_BENCH(iters,stencil)
+            integer, dimension(:), intent(in) :: stencil
+            integer, intent(in) :: iters
+        end SUBROUTINE TEST_BENCH
+    end INTERFACE
+
+
     iters = 1024
     stencil = (/ 1, 0, 1/)
-    sten_len = 3 ! must be odd
-    sten_sum = 2
 
+
+    !!!!!!!! initialize timing here
+    CALL perf_regions_init()
+
+    CALL TEST_BENCH(iters,stencil)
+
+    !!!!!!!! finalize timing here
+    CALL perf_regions_finalize()
+
+END PROGRAM main
+
+
+
+SUBROUTINE stencil_characteristics(stencil, sum, length)
+    integer, dimension(:), intent(in) :: stencil
+    integer, intent(out) :: sum, length
+    length = size(stencil)
+    WRITE(*,*) "length", length
+    sum = 0
+    do i = 1, length
+        sum = sum + stencil(i)
+    end do
+END SUBROUTINE stencil_characteristics
+
+SUBROUTINE TEST_BENCH(iters,stencil)
+    USE perf_regions_fortran
+    
+    integer, dimension(:), intent(in) :: stencil
+    integer, intent(in) :: iters
+    integer :: sten_sum, sten_len
+    real, dimension(ARRAY_LEN) :: array
+    real, dimension(ARRAY_LEN) :: result
+
+    INTERFACE
+        SUBROUTINE stencil_characteristics(stencil, sum, length)
+            integer, dimension(:), intent(in) :: stencil
+            integer, intent(out) :: sum, length
+        end SUBROUTINE stencil_characteristics
+    end INTERFACE
+
+    CALL stencil_characteristics(stencil,sten_sum,sten_len)
 
     
     ! example for formatting :
@@ -34,8 +82,6 @@ USE perf_regions_fortran
 1 format(I2, I2)
 #endif
 
-    !!!!!!!! initialize timing here
-    CALL perf_regions_init()
     
     WRITE(*,*) "**************************************"
     WRITE(*,*) "Mem size: ", ARRAY_LEN*0.001*sizeof(real) ," KByte"
@@ -74,12 +120,9 @@ USE perf_regions_fortran
 
     end do
     
-    !!!!!!!! finalize timing here
-    CALL perf_regions_finalize()
-    
 
     PRINT *, 'array(', modulo(42,ARRAY_LEN) , ')', array(modulo(42,ARRAY_LEN))
     
     PRINT *, 'result(', modulo(42,ARRAY_LEN) , ')', result(modulo(42,ARRAY_LEN))
   
-end PROGRAM main
+end SUBROUTINE TEST_BENCH
