@@ -59,6 +59,6 @@ clean_bench:
 else
 clean_bench:
 	./perf_regions_instrumentation.py cleanup
-	rm -f main main_perf_region main.o
+	rm -f main main_perf_region main.o file.csv
 	rm -f perf_region_list.txt
 endif

@@ -33,19 +33,19 @@ USE perf_regions_fortran
 #ifdef DEBUG
 1 format(I2, I2)
 #endif
+
+    !!!!!!!! initialize timing here
+    CALL perf_regions_init()
     
     WRITE(*,*) "**************************************"
-    WRITE(*,*) "Mem size: ", ARRAY_LEN*0.001 ," KByte"
+    WRITE(*,*) "Mem size: ", ARRAY_LEN*0.001*sizeof(real) ," KByte"
     WRITE(*,*) "Iterations: ", iters
-    
-    ! initialize timing here
-    CALL perf_regions_init()
     do k = 1, iters
         do i = 1, ARRAY_LEN
             call RANDOM_NUMBER(array(i))
         end do
         
-        ! start timing here
+        !!!!!!!! start timing here
         CALL perf_region_start(0, "TEST_BENCH"//achar(0))
         
         
@@ -69,12 +69,12 @@ USE perf_regions_fortran
             result(i) = result(i)/sten_sum
         end do
 
-        ! end timing here
+        !!!!!!!! end timing here
         CALL perf_region_stop(0)
 
     end do
     
-    ! finalize timing here
+    !!!!!!!! finalize timing here
     CALL perf_regions_finalize()
     
 

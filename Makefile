@@ -25,9 +25,7 @@ all:
 	-cd $(BENCH) && $(MAKE) PERF_REGIONS=../$(PERF_REGIONS_FOLDER)
 	-cd $(TUTO) && $(MAKE)
 
-run:
-	-cd $(TUTO) && $(MAKE) run
-	-cd $(BENCH) && $(MAKE) run
+run: run_bench
 run_bench:
 	cd $(BENCH) && $(MAKE) run
 run_tuto:
