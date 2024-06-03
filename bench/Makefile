@@ -14,8 +14,8 @@ MAIN:= $(MAIN).exe
 endif
 
 
-
-
+### compilation flags ###
+BENCH_LIB := -Isrc -Ibuild -Jbuild
 
 PAPI_LIB:=-L. -lpapi
 
@@ -28,7 +28,8 @@ endif
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 CFLAGS_PERFREGION:=-I$(PERFREGION_SRC)
-LINKFLAGS_PERFREGION:=${PAPI_LIB} ${PERFREGION_LIB}
+
+LINKFLAGS:=${PAPI_LIB} ${PERFREGION_LIB} ${BENCH_LIB}
 
 
 build_bench:
@@ -38,7 +39,7 @@ build_bench:
 $(MAIN) : main.f90
 	./perf_regions_instrumentation.py cleanup
 # ./perf_regions_instrumentation.py preprocess
-	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS_PERFREGION} ${LINKFLAGS_PERFREGION}
+	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS_PERFREGION} ${LINKFLAGS}
 # -cpp option does preprocessing
 
 run_main : build_bench

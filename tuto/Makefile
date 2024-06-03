@@ -25,9 +25,9 @@ $(OMP) : hello_world_omp.f90
 
 run_tuto: run_echo run_omp
 run_echo : $(ECHO)
-	./$(ECHO)
+	-./$(ECHO) 0 1 2 gotchu
 run_omp : $(OMP)
-	./$(OMP)
+	-./$(OMP)
 
 
 # clean depending on OS

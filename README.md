@@ -27,7 +27,7 @@ Done on 05/28 :
 - [X] hello world in Fortran
     - [X] global Makefile and ``tuto`` folder containing hello worlds (works on Linux and windows)
 
-To do on 05/30 :
+Done on 05/30 :
 - [ ] write objectives and problematique in ``README.md``
     - more detailed objectives to come after basic functionalities are implemented
     - [X] basic roadmap
@@ -36,7 +36,7 @@ To do on 05/30 :
     - [X] allocate an array (precise type TBD) randomly and display a value
     - timing not finished as of 05/30, but included ``perf_regions`` in the make compilation
 
-To do on 05/31
+Done on 05/31 :
 - [X] import timing library and output time
     - [X] included ``perf_regions`` in the make compilation
     - [X] in the ``make run`` make the output get saved in a ``.csv`` file
@@ -44,4 +44,12 @@ To do on 05/31
     - [X] investigate adding subroutines
     - [ ] implement a second benchmark, array type to be determined
     - [ ] get inspired by Martin's OpenMP benchmarking from the HPC course
+- [ ] transform into modules for clearer code organisation
+
+To do on 06/03 :
+
+- [ ] make a way to have more than one benchmark
+    - [ ] make a dummy benchmark selector
+        - [X] get inspired by Martin's OpenMP benchmarking from the HPC course
+    - [ ] implement an actual second benchmark, array type to be determined
 - [ ] transform into modules for clearer code organisation
