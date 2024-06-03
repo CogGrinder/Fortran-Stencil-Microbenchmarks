@@ -46,10 +46,18 @@ Done on 05/31 :
     - [ ] get inspired by Martin's OpenMP benchmarking from the HPC course
 - [ ] transform into modules for clearer code organisation
 
-To do on 06/03 :
+Done on 06/03 :
 
-- [ ] make a way to have more than one benchmark
-    - [ ] make a dummy benchmark selector
+- [X] make a way to have more than one benchmark
+    - [X] make a dummy benchmark selector
         - [X] get inspired by Martin's OpenMP benchmarking from the HPC course
-    - [ ] implement an actual second benchmark, array type to be determined
+        - [X] implement a selector at execution time - note : must set selection of benchmarks in ``run_benches.sh``
 - [ ] transform into modules for clearer code organisation
+    - [X] make a ``tools`` module
+    - [X] make a ``.a`` library
+    - [ ] make a module for benchmarks
+
+To do on 06/04 :
+- [ ] implement an actual second benchmark, array type to be determined
+    - [ ] implement a library version of 2 dummy benchmarks
+        - [ ] decide : do we make different versions of the computation in a module and insert it into the SUBROUTINE TEST_BENCH - renamed BENCHMARK ?

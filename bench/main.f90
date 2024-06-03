@@ -87,13 +87,6 @@ SUBROUTINE TEST_BENCH(iters,stencil,bench_id,bench_str)
     real, dimension(ARRAY_LEN) :: array
     real, dimension(ARRAY_LEN) :: result
 
-    ! INTERFACE
-    !     SUBROUTINE stencil_characteristics(stencil, sum, length)
-    !         integer, dimension(:), intent(in) :: stencil
-    !         integer, intent(out) :: sum, length
-    !     end SUBROUTINE stencil_characteristics
-    ! end INTERFACE
-
     CALL stencil_characteristics(stencil,sten_sum,sten_len)
 
     
@@ -119,6 +112,7 @@ SUBROUTINE TEST_BENCH(iters,stencil,bench_id,bench_str)
         !!!!!!!! start timing here
         CALL perf_region_start(bench_id, bench_str//achar(0))
         
+        ! TODO : replace the part below by a function (with the allocation etc)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         do i = 1, ARRAY_LEN-sten_len+1
             result(i + sten_len/2) = 0
