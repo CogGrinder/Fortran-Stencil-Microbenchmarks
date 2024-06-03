@@ -13,6 +13,7 @@ PROGRAM main
     ! thank you to https://www.tutorialspoint.com/fortran/fortran_arrays.htm
 
     USE perf_regions_fortran
+    use tools
     USE benchmark_names
 
 #include "perf_regions_defines.h"
@@ -29,7 +30,7 @@ PROGRAM main
         SUBROUTINE TEST_BENCH(iters,stencil,bench_id,bench_str)
             integer, dimension(:), intent(in) :: stencil
             integer, intent(in) :: iters, bench_id
-            character(len=32), intent(in) :: bench_str
+            character(len=7), intent(in) :: bench_str
         end SUBROUTINE TEST_BENCH
     end INTERFACE
     
@@ -75,18 +76,9 @@ END PROGRAM main
 
 
 
-SUBROUTINE stencil_characteristics(stencil, sum, length)
-    integer, dimension(:), intent(in) :: stencil
-    integer, intent(out) :: sum, length
-    length = size(stencil)
-    sum = 0
-    do i = 1, length
-        sum = sum + stencil(i)
-    end do
-END SUBROUTINE stencil_characteristics
-
 SUBROUTINE TEST_BENCH(iters,stencil,bench_id,bench_str)
     USE perf_regions_fortran
+    use tools
     
     integer, dimension(:), intent(in) :: stencil
     integer, intent(in) :: iters, bench_id
@@ -95,12 +87,12 @@ SUBROUTINE TEST_BENCH(iters,stencil,bench_id,bench_str)
     real, dimension(ARRAY_LEN) :: array
     real, dimension(ARRAY_LEN) :: result
 
-    INTERFACE
-        SUBROUTINE stencil_characteristics(stencil, sum, length)
-            integer, dimension(:), intent(in) :: stencil
-            integer, intent(out) :: sum, length
-        end SUBROUTINE stencil_characteristics
-    end INTERFACE
+    ! INTERFACE
+    !     SUBROUTINE stencil_characteristics(stencil, sum, length)
+    !         integer, dimension(:), intent(in) :: stencil
+    !         integer, intent(out) :: sum, length
+    !     end SUBROUTINE stencil_characteristics
+    ! end INTERFACE
 
     CALL stencil_characteristics(stencil,sten_sum,sten_len)
 

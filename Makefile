@@ -23,11 +23,13 @@ all:
 	@echo make: $(MAKE)
 	-cd $(PERF_REGIONS_FOLDER) && $(MAKE)
 	-cd $(BENCH) && $(MAKE) PERF_REGIONS=../$(PERF_REGIONS_FOLDER)
-	-cd $(TUTO) && $(MAKE)
 
 run: run_bench
 run_bench:
 	cd $(BENCH) && $(MAKE) run
+
+tuto:
+	-cd $(TUTO) && $(MAKE)
 run_tuto:
 	cd $(TUTO) && $(MAKE) run
 

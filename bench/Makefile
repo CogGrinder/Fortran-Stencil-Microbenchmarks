@@ -15,7 +15,7 @@ endif
 
 
 ### compilation flags ###
-BENCH_LIB := -Isrc -Ibuild -Jbuild
+BENCH_LIB := -Lbuild -Llib -l:library.a
 
 PAPI_LIB:=-L. -lpapi
 
@@ -27,19 +27,20 @@ endif
 
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
-CFLAGS_PERFREGION:=-I$(PERFREGION_SRC)
 
-LINKFLAGS:=${PAPI_LIB} ${PERFREGION_LIB} ${BENCH_LIB}
+CFLAGS:= -Ibuild -I$(PERFREGION_SRC)
+LINKFLAGS:=${BENCH_LIB} ${PAPI_LIB} ${PERFREGION_LIB}
 
 
 build_bench:
+	make -C src
 	make -C $(PERFREGION_SRC)
 	make $(MAIN)
 
 $(MAIN) : main.f90
 	./perf_regions_instrumentation.py cleanup
 # ./perf_regions_instrumentation.py preprocess
-	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS_PERFREGION} ${LINKFLAGS}
+	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS} ${LINKFLAGS}
 # -cpp option does preprocessing
 
 run_main : build_bench
@@ -60,6 +61,9 @@ clean_bench:
 else
 clean_bench:
 	./perf_regions_instrumentation.py cleanup
-	rm -f main main_perf_region main.o file.csv
-	rm -f perf_region_list.txt
+	-rm -f main main_perf_region main.o file.csv
+	-rm -f perf_region_list.txt
+	-rm build/*.mod
+	-rm src/*.o
+	-rm lib/*.a
 endif
