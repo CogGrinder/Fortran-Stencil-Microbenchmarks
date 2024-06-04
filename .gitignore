@@ -1,3 +1,6 @@
 perf_regions
 .gitconfig
 .vscode
+/bench/build
+/bench/lib
+/bench/*.o

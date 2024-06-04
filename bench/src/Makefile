@@ -22,9 +22,10 @@ $(BUILD_DIR)/%.mod : %.f90
 # according to https://www1.udel.edu/topics_css/software/special/language/fortran/fortran-docs/fortran-libraries1.html
 # need this to override default modula2 compiling
 %.o : %.mod
-$(LIB_DIR)/library.a : $(MODULE_O) ../benchmark_implementations.o
+$(LIB_DIR)/library.a : $(MODULE_O) #../benchmark_implementations.o
 	-@mkdir ../lib
-	ar cr $(LIB_DIR)/library.a $(MODULE_O) ../benchmark_implementations.o
+	ar cr $(LIB_DIR)/library.a $(MODULE_O)
+#../benchmark_implementations.o
 
-../benchmark_implementations.o :
-	make -C .. benchmark_implementations
+# ../benchmark_implementations.o :
+# make -C .. benchmark_implementations

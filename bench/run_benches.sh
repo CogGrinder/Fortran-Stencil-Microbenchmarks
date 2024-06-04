@@ -11,6 +11,6 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 # ./$BENCH_EXECUTABLE
 # TODO : add all new benchmarks to file.csv
 # ./$BENCH_EXECUTABLE |  grep TEST_BENCH | paste -sd ',\t' >> file.csv
-./$BENCH_EXECUTABLE 0 1 2 
-# ./$BENCH_EXECUTABLE 0 1 2 |  grep TEST_BENCH | paste -sd ',\t' >> file.csv
+# ./$BENCH_EXECUTABLE 0 1 2 
+./$BENCH_EXECUTABLE 0 1 2 |  grep -A100 Section | paste >> file.csv
 cat file.csv

@@ -38,18 +38,18 @@ build_bench:
 	make -C $(PERFREGION_SRC)
 	make -C src
 	make -C src library
-	make benchmark_implementations
+# make benchmark_implementations
 	make $(MAIN)
 
 
-BUILD_DIR := build
-benchmark_implementations : benchmark_implementations.o
-	@echo
-benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
-$(BUILD_DIR)/benchmark_implementations.mod : benchmark_implementations.f90
-	make -C src
-	./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -c benchmark_implementations.f90 -J$(BUILD_DIR) -I$(BUILD_DIR) ${CFLAGS} ${LINKFLAGS}
+# BUILD_DIR := build
+# benchmark_implementations : benchmark_implementations.o
+# @echo
+# benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
+# $(BUILD_DIR)/benchmark_implementations.mod : benchmark_implementations.f90
+# make -C src
+# ./perf_regions_instrumentation.py cleanup
+# ${FC} ${FFLAGS} -c benchmark_implementations.f90 -J$(BUILD_DIR) -I$(BUILD_DIR) ${CFLAGS} ${LINKFLAGS}
 # -cpp option does preprocessing
 
 $(MAIN) : main.f90
