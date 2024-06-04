@@ -1,6 +1,7 @@
 ### bench makefile ###
 
 FC:=gfortran
+FFLAGS = -cpp -Wall -Wextra -O3
 
 all: build_bench
 run: run_main
@@ -15,7 +16,8 @@ endif
 
 
 ### compilation flags ###
-BENCH_LIB := -Lbuild -Llib -l:library.a
+BENCH_LIB_DIR   := lib
+BENCH_LIB := -Lbuild -L$(BENCH_LIB_DIR) -l:library.a
 
 PAPI_LIB:=-L. -lpapi
 
@@ -29,18 +31,30 @@ PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_F
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
 CFLAGS:= -Ibuild -I$(PERFREGION_SRC)
-LINKFLAGS:=${BENCH_LIB} ${PAPI_LIB} ${PERFREGION_LIB}
+LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 
 build_bench:
-	make -C src
 	make -C $(PERFREGION_SRC)
+	make -C src
+	make -C src library
+	make benchmark_implementations
 	make $(MAIN)
+
+
+BUILD_DIR := build
+benchmark_implementations : benchmark_implementations.o
+	@echo
+benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
+$(BUILD_DIR)/benchmark_implementations.mod : benchmark_implementations.f90
+	make -C src
+	./perf_regions_instrumentation.py cleanup
+	${FC} ${FFLAGS} -c benchmark_implementations.f90 -J$(BUILD_DIR) -I$(BUILD_DIR) ${CFLAGS} ${LINKFLAGS}
+# -cpp option does preprocessing
 
 $(MAIN) : main.f90
 	./perf_regions_instrumentation.py cleanup
-# ./perf_regions_instrumentation.py preprocess
-	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS} ${LINKFLAGS}
+	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS} ${BENCH_LIB} ${LINKFLAGS}
 # -cpp option does preprocessing
 
 run_main : build_bench
@@ -64,6 +78,6 @@ clean_bench:
 	-rm -f main main_perf_region main.o file.csv
 	-rm -f perf_region_list.txt
 	-rm build/*.mod
-	-rm src/*.o
-	-rm lib/*.a
+	-rm src/*.o src/*.mod
+	-rm lib/library.a
 endif
