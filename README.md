@@ -63,7 +63,7 @@ To do on 06/04 :
         - [X] decide : do we make different versions of the computation in a module and insert it into the SUBROUTINE TEST_BENCH - renamed BENCHMARK ?
         - answer : module does not work, going back to main.f90
 - [ ] fix bench
-    - [ ] fix stencil
+    - [X] fix stencil
     - [ ] fix "preheating" cache and check constant results
         - [X] attempted fix that uses fixed stencil size in a computation - may be improved upon, L3 PAPI misses still irregular at 128*1024 size and 1024 iterations
     - [ ] sanity check, especially if preheating cache does not work

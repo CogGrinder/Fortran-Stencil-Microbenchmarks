@@ -1,11 +1,12 @@
-!#define DEBUG
+! #define DEBUG
 
 
 
 #define MAX_SIZE 1024*1024*128
 
-#define ARRAY_LEN 1024*128
-#define ITERS 1024
+#define ARRAY_LEN  10
+! 1024*128
+#define ITERS 1
 
 #ifdef ARRAY_LEN_OVERRIDE
     #define ARRAY_LEN ARRAY_LEN_OVERRIDE
@@ -124,12 +125,12 @@ SUBROUTINE WARMUP_COMPUTATION(sten_len)
         call RANDOM_NUMBER(array(i))
     end do
 
-    do i = 1, ARRAY_LEN-sten_len+1
+    do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
         result(i + sten_len/2) = 0
         do j = 1,sten_len
 
             ! TODO : is there a += operator ?
-            result(i + sten_len/2) = result(i + sten_len/2) + array(i-sten_len/2 + j)
+            result(i) = result(i) + array(i-sten_len/2 -1 + j)
         end do
 
     end do
@@ -176,17 +177,17 @@ SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1, ARRAY_LEN-sten_len+1
+    do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
         result(i + sten_len/2) = 0
         do j = 1,sten_len
 #ifdef DEBUG
-        write(6, 1, advance="no") j, i-sten_len/2 + j
+        write(6, 1, advance="no") j, i-sten_len/2 -1 + j
 #endif
             ! TODO : is there a += operator ?
-            result(i + sten_len/2) = result(i + sten_len/2) + stencil(j) * array(i-sten_len/2 + j)
+            result(i) = result(i) + stencil(j) * array(i-sten_len/2 -1 + j)
         end do
 #ifdef DEBUG        
-    write(*,*) " at index " , i + sten_len/2
+    write(*,*) " at index " , i
 #endif
     end do
     ! we ignore edges in the computation which explains the shift in indexes
