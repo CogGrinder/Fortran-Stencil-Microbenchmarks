@@ -58,7 +58,7 @@ Done on 06/03 :
     - [ ] make a module for benchmarks
     note : module aborted 06/04 because of bad linking with ``perf_regions``, all subroutines are in mainfile
 
-To do on 06/04 :
+Done on 06/04 :
 - [ ] implement an actual second benchmark, array type to be determined
     - [X] implement a library version of 2 dummy benchmarks
         - [X] decide : do we make different versions of the computation in a module and insert it into the SUBROUTINE TEST_BENCH - renamed BENCHMARK ?
@@ -74,11 +74,11 @@ To do on 06/04 :
 To do on 06/05 :
 - [ ] fix bench
     - [X] fix stencil
-        - [ ] check in MG code 
+        - [X] check in MG code 
     - [ ] fix "preheating" cache and check constant results
         - [X] attempted fix that uses fixed stencil size in a computation - may be improved upon, L3 PAPI misses still irregular at 128*1024 size and 1024 iterations
-    - [ ] sanity check, especially if preheating cache does not work
-        - [ ] implement 2D bench
+    - [X] sanity check, especially if preheating cache does not work
+        - [X] implement 2D bench in ij and ji variant
 - [ ] -> once bench is fixed, do the allocatable version of the baseline code
 
 ### Objectives from discussion on the 06/04
@@ -100,3 +100,6 @@ differente et expliquer la difference (sanity check with 2d ij and ji variants
 )
 
 - [ ] documenter les differents bench et donner des noms explicites aux bench
+
+### Nice-to-have features
+- [ ] use ``call cpu_time(e)`` to make alternative timing code for non-PAPI systems
