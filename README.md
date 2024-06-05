@@ -56,6 +56,7 @@ Done on 06/03 :
     - [X] make a ``tools`` module
     - [X] make a ``.a`` library
     - [ ] make a module for benchmarks
+    note : module aborted 06/04 because of bad linking with ``perf_regions``, all subroutines are in mainfile
 
 To do on 06/04 :
 - [ ] implement an actual second benchmark, array type to be determined
@@ -70,6 +71,16 @@ To do on 06/04 :
         - [ ] implement 2D bench
 - [ ] -> once bench is fixed, do the allocatable version of the baseline code
 
+To do on 06/05 :
+- [ ] fix bench
+    - [X] fix stencil
+        - [ ] check in MG code 
+    - [ ] fix "preheating" cache and check constant results
+        - [X] attempted fix that uses fixed stencil size in a computation - may be improved upon, L3 PAPI misses still irregular at 128*1024 size and 1024 iterations
+    - [ ] sanity check, especially if preheating cache does not work
+        - [ ] implement 2D bench
+- [ ] -> once bench is fixed, do the allocatable version of the baseline code
+
 ### Objectives from discussion on the 06/04
 - [ ] Comme convenu il serait interessant de modifier le code de stencil
 pour qu'il "ressemble" au code de stencil classique:
@@ -77,15 +88,15 @@ pour qu'il "ressemble" au code de stencil classique:
     - [ ] piece jointe NPB code MG - Multi-Grid on a sequence of meshes,
 long- and short-distance communication, memory intensive
 
-[ ] Utiliser les allocatable (declaration allocatable puis allocate) pour
+- [ ] Utiliser les allocatable (declaration allocatable puis allocate) pour
 comparer les resultats de performance aux allocations statiques (ce qui
 est deja present dans le code)
 
-[ ] Verifier qu'en "chauffant" le cache on obtient des resultats plus
+- [ ] Verifier qu'en "chauffant" le cache on obtient des resultats plus
 constant.
 
-[ ] Chercher a modifier le bench pour obtenir des valeur de cache miss
+- [ ] Chercher a modifier le bench pour obtenir des valeur de cache miss
 differente et expliquer la difference (sanity check with 2d ij and ji variants
 )
 
-[ ] documenter les differents bench et donner des noms explicites aux bench
+- [ ] documenter les differents bench et donner des noms explicites aux bench
