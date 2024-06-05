@@ -3,4 +3,4 @@ perf_regions
 .vscode
 /bench/build
 /bench/lib
-/bench/*.o
+/bench/benchmark_implementations.o
