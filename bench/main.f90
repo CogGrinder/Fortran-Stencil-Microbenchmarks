@@ -40,22 +40,22 @@ PROGRAM main
         SUBROUTINE WARMUP_COMPUTATION(sten_len)
             integer, intent(in) :: sten_len
         end SUBROUTINE WARMUP_COMPUTATION
-        SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
+        SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
             integer, intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_0
-        SUBROUTINE TEST_COMPUTATION_1(bench_id,bench_str)
+        end SUBROUTINE COMPUTATION_FIXED_ARRAY
+        SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
             integer, intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_1
-        SUBROUTINE TEST_COMPUTATION_2D_JI(bench_id,bench_str)
+        end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
+        SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
             integer, intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_2D_JI
-        SUBROUTINE TEST_COMPUTATION_2D_IJ(bench_id,bench_str)
+        end SUBROUTINE COMPUTATION_2D_JI
+        SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
             integer, intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_2D_IJ
+        end SUBROUTINE COMPUTATION_2D_IJ
     end INTERFACE
     
     ! getting the variant of the benchmark from the command line
@@ -87,13 +87,13 @@ PROGRAM main
         
         ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
         select case (bench_id)
-            case (TEST_BENCH_0)
-                bench_str = 'BENCH_0'
-            case (TEST_BENCH_1)
-                bench_str = 'BENCH_1'
-            case(TEST_BENCH_2D_JI)
+            case (BENCH_FIXED_ARRAY)
+                bench_str = '1D_FIXD'
+            case (BENCH_ALLOCATABLE_ARRAY)
+                bench_str = '1D_ALOC'
+            case(BENCH_2D_JI)
                 bench_str = '2D_JI'
-            case(TEST_BENCH_2D_IJ)
+            case(BENCH_2D_IJ)
                 bench_str = '2D_IJ'
             case DEFAULT
                 bench_str = 'ERROR'
@@ -126,14 +126,14 @@ SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str)
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
         select case (bench_id)
-            case (TEST_BENCH_0)
-                CALL TEST_COMPUTATION_0(bench_id, bench_str)
-            case (TEST_BENCH_1)
-                CALL TEST_COMPUTATION_1(bench_id, bench_str)
-            case (TEST_BENCH_2D_JI)
-                CALL TEST_COMPUTATION_2D_JI(bench_id, bench_str)
-            case (TEST_BENCH_2D_IJ)
-                CALL TEST_COMPUTATION_2D_IJ(bench_id, bench_str)
+            case (BENCH_FIXED_ARRAY)
+                CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str)
+            case (BENCH_ALLOCATABLE_ARRAY)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str)
+            case (BENCH_2D_JI)
+                CALL COMPUTATION_2D_JI(bench_id, bench_str)
+            case (BENCH_2D_IJ)
+                CALL COMPUTATION_2D_IJ(bench_id, bench_str)
             case DEFAULT
                 write (*,*) 'Error: no such benchmark'
         end select
@@ -168,7 +168,7 @@ SUBROUTINE WARMUP_COMPUTATION(sten_len)
 
 end SUBROUTINE WARMUP_COMPUTATION
 
-SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
+SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -233,7 +233,7 @@ SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
 
 end SUBROUTINE
 
-SUBROUTINE TEST_COMPUTATION_1(bench_id,bench_str)
+SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -297,9 +297,9 @@ SUBROUTINE TEST_COMPUTATION_1(bench_id,bench_str)
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE TEST_COMPUTATION_1
+end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
 
-SUBROUTINE TEST_COMPUTATION_2D_JI(bench_id,bench_str)
+SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -375,9 +375,9 @@ SUBROUTINE TEST_COMPUTATION_2D_JI(bench_id,bench_str)
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE TEST_COMPUTATION_2D_JI
+end SUBROUTINE COMPUTATION_2D_JI
 
-SUBROUTINE TEST_COMPUTATION_2D_IJ(bench_id,bench_str)
+SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -453,7 +453,7 @@ SUBROUTINE TEST_COMPUTATION_2D_IJ(bench_id,bench_str)
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE TEST_COMPUTATION_2D_IJ
+end SUBROUTINE COMPUTATION_2D_IJ
 
 
 SUBROUTINE ANTI_OPTIMISATION_WRITE(written)

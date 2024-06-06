@@ -8,17 +8,17 @@ MODULE benchmark_implementations
     implicit none
     
     contains
-        SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
+        SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
             integer, intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_0
-        SUBROUTINE TEST_COMPUTATION_1()
-        end SUBROUTINE TEST_COMPUTATION_1
+        end SUBROUTINE COMPUTATION_FIXED_ARRAY
+        SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY()
+        end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
 
 end MODULE
 
 
-SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
+SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -85,5 +85,5 @@ SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
     PRINT *, 'result(', modulo(42,ARRAY_LEN) , ')', result(modulo(42,ARRAY_LEN))
 
 end SUBROUTINE
-SUBROUTINE TEST_COMPUTATION_1()
+SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY()
 end SUBROUTINE

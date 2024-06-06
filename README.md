@@ -76,13 +76,16 @@ To do on 06/05 :
     - [X] fix stencil
         - [X] check in MG code 
     - [ ] fix "preheating" cache and check constant results
-        - [X] attempted fix that uses fixed stencil size in a computation - may be improved upon, L3 PAPI misses still irregular at 128*1024 size and 1024 iterations
+        - [X] attempted fix that uses fixed stencil size in a computation - may be improved upon, L3 PAPI misses still irregular at 128*1024 size and 
+        1024 iterations
+        - [X] -> current version still has irregular L3 PAPI misses but by no more than a factor of 2 it seems. Maybe increasing iterations and making longer benchmarks will help with smoothing out data
     - [X] sanity check, especially if preheating cache does not work
         - [X] implement 2D bench in ij and ji variant
-- [ ] -> once bench is fixed, do the allocatable version of the baseline code
-    - [ ] Utiliser les allocatable (declaration allocatable puis allocate) pour
+- [X] -> once bench is fixed, do the allocatable version of the baseline code
+    - [X] Utiliser les allocatable (declaration allocatable puis allocate) pour
 comparer les resultats de performance aux allocations statiques (ce qui
 est deja present dans le code)
+    - [ ] -> to go further, make a python script that parses and plots the comparison data
 - [ ] documenter les differents bench et donner des noms explicites aux bench
 
 ### Objectives from discussion on the 06/04
