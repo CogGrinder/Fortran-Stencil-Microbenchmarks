@@ -5,4 +5,5 @@ MODULE benchmark_names
     integer, parameter :: BENCH_ALLOCATABLE_ARRAY = 1
     integer, parameter :: BENCH_2D_JI = 2
     integer, parameter :: BENCH_2D_IJ = 3
+    integer, parameter :: BENCH_ALLOCATABLE_ARRAY_MODULE = 4
 END MODULE benchmark_names

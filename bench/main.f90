@@ -1,5 +1,5 @@
 ! #define DEBUG
-
+#define DEBUG_PERF
 
 
 #define MAX_SIZE 1024*1024*128
@@ -19,6 +19,7 @@ PROGRAM main
     USE perf_regions_fortran
     use tools
     USE benchmark_names
+    USE benchmark_implementations
 
 #include "perf_regions_defines.h"
 
@@ -64,10 +65,11 @@ PROGRAM main
 
     iters = ITERS
 
-
+#ifndef DEBUG_PERF
     !!!!!!!! initialize timing here
     CALL perf_regions_init()
-    
+#endif
+
     CALL WARMUP_COMPUTATION(3)
 
     i = 1
@@ -97,6 +99,8 @@ PROGRAM main
                     bench_str = '2D_JI'
                 case(BENCH_2D_IJ)
                     bench_str = '2D_IJ'
+                case (BENCH_ALLOCATABLE_ARRAY_MODULE)
+                    bench_str = 'MODULE'
                 case DEFAULT
                     bench_str = 'ERROR'
                     write (*,*) 'Error: no such benchmark'
@@ -107,9 +111,11 @@ PROGRAM main
         endif
         i = i + 1
     end do
+
+#ifndef DEBUG_PERF
     !!!!!!!! finalize timing here
     CALL perf_regions_finalize()
-
+#endif
 END PROGRAM main
 
 
@@ -132,11 +138,13 @@ SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str)
             case (BENCH_FIXED_ARRAY)
                 CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str)
             case (BENCH_ALLOCATABLE_ARRAY)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str)
             case (BENCH_2D_JI)
                 CALL COMPUTATION_2D_JI(bench_id, bench_str)
             case (BENCH_2D_IJ)
                 CALL COMPUTATION_2D_IJ(bench_id, bench_str)
+            case (BENCH_ALLOCATABLE_ARRAY_MODULE)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str)
             case DEFAULT
                 write (*,*) 'Error: no such benchmark'
         end select
@@ -236,7 +244,7 @@ SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
 
 end SUBROUTINE
 
-SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
+SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -267,9 +275,11 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
     ! 100 format(I5, F10.4, A)
     1 format(I2, I2)
 #endif
-        !!!!!!!! start timing here
-    CALL perf_region_start(bench_id, bench_str//achar(0))
 
+#ifndef DEBUG_PERF
+    !!!!!!!! start timing here
+    CALL perf_region_start(bench_id, bench_str//achar(0))
+#endif
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
@@ -291,16 +301,17 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
     ! we ignore edges in the computation which explains the shift in indexes
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+#ifndef DEBUG_PERF
     !!!!!!!! end timing here
     CALL perf_region_stop(bench_id)
+#endif   
 
         
 
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
+end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE
 
 SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
     use tools
