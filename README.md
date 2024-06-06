@@ -80,6 +80,10 @@ To do on 06/05 :
     - [X] sanity check, especially if preheating cache does not work
         - [X] implement 2D bench in ij and ji variant
 - [ ] -> once bench is fixed, do the allocatable version of the baseline code
+    - [ ] Utiliser les allocatable (declaration allocatable puis allocate) pour
+comparer les resultats de performance aux allocations statiques (ce qui
+est deja present dans le code)
+- [ ] documenter les differents bench et donner des noms explicites aux bench
 
 ### Objectives from discussion on the 06/04
 - [ ] Comme convenu il serait interessant de modifier le code de stencil
