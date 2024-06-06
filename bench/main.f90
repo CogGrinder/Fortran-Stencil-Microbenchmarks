@@ -22,7 +22,7 @@ PROGRAM main
 
 #include "perf_regions_defines.h"
 
-    ! integer :: iters
+    integer :: iters
     integer :: bench_id
     character(len=32) :: arg
     character(len=7) :: bench_str
@@ -62,8 +62,7 @@ PROGRAM main
     ! see https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html
 
 
-    ! iters = 1024
-    ! stencil = (/ 1, 0, 1/)
+    iters = ITERS
 
 
     !!!!!!!! initialize timing here
@@ -77,31 +76,35 @@ PROGRAM main
         ! condition to leave do loop
         if (len_trim(arg) == 0) then
             exit
+        else if (index(arg, 'iters=') == 1) then
+            write(*,*) arg
+            CALL get_key_value(arg,iters)            
         else
             read(arg,*) bench_id
-        endif
-        WRITE(*,*) "**************************************"
-        WRITE(*,*) "**************************************"
+    
+            WRITE(*,*) "**************************************"
+            WRITE(*,*) "**************************************"
 
-        write (*,*) 'Calling benchmark of id ', bench_id
-        
-        ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
-        select case (bench_id)
-            case (BENCH_FIXED_ARRAY)
-                bench_str = '1D_FIXD'
-            case (BENCH_ALLOCATABLE_ARRAY)
-                bench_str = '1D_ALOC'
-            case(BENCH_2D_JI)
-                bench_str = '2D_JI'
-            case(BENCH_2D_IJ)
-                bench_str = '2D_IJ'
-            case DEFAULT
-                bench_str = 'ERROR'
-                write (*,*) 'Error: no such benchmark'
-        end select
-        if ( .not. bench_str .eq. 'ERROR') then
-            CALL BENCH_SKELETON(ITERS, bench_id, bench_str)
-        end if
+            write (*,*) 'Calling benchmark of id ', bench_id
+            
+            ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
+            select case (bench_id)
+                case (BENCH_FIXED_ARRAY)
+                    bench_str = '1D_FIXD'
+                case (BENCH_ALLOCATABLE_ARRAY)
+                    bench_str = '1D_ALOC'
+                case(BENCH_2D_JI)
+                    bench_str = '2D_JI'
+                case(BENCH_2D_IJ)
+                    bench_str = '2D_IJ'
+                case DEFAULT
+                    bench_str = 'ERROR'
+                    write (*,*) 'Error: no such benchmark'
+            end select
+            if ( .not. bench_str .eq. 'ERROR') then
+                CALL BENCH_SKELETON(iters, bench_id, bench_str)
+            end if
+        endif
         i = i + 1
     end do
     !!!!!!!! finalize timing here

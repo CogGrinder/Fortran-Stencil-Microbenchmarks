@@ -20,9 +20,8 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 for i in {1..10}
 do
     echo "Running time ${i}..."
-    ./$BENCH_EXECUTABLE 0 1 |  grep -A100 Section | paste >> 1D_FIXD_1D_ALOC_variance.csv
+    ./$BENCH_EXECUTABLE iters=1024 0 iters=1024 1 |  grep -A100 Section | paste >> 1D_FIXD_1D_ALOC_variance.csv
 done
 cat 1D_FIXD_1D_ALOC_variance.csv
-
 
 cat file.csv
