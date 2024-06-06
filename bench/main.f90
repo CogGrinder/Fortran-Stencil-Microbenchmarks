@@ -239,7 +239,7 @@ SUBROUTINE TEST_COMPUTATION_1(bench_id,bench_str)
 #include "perf_regions_defines.h"
     
     ! stencil must be odd length
-    integer, dimension(1:3) :: stencil
+    integer, dimension(-1:1) :: stencil
     integer, intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
     real    :: sten_sum
@@ -271,12 +271,12 @@ SUBROUTINE TEST_COMPUTATION_1(bench_id,bench_str)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
         result(i + sten_len/2) = 0
-        do k = 1,sten_len
+        do k = -sten_len/2,sten_len/2
 #ifdef DEBUG
-        write(6, 1, advance="no") k, i-sten_len/2 -1 + k
+        write(6, 1, advance="no") k, i + k
 #endif
             ! TODO : is there a += operator ?
-            result(i) = result(i) + stencil(k) * array(i-sten_len/2 -1 + k)
+            result(i) = result(i) + stencil(k) * array(i + k)
         end do
 #ifdef DEBUG        
         write(*,*) " at index " , i

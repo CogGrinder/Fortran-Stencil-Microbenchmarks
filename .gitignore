@@ -4,3 +4,5 @@ perf_regions
 /bench/build
 /bench/lib
 /bench/benchmark_implementations.o
+/bench/file.csv
+/bench/output.txt
