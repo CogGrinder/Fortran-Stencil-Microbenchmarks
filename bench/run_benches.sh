@@ -26,7 +26,4 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
 #### Bugged code ####
 ./$BENCH_EXECUTABLE iters=128 4
-
-
-./$BENCH_EXECUTABLE iters=128 4
 cat file.csv
