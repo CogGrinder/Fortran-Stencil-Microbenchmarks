@@ -79,6 +79,7 @@ To do on 06/05 :
         - [X] attempted fix that uses fixed stencil size in a computation - may be improved upon, L3 PAPI misses still irregular at 128*1024 size and 
         1024 iterations
         - [X] -> current version still has irregular L3 PAPI misses but by no more than a factor of 2 it seems. Maybe increasing iterations and making longer benchmarks will help with smoothing out data
+            - [ ] proposed : make a flush_L3 function that allocates big enough data and uses L3 cache entirely
     - [X] sanity check, especially if preheating cache does not work
         - [X] implement 2D bench in ij and ji variant
 - [X] -> once bench is fixed, do the allocatable version of the baseline code
@@ -87,22 +88,27 @@ comparer les resultats de performance aux allocations statiques (ce qui
 est deja present dans le code)
     - [ ] -> to go further, make a python script that parses and plots the comparison data
 - [ ] documenter les differents bench et donner des noms explicites aux bench
+    - [X] better naming
+    - [X] more clear passing of number of iterations
+    - [ ] documentation
+- [ ] retry module implementation
+    - [ ] use ``library_base.a`` for compilation before making ``library.a``
 
 ### Objectives from discussion on the 06/04
-- [ ] Comme convenu il serait interessant de modifier le code de stencil
+- [X] Comme convenu il serait interessant de modifier le code de stencil
 pour qu'il "ressemble" au code de stencil classique:
 
-    - [ ] piece jointe NPB code MG - Multi-Grid on a sequence of meshes,
+    - [X] piece jointe NPB code MG - Multi-Grid on a sequence of meshes,
 long- and short-distance communication, memory intensive
 
-- [ ] Utiliser les allocatable (declaration allocatable puis allocate) pour
+- [X] Utiliser les allocatable (declaration allocatable puis allocate) pour
 comparer les resultats de performance aux allocations statiques (ce qui
 est deja present dans le code)
 
 - [ ] Verifier qu'en "chauffant" le cache on obtient des resultats plus
 constant.
 
-- [ ] Chercher a modifier le bench pour obtenir des valeur de cache miss
+- [X] Chercher a modifier le bench pour obtenir des valeur de cache miss
 differente et expliquer la difference (sanity check with 2d ij and ji variants
 )
 

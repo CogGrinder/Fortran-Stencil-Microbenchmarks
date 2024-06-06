@@ -16,8 +16,9 @@ endif
 
 
 ### compilation flags ###
+BUILD_DIR := build
 BENCH_LIB_DIR   := lib
-BENCH_LIB := -Lbuild -L$(BENCH_LIB_DIR) -l:library.a
+BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.a
 
 PAPI_LIB:=-L. -lpapi
 
@@ -30,31 +31,29 @@ endif
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
-CFLAGS:= -Ibuild -I$(PERFREGION_SRC)
-LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
+CFLAGS:= -I$(BUILD_DIR) -I$(PERFREGION_SRC)
+PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 
 build_bench:
 	make -C $(PERFREGION_SRC)
-	make -C src
-	make -C src library
-# make benchmark_implementations
+	make bench_library
 	make $(MAIN)
 
-
-# BUILD_DIR := build
-# benchmark_implementations : benchmark_implementations.o
-# @echo
-# benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
-# $(BUILD_DIR)/benchmark_implementations.mod : benchmark_implementations.f90
-# make -C src
-# ./perf_regions_instrumentation.py cleanup
-# ${FC} ${FFLAGS} -c benchmark_implementations.f90 -J$(BUILD_DIR) -I$(BUILD_DIR) ${CFLAGS} ${LINKFLAGS}
+bench_library : 
+	make -C src
+	make benchmark_implementations.o
+	make -C src library
+benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
+	@echo
+$(BUILD_DIR)/benchmark_implementations.mod : src/benchmark_implementations.f90
+	./perf_regions_instrumentation.py cleanup
+	${FC} -c src/benchmark_implementations.f90 -cpp ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
 # -cpp option does preprocessing
 
 $(MAIN) : main.f90
 	./perf_regions_instrumentation.py cleanup
-	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS} ${BENCH_LIB} ${LINKFLAGS}
+	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 # -cpp option does preprocessing
 
 run_main : build_bench
@@ -64,7 +63,7 @@ run_main : build_bench
 	./run_benches.sh
 
 #main.o:
-#	${FC} -c main.F90 ${CFLAGS_PERFREGION} ${LINKFLAGS_PERFREGION}
+#	${FC} -c main.F90 ${CFLAGS} ${PERFREGION_LINKFLAGS}
 
 
 # clean depending on OS
@@ -75,7 +74,7 @@ clean_bench:
 else
 clean_bench:
 	./perf_regions_instrumentation.py cleanup
-	-rm -f main main_perf_region main.o file.csv
+	-rm -f main main.o benchmark_implementations.o file.csv
 	-rm -f perf_region_list.txt
 	-rm build/*.mod
 	-rm src/*.o src/*.mod
