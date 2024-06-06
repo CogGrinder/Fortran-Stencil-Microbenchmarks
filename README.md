@@ -71,7 +71,7 @@ Done on 06/04 :
         - [ ] implement 2D bench
 - [ ] -> once bench is fixed, do the allocatable version of the baseline code
 
-To do on 06/05 :
+Done on 06/05 :
 - [ ] fix bench
     - [X] fix stencil
         - [X] check in MG code 
@@ -95,6 +95,10 @@ est deja present dans le code)
     - [ ] use ``library_base.a`` for compilation before making ``library.a``
     - [X] compilation and execution
     - [ ] find out why the ``perf_regions`` is not working
+
+
+To do on 07/05 :
+- [ ] investigate GPU computation
 
 ### Objectives from discussion on the 06/04
 - [X] Comme convenu il serait interessant de modifier le code de stencil
