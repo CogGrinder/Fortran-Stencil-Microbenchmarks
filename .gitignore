@@ -1,4 +1,6 @@
-perf_regions
+perf_regions/examples
+perf_regions/doc
+perf_regions/run_tests.sh
 .gitconfig
 .vscode
 /bench/build
