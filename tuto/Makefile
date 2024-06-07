@@ -20,14 +20,30 @@ $(ECHO) : hello_world_echo.f90
 	gfortran hello_world_echo.f90 -o $(ECHO)
 
 # cannot group compilations because hello_world_omp.f90 uses openmp
+# old path change :
+# export PATH:=/usr/local/cuda:/usr/local/cuda/bin:$(PATH)
+# new path change :
+# export PATH:=/usr/lib/nvidia-cuda-toolkit:/usr/lib/nvidia-cuda-toolkit/bin:$(PATH)
+# note : to change CUDA version simlink, use
+# sudo update-alternatives --display cuda
+# sudo update-alternatives --config cuda
+# export PATH:=/usr/local/cuda-11:/usr/local/cuda-11/bin:$(PATH)
+export PATH:=/usr/local/cuda-12:/usr/local/cuda-12/bin:$(PATH)
+# export LD_LIBRARY_PATH:=/usr/local/cuda-11:/usr/local/cuda-11/lib:$(LD_LIBRARY_PATH)
+export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_PATH)
 $(OMP) : hello_world_omp.f90
-	gfortran -fopenmp hello_world_omp.f90 -o $(OMP)
+	@echo $(PATH)
+	gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector hello_world_omp.f90 -o $(OMP)
+# --ptxas-options -gpu-name=sm_75
+# note : can use -foffload=-lgfortran
+# gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector -lgcc -L/usr/local/cuda/lib64/ -lcuda -lcudart hello_world_omp.f90 -o $(OMP)
 
-run_tuto: run_echo run_omp
+run_tuto: run_omp
 run_echo : $(ECHO)
 	-./$(ECHO) 0 1 2 gotchu
 run_omp : $(OMP)
-	-./$(OMP)
+	OMP_TARGET_OFFLOAD=mandatory ./$(OMP)
+# nvprof ./$(OMP)
 
 
 # clean depending on OS

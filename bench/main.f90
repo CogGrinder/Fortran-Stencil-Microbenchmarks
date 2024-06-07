@@ -165,7 +165,6 @@ SUBROUTINE WARMUP_COMPUTATION(sten_len)
         result(i + sten_len/2) = 0
         do j = 1,sten_len
 
-            ! TODO : is there a += operator ?
             result(i) = result(i) + array(i-sten_len/2 -1 + j)
         end do
 
@@ -220,7 +219,6 @@ SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
 #ifdef DEBUG
         write(6, 1, advance="no") k, i-sten_len/2 -1 + k
 #endif
-            ! TODO : is there a += operator ?
             result(i) = result(i) + stencil(k) * array(i-sten_len/2 -1 + k)
         end do
 #ifdef DEBUG        
@@ -288,7 +286,6 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
 #ifdef DEBUG
         write(6, 1, advance="no") k, i + k
 #endif
-            ! TODO : is there a += operator ?
             result(i) = result(i) + stencil(k) * array(i + k)
         end do
 #ifdef DEBUG        
@@ -365,7 +362,6 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
 #ifdef DEBUG
                     write(6, 2, advance="no") k_1, i + k_1, k_2, i + k_2
 #endif
-                    ! TODO : is there a += operator ?
                     result(i,j) = result(i,j) + stencil(k_1,k_2) * array(i + k_1, j + k_2)
                     ! note : (k_1 - 1 - sten_len/2,k_2 - 1 - sten_len/2) is the centered index of the stencil
                 end do
@@ -443,7 +439,6 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
 #ifdef DEBUG
                     write(6, 2, advance="no") k_1, i + k_1, k_2, i + k_2
 #endif
-                    ! TODO : is there a += operator ?
                     result(i,j) = result(i,j) + stencil(k_1,k_2) * array(i + k_1, j + k_2)
                     ! note : (k_1 - 1 - sten_len/2,k_2 - 1 - sten_len/2) is the centered index of the stencil
                 end do
