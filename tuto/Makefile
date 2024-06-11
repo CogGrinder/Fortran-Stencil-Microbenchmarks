@@ -40,7 +40,10 @@ export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_P
 $(OMP) : hello_world_omp.f90
 	@echo $(PATH)
 # nvc/nvfortran compilation :
-	nvfortran -mp=gpu -gpu=sm_75 -o $(OMP) hello_world_omp.f90
+	nvfortran -cpp -mp=gpu -gpu=sm_75 -o $(OMP) hello_world_omp.f90
+# fails with error NVFORTRAN-S-0021-Label field of continuation line is not blank (hello_world_omp.f90: 4)
+# suggestion is to use -Mfree flag
+
 # gfortran compilation : fails with ptxas fatal   : Value 'sm_35' is not defined for option 'gpu-name'
 #	gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector hello_world_omp.f90 -o $(OMP)
 

@@ -6,7 +6,12 @@
 PROGRAM omp
     USE OMP_lib
     integer :: main_thread, thread_num, sum, target_devices
-    integer, dimension(LENGTH) :: A, B, C
+    ! allocatable seems to be necessary for CUDA target pragma
+    integer, allocatable :: A(:), B(:), C(:)
+    allocate(A(LENGTH))
+    allocate(B(LENGTH))
+    allocate(C(LENGTH))
+    
     main_thread = 0
   
     !$omp parallel private(thread_num) firstprivate(main_thread)
