@@ -8,7 +8,7 @@ sys.path.append('../perf_regions/scripts')
 import perf_regions
 
 pf = perf_regions.perf_regions(
-        ["./"],    # list with source directories
+        ["./","./src"],    # list with source directories
         [
             ".*timing_init.*",        # initialization of timing
             ".*timing_finalize.*",    # shutdown of timing

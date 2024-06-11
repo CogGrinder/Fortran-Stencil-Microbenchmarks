@@ -1,8 +1,11 @@
 perf_regions
+!perf_regions/src/perf_regions_defines.h
+!perf_regions/src/perf_regions.c
 .gitconfig
 .vscode
-/bench/build
-/bench/lib
-/bench/benchmark_implementations.o
-/bench/file.csv
-/bench/output.txt
+bench/build
+bench/lib
+bench/benchmark_implementations.o
+bench/file.csv
+bench/output.txt
+bench/output.txt
