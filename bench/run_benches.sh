@@ -2,7 +2,11 @@
 
 # set BENCH_EXECUTABLE and PERF_REGIONS
 export PERF_REGIONS="../perf_regions"
-export BENCH_EXECUTABLE="main"
+export BENCH_EXECUTABLE=main
+# set verbosity here
+export PERF_REGIONS_VERBOSITY=1
+
+export PERF_REGIONS_MAX=256
 
 export LD_LIBRARY_PATH="$PERF_REGIONS/build:$LD_LIBRARY_PATH"
 export PERF_REGIONS_COUNTERS=""
@@ -22,6 +26,8 @@ do
     echo "Running time ${i}..."
     ./$BENCH_EXECUTABLE 0
     ./$BENCH_EXECUTABLE 1
+    ./$BENCH_EXECUTABLE 1
+    ./$BENCH_EXECUTABLE 0
     # ./$BENCH_EXECUTABLE 0 1
     # ./$BENCH_EXECUTABLE 0 1 |  grep -A100 Section | paste >> BENCH_0_BENCH_1_variance.csv
 done

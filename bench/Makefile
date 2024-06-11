@@ -17,7 +17,7 @@ endif
 
 ### compilation flags ###
 BENCH_LIB_DIR   := lib
-BENCH_LIB := -Lbuild -L$(BENCH_LIB_DIR) -l:library.a
+BENCH_LIB := -Lbuild -L$(BENCH_LIB_DIR) -l:library.a -Ibuild
 
 PAPI_LIB:=-L. -lpapi
 
@@ -30,7 +30,7 @@ endif
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
-CFLAGS:= -Ibuild -I$(PERFREGION_SRC)
+CFLAGS:= -I$(PERFREGION_SRC) -O0 -g
 LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 
