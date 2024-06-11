@@ -1,7 +1,8 @@
 ! credit to https://curc.readthedocs.io/en/latest/programming/OpenMP-Fortran.html
 ! note : upper case and lower case commands seem to be up to taste, like in SQL
 
-#define LENGTH 1024*256
+#define LENGTH 1024*32
+! #define LENGTH 256
 
 PROGRAM omp
     USE OMP_lib
@@ -14,7 +15,7 @@ PROGRAM omp
     
     main_thread = 0
   
-    !$omp parallel private(thread_num) firstprivate(main_thread)
+    !$omp parallel firstprivate(A,B,C) private(thread_num) firstprivate(main_thread)
     thread_num = omp_get_thread_num()
     PRINT *, 'Hello World ! thread n°', thread_num
   
@@ -26,25 +27,71 @@ PROGRAM omp
       ! example from "Programming Your GPU with OpenMP" byt T.Deakin and T.G.Mattson page 62
       ! dependencies :
       ! https://developer.nvidia.com/cuda-downloads
-      ! gcc-offload-nvptx
-      ! warning : nvcc version or cuda toolkit
-      ! dont use nvidia-cuda-toolkit seems to be too old
-      ! find /usr -type d -name cuda
 
 
-      !$omp target firstprivate(A,B,C)
+      ! modified
+      write (*,*) "entering target..."
+      !$omp loop bind(thread) private(A,B,C)
       do k = 1, LENGTH
         do i = 1, LENGTH
+          ! write (*,*) "entered target loop..."
+          
           C(i) = A(i) + B(i)
         end do
       end do
-      
-      ! sum = 0
-      ! do i = 1, LENGTH
-      !   sum = sum + C(i)
-      ! end do
-      write (*,*) "C LENGTH=", C(LENGTH)
-      !$omp end target
+      sum = 0
+      do i = 1, LENGTH
+        sum = sum + C(i)
+      end do
+      write (*,*) "C sum :", sum
+      !!$omp end target
     end if
-    !$omp end parallel
+  !$omp end parallel
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! examples from https://docs.nvidia.com/hpc-sdk/compilers/hpc-compilers-user-guide/index.html#openmp-use
+  write(*,*) "!$omp target teams loop "
+  !$omp target teams loop 
+  do n1loc_blk = 1, n1loc_blksize
+    do igp = 1, ngpown 
+      do ig_blk = 1, ig_blksize 
+        do ig = ig_blk, ncouls, ig_blksize
+          do n1_loc = n1loc_blk, ntband_dist, n1loc_blksize
+            !expensive computation codes           
+          enddo 
+        enddo 
+      enddo 
+    enddo 
+  enddo
+  write(*,*) "!$omp target teams loop collapse(3)"
+  write(*,*) "with !$omp loop bind(parallel) collapse(2)"
+  !$omp target teams loop collapse(3)
+  do n1loc_blk = 1, n1loc_blksize
+    do igp = 1, ngpown 
+      do ig_blk = 1, ig_blksize 
+        !$omp loop bind(parallel) collapse(2)
+        do ig = ig_blk, ncouls, ig_blksize
+          do n1_loc = n1loc_blk, ntband_dist, n1loc_blksize
+            !expensive computation codes           
+          enddo 
+        enddo 
+      enddo 
+    enddo 
+  enddo
+  write(*,*) "!$omp target teams loop collapse(3)"
+  write(*,*) "with !$omp loop bind(thread) collapse(2)"
+  !$omp target teams loop collapse(3)
+  do n1loc_blk = 1, n1loc_blksize
+    do igp = 1, ngpown 
+      do ig_blk = 1, ig_blksize 
+        !$omp loop bind(thread) collapse(2)
+        do ig = ig_blk, ncouls, ig_blksize
+          do n1_loc = n1loc_blk, ntband_dist, n1loc_blksize
+            ! expensive computation codes           
+          enddo 
+        enddo 
+      enddo 
+    enddo 
+  enddo
+
 end PROGRAM omp

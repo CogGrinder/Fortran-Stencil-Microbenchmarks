@@ -23,17 +23,27 @@ Other options:
 - use preprocessing macro ``DEBUG=1`` in ``main.f90`` if you are debugging
 
 ### Notes on CUDA compilation with OpenMP
-According to IDRIS at page http://www.idris.fr/media/formations/openacc/openmp_gpu_idris_c.pdf , the right way to compile is with nvc : 
-``nvc -mp=gpu -gpu=cc70 -o test test.f90``
-To compile effectively, use the following parameters, such that ``/opt/nvidia/hpc_sdk/$NVARCH/24.5/compilers/bin/`` is the path to the nvc compiler
-See installation guide at https://docs.nvidia.com/hpc-sdk//hpc-sdk-install-guide/index.html 
-```bash
-NVARCH=`Linux_x86_64 -s`_`Linux_x86_64 -m`; export NVARCH
-NVCOMPILERS=/opt/nvidia/hpc_sdk; export NVCOMPILERS
-MANPATH=$MANPATH:$NVCOMPILERS/$NVARCH/24.5/compilers/man; export MANPATH
-PATH=$NVCOMPILERS/$NVARCH/24.5/compilers/bin:$PATH; export PATH
+According to IDRIS at page http://www.idris.fr/media/formations/openacc/openmp_gpu_idris_c.pdf , the right way to compile is with nvidia's HPC SDK :
+``nvfortran -mp=gpu -gpu=sm_75 -o test test.f90``
+
+Replace ``sm_75`` in ``-gpu=sm_75`` by your gpu's name (see https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/)
+
+To compile, use NVidia's HPC SDK, see installation guide at https://docs.nvidia.com/hpc-sdk//hpc-sdk-install-guide/index.html and https://developer.nvidia.com/hpc-sdk-downloads
+- In ``make``, use the following :
+```makefile
+NVARCH=Linux_x86_64
+NVRELEASE=24.5
+export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk
+export NVCOMPILERS
+export MANPATH:=$(MANPATH):$(NVCOMPILERS)/$(NVARCH)/$(NVRELEASE)/compilers/man
+export PATH:=$(NVCOMPILERS)/$(NVARCH)/$(NVRELEASE)/compilers/bin:$(PATH)
+export PATH:=/usr/local/cuda:/usr/local/cuda/bin:$(PATH)
+export LD_LIBRARY_PATH:=/usr/local/cuda:/usr/local/cuda/lib:$(LD_LIBRARY_PATH)
 ```
-/usr/share/keyrings/ is the directory for signature of nvidia repos. Need to remove https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 from /etc/apt/sources.list.d/ to prevent downloading of wrong Ubuntu 18 repo
+/usr/share/keyrings/ is the directory for signature of nvidia repos. Need to remove https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 from ``/etc/apt/sources.list.d/`` to prevent downloading of wrong Ubuntu 18 repo
+
+If you have trouble installing the right cuda and cuda-drivers, go see https://forums.developer.nvidia.com/t/ubuntu-install-specific-old-cuda-drivers-combo/214601/5
 
 ## Current roadmap
 Done on 05/28 :

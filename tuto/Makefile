@@ -40,7 +40,7 @@ export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_P
 $(OMP) : hello_world_omp.f90
 	@echo $(PATH)
 # nvc/nvfortran compilation :
-	nvfortran -cpp -mp=gpu -gpu=sm_75 -o $(OMP) hello_world_omp.f90
+	nvfortran -cpp -Minfo=mp -mp=gpu -gpu=sm_75 -o $(OMP) hello_world_omp.f90
 # fails with error NVFORTRAN-S-0021-Label field of continuation line is not blank (hello_world_omp.f90: 4)
 # suggestion is to use -Mfree flag
 
@@ -48,6 +48,10 @@ $(OMP) : hello_world_omp.f90
 #	gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector hello_world_omp.f90 -o $(OMP)
 
 # attempts :
+# gcc-offload-nvptx
+# warning : nvcc version or cuda toolkit
+# dont use nvidia-cuda-toolkit seems to be too old
+# find /usr -type d -name cuda
 # note : can use -foffload=-lgfortran
 # gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector -lgcc -L/usr/local/cuda/lib64/ -lcuda -lcudart hello_world_omp.f90 -o $(OMP)
 # --ptxas-options -gpu-name=sm_75
