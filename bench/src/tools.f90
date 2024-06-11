@@ -1,6 +1,20 @@
 MODULE tools
     integer, parameter :: dp=kind(0.d0)
     contains
+            ! warning : hard coded type, shape and allocation
+        SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
+            implicit none
+            real(kind=dp), intent(in) :: written
+            integer :: descriptor
+            character(len=42) :: filename
+        
+            filename = 'output.txt'
+            descriptor = 42
+        
+            open(unit=descriptor, file=filename, status='unknown')
+            write(descriptor,*) written
+            close(descriptor)
+        end SUBROUTINE ANTI_OPTIMISATION_WRITE
         SUBROUTINE get_key_value(arg, value)
             character(len=*), intent(in) :: arg
             integer, intent(out) :: value

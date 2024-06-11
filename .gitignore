@@ -3,8 +3,9 @@ perf_regions/doc
 perf_regions/run_tests.sh
 .gitconfig
 .vscode
-/bench/build
-/bench/lib
-/bench/benchmark_implementations.o
-/bench/file.csv
-/bench/output.txt
+bench/build
+bench/lib
+bench/benchmark_implementations.o
+bench/file.csv
+bench/output.txt
+bench/src/tools.mod

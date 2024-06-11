@@ -1,11 +1,10 @@
 ! #define DEBUG
-#define DEBUG_PERF
 
 
 #define MAX_SIZE 1024*1024*128
 
 ! #define ARRAY_LEN  10
-#define ARRAY_LEN  1024*128
+#define ARRAY_LEN 1024*128
 ! #define ITERS 1
 #define ITERS 1024
 
@@ -34,10 +33,6 @@ PROGRAM main
             integer, intent(in) :: iters, bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE BENCH_SKELETON
-        SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
-            ! warning : hard coded type
-            real, intent(in) :: written
-        end SUBROUTINE ANTI_OPTIMISATION_WRITE
         SUBROUTINE WARMUP_COMPUTATION(sten_len)
             integer, intent(in) :: sten_len
         end SUBROUTINE WARMUP_COMPUTATION
@@ -65,10 +60,8 @@ PROGRAM main
 
     iters = ITERS
 
-#ifndef DEBUG_PERF
     !!!!!!!! initialize timing here
     CALL perf_regions_init()
-#endif
 
     CALL WARMUP_COMPUTATION(3)
 
@@ -112,10 +105,8 @@ PROGRAM main
         i = i + 1
     end do
 
-#ifndef DEBUG_PERF
     !!!!!!!! finalize timing here
     CALL perf_regions_finalize()
-#endif
 END PROGRAM main
 
 
@@ -123,7 +114,7 @@ END PROGRAM main
 SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str)
     USE perf_regions_fortran
     USE benchmark_names
-    ! use benchmark_implementations
+    use benchmark_implementations
     
     integer, intent(in) :: iters, bench_id
     character(len=7), intent(in) :: bench_str
@@ -138,7 +129,7 @@ SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str)
             case (BENCH_FIXED_ARRAY)
                 CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str)
             case (BENCH_ALLOCATABLE_ARRAY)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str)
             case (BENCH_2D_JI)
                 CALL COMPUTATION_2D_JI(bench_id, bench_str)
             case (BENCH_2D_IJ)
@@ -242,7 +233,7 @@ SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
 
 end SUBROUTINE
 
-SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
+SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -274,10 +265,8 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
     1 format(I2, I2)
 #endif
 
-#ifndef DEBUG_PERF
     !!!!!!!! start timing here
     CALL perf_region_start(bench_id, bench_str//achar(0))
-#endif
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
@@ -298,17 +287,15 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
     ! we ignore edges in the computation which explains the shift in indexes
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#ifndef DEBUG_PERF
     !!!!!!!! end timing here
     CALL perf_region_stop(bench_id)
-#endif   
 
         
 
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE
+end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
 
 SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
     use tools
@@ -463,20 +450,3 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
 
 end SUBROUTINE COMPUTATION_2D_IJ
-
-
-SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
-    use tools
-    implicit none
-    real(kind=dp), intent(in) :: written
-    integer :: descriptor
-    character(len=42) :: filename
-
-    filename = 'output.txt'
-    descriptor = 42
-
-    open(unit=descriptor, file=filename, status='unknown')
-    write(descriptor,*) written
-    close(descriptor)
-
-end SUBROUTINE ANTI_OPTIMISATION_WRITE

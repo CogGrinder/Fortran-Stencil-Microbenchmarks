@@ -498,7 +498,7 @@ void perf_regions_output_human_readable_text()
 		struct PerfRegion *r = &(perf_regions.perf_regions_list[i]);
 		if (r->active != 0)
 		{
-			fprintf(stderr, "Still in region of %s\n", get_perf_region_name(i));
+			fprintf(stderr, "Still in region of %s\n", i);//get_perf_region_name(i));
 			exit(-1);
 		}
 	}

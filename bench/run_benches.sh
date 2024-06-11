@@ -24,6 +24,9 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 # done
 # cat 1D_FIXD_1D_ALOC_variance.csv
 
-#### Bugged code ####
-./$BENCH_EXECUTABLE iters=128 4
+# ./$BENCH_EXECUTABLE iters=128 0
+./$BENCH_EXECUTABLE iters=128 1
+
+#### Bugged module access to perf_regions ####
+# ./$BENCH_EXECUTABLE iters=128 4
 cat file.csv
