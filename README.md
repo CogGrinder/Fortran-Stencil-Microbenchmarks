@@ -22,6 +22,19 @@ Timing libraries
 Other options:
 - use preprocessing macro ``DEBUG=1`` in ``main.f90`` if you are debugging
 
+### Notes on CUDA compilation with OpenMP
+According to IDRIS at page http://www.idris.fr/media/formations/openacc/openmp_gpu_idris_c.pdf , the right way to compile is with nvc : 
+``nvc -mp=gpu -gpu=cc70 -o test test.f90``
+To compile effectively, use the following parameters, such that ``/opt/nvidia/hpc_sdk/$NVARCH/24.5/compilers/bin/`` is the path to the nvc compiler
+See installation guide at https://docs.nvidia.com/hpc-sdk//hpc-sdk-install-guide/index.html 
+```bash
+NVARCH=`Linux_x86_64 -s`_`Linux_x86_64 -m`; export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk; export NVCOMPILERS
+MANPATH=$MANPATH:$NVCOMPILERS/$NVARCH/24.5/compilers/man; export MANPATH
+PATH=$NVCOMPILERS/$NVARCH/24.5/compilers/bin:$PATH; export PATH
+```
+/usr/share/keyrings/ is the directory for signature of nvidia repos. Need to remove https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 from /etc/apt/sources.list.d/ to prevent downloading of wrong Ubuntu 18 repo
+
 ## Current roadmap
 Done on 05/28 :
 - [X] hello world in Fortran

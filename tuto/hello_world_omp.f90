@@ -34,11 +34,11 @@ PROGRAM omp
         end do
       end do
       
-      sum = 0
-      do i = 1, LENGTH
-        sum = sum + C(i)
-      end do
-      write (*,*) "C sum=", sum
+      ! sum = 0
+      ! do i = 1, LENGTH
+      !   sum = sum + C(i)
+      ! end do
+      write (*,*) "C LENGTH=", C(LENGTH)
       !$omp end target
     end if
     !$omp end parallel

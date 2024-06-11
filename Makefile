@@ -28,8 +28,8 @@ run: run_bench
 run_bench:
 	cd $(BENCH) && $(MAKE) run
 
-tuto:
-	-cd $(TUTO) && $(MAKE)
+make_tuto:
+	$(MAKE) -C $(TUTO)
 run_tuto:
 	cd $(TUTO) && $(MAKE) run
 

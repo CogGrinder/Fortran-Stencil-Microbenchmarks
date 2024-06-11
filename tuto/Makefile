@@ -28,15 +28,26 @@ $(ECHO) : hello_world_echo.f90
 # sudo update-alternatives --display cuda
 # sudo update-alternatives --config cuda
 # export PATH:=/usr/local/cuda-11:/usr/local/cuda-11/bin:$(PATH)
+NVARCH=Linux_x86_64#`Linux_x86_64 -s`_`Linux_x86_64 -m`
+export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk
+export NVCOMPILERS
+export MANPATH:=$(MANPATH):$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/man
+export PATH:=$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/bin:$(PATH)
 export PATH:=/usr/local/cuda-12:/usr/local/cuda-12/bin:$(PATH)
 # export LD_LIBRARY_PATH:=/usr/local/cuda-11:/usr/local/cuda-11/lib:$(LD_LIBRARY_PATH)
 export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_PATH)
 $(OMP) : hello_world_omp.f90
 	@echo $(PATH)
-	gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector hello_world_omp.f90 -o $(OMP)
-# --ptxas-options -gpu-name=sm_75
+# nvc/nvfortran compilation :
+	nvfortran -mp=gpu -gpu=sm_75 -o $(OMP) hello_world_omp.f90
+# gfortran compilation : fails with ptxas fatal   : Value 'sm_35' is not defined for option 'gpu-name'
+#	gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector hello_world_omp.f90 -o $(OMP)
+
+# attempts :
 # note : can use -foffload=-lgfortran
 # gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector -lgcc -L/usr/local/cuda/lib64/ -lcuda -lcudart hello_world_omp.f90 -o $(OMP)
+# --ptxas-options -gpu-name=sm_75
 
 run_tuto: run_omp
 run_echo : $(ECHO)
