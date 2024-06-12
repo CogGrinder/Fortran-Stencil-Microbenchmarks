@@ -1,0 +1,8 @@
+build
+.vscode
+**/__pycache__
+**/*.pyc
+**/output_*
+**/*.swp
+**/Makefile.deps
+**/*.lyx~

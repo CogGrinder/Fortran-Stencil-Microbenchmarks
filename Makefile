@@ -21,18 +21,21 @@ endif
 
 all:
 	@echo make: $(MAKE)
+# add MODE=debug as a trailing option for debugging
 	-cd $(PERF_REGIONS_FOLDER) && $(MAKE)
+# -cd $(PERF_REGIONS_FOLDER) && $(MAKE) MODE=debug
 	-cd $(BENCH) && $(MAKE) PERF_REGIONS=../$(PERF_REGIONS_FOLDER)
 
 run: run_bench
 run_bench:
 	cd $(BENCH) && $(MAKE) run
 
-tuto:
-	-cd $(TUTO) && $(MAKE)
+make_tuto:
+	$(MAKE) -C $(TUTO)
 run_tuto:
 	cd $(TUTO) && $(MAKE) run
 
 clean:
+	-cd $(PERF_REGIONS_FOLDER) && $(MAKE) clean
 	-cd $(BENCH) && $(MAKE) clean
 	-cd $(TUTO) && $(MAKE) clean

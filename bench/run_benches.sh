@@ -32,6 +32,16 @@ do
     # ./$BENCH_EXECUTABLE 0 1 |  grep -A100 Section | paste >> BENCH_0_BENCH_1_variance.csv
 done
 cat BENCH_0_BENCH_1_variance.csv
+# for i in {1..10}
+# do
+#     echo "Running time ${i}..."
+#     ./$BENCH_EXECUTABLE iters=1024 0 iters=1024 1 |  grep -A100 Section | paste >> 1D_FIXD_1D_ALOC_variance.csv
+# done
+# cat 1D_FIXD_1D_ALOC_variance.csv
 
+# ./$BENCH_EXECUTABLE iters=128 0
+./$BENCH_EXECUTABLE iters=128 1
 
+#### Bugged module access to perf_regions ####
+# ./$BENCH_EXECUTABLE iters=128 4
 cat file.csv

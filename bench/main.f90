@@ -1,11 +1,10 @@
 ! #define DEBUG
 
 
-
 ! #define MAX_SIZE 1024*1024*128
 
 ! #define ARRAY_LEN  10
-#define ARRAY_LEN  1024*128
+#define ARRAY_LEN 1024*128
 ! #define ITERS 1
 #define ITERS 1024
 
@@ -18,7 +17,8 @@ PROGRAM main
     USE perf_regions_fortran
     use tools
     USE benchmark_names
-    
+    USE benchmark_implementations
+
 #include "perf_regions_defines.h"
     implicit none
 
@@ -42,31 +42,29 @@ PROGRAM main
         SUBROUTINE WARMUP_COMPUTATION(sten_len)
             integer, intent(in) :: sten_len
         end SUBROUTINE WARMUP_COMPUTATION
-        SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
+        SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_0
-        SUBROUTINE TEST_COMPUTATION_1(bench_id,bench_str)
+        end SUBROUTINE COMPUTATION_FIXED_ARRAY
+        SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_1
-        SUBROUTINE TEST_COMPUTATION_2D_JI(bench_id,bench_str)
+        end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
+        SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_2D_JI
-        SUBROUTINE TEST_COMPUTATION_2D_IJ(bench_id,bench_str)
+        end SUBROUTINE COMPUTATION_2D_JI
+        SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE TEST_COMPUTATION_2D_IJ
+        end SUBROUTINE COMPUTATION_2D_IJ
     end INTERFACE
     
     ! getting the variant of the benchmark from the command line
     ! see https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html
 
 
-    ! iters = 1024
-    ! stencil = (/ 1, 0, 1/)
-
+    iters = ITERS
 
     !!!!!!!! initialize timing here
 CALL perf_regions_init()
@@ -79,8 +77,12 @@ CALL perf_regions_init()
         ! condition to leave do loop
         if (len_trim(arg) == 0) then
             exit
+        else if (index(arg, 'iters=') == 1) then
+            write(*,*) arg
+            CALL get_key_value(arg,iters)            
         else
             read(arg,*) bench_id
+    
             WRITE(*,*) "**************************************"
             WRITE(*,*) "**************************************"
 
@@ -88,46 +90,27 @@ CALL perf_regions_init()
             
             ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
             select case (bench_id)
-                case (TEST_BENCH_0)
-                    bench_str = 'BENCH_0'
-                case (TEST_BENCH_1)
-                    bench_str = 'BENCH_1'
-                case(TEST_BENCH_2D_JI)
+                case (BENCH_FIXED_ARRAY)
+                    bench_str = '1D_FIXD'
+                case (BENCH_ALLOCATABLE_ARRAY)
+                    bench_str = '1D_ALOC'
+                case(BENCH_2D_JI)
                     bench_str = '2D_JI'
-                case(TEST_BENCH_2D_IJ)
+                case(BENCH_2D_IJ)
                     bench_str = '2D_IJ'
+                case (BENCH_ALLOCATABLE_ARRAY_MODULE)
+                    bench_str = 'MODULE'
                 case DEFAULT
                     bench_str = 'ERROR'
                     write (*,*) 'Error: no such benchmark'
             end select
             if ( .not. bench_str .eq. 'ERROR') then
-                CALL perf_region_start(98, "BENCH"//achar(0))
-                write (*,*) 'Running bench ', bench_str, '...'
-                WRITE(*,*) "**************************************"
-                WRITE(*,*) "Mem size: ", ARRAY_LEN*0.001*sizeof(dp) ," KByte"
-                WRITE(*,*) "Iterations: ", ITERS
-                do k = 1, ITERS
-                    CALL perf_region_start(99, "ITERS"//achar(0))
-                    select case (bench_id)
-                        case (TEST_BENCH_0)
-                            CALL TEST_COMPUTATION_0(bench_id, bench_str)
-                        case (TEST_BENCH_1)
-                            CALL TEST_COMPUTATION_1(bench_id, bench_str)
-                        case (TEST_BENCH_2D_JI)
-                            CALL TEST_COMPUTATION_2D_JI(bench_id, bench_str)
-                        case (TEST_BENCH_2D_IJ)
-                            CALL TEST_COMPUTATION_2D_IJ(bench_id, bench_str)
-                        case DEFAULT
-                            write (*,*) 'Error: no such benchmark'
-                    end select
-                    CALL perf_region_stop(99) !FOOA
-                end do
-                CALL perf_region_stop(98) !FOOA
-
+                CALL BENCH_SKELETON(iters, bench_id, bench_str)
             end if
         endif
         i = i + 1
     end do
+
     !!!!!!!! finalize timing here
 CALL perf_regions_finalize()
 
@@ -139,7 +122,7 @@ SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str)
 USE perf_regions_fortran
 USE benchmark_names
 #include "perf_regions_defines.h"
-    ! use benchmark_implementations
+    use benchmark_implementations
     
     integer, intent(in) :: iters
     integer(KIND=4), intent(in) :: bench_id
@@ -153,14 +136,16 @@ USE benchmark_names
     do k = 1, iters
         CALL perf_region_start(99, "ITERS"//achar(0))
         select case (bench_id)
-            case (TEST_BENCH_0)
-                CALL TEST_COMPUTATION_0(bench_id, bench_str)
-            case (TEST_BENCH_1)
-                CALL TEST_COMPUTATION_1(bench_id, bench_str)
-            case (TEST_BENCH_2D_JI)
-                CALL TEST_COMPUTATION_2D_JI(bench_id, bench_str)
-            case (TEST_BENCH_2D_IJ)
-                CALL TEST_COMPUTATION_2D_IJ(bench_id, bench_str)
+            case (BENCH_FIXED_ARRAY)
+                CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str)
+            case (BENCH_ALLOCATABLE_ARRAY)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str)
+            case (BENCH_2D_JI)
+                CALL COMPUTATION_2D_JI(bench_id, bench_str)
+            case (BENCH_2D_IJ)
+                CALL COMPUTATION_2D_IJ(bench_id, bench_str)
+            case (BENCH_ALLOCATABLE_ARRAY_MODULE)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str)
             case DEFAULT
                 write (*,*) 'Error: no such benchmark'
         end select
@@ -182,7 +167,6 @@ SUBROUTINE WARMUP_COMPUTATION(sten_len)
         result(i + sten_len/2) = 0
         do j = 1,sten_len
 
-            ! TODO : is there a += operator ?
             result(i) = result(i) + array(i-sten_len/2 -1 + j)
         end do
 
@@ -225,7 +209,9 @@ CALL perf_region_start(bench_id, bench_str//achar(0))
     do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
         result(i + sten_len/2) = 0
         do k = 1,sten_len
-            ! TODO : is there a += operator ?
+#ifdef DEBUG
+        write(6, 1, advance="no") k, i-sten_len/2 -1 + k
+#endif
             result(i) = result(i) + stencil(k) * array(i-sten_len/2 -1 + k)
         end do
         ! normalize by sten_sum
@@ -245,9 +231,9 @@ CALL perf_region_stop(bench_id)
 
 end SUBROUTINE
 
-SUBROUTINE TEST_COMPUTATION_1(bench_id,bench_str)
-use perf_regions_fortran
-use tools
+SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
+    use tools
+    use perf_regions_fortran
 #include "perf_regions_defines.h"
     
     ! stencil must be odd length
@@ -267,17 +253,26 @@ use tools
     do i = 1, ARRAY_LEN
         call RANDOM_NUMBER(array(i))
     end do
+    
+#ifdef DEBUG
+    ! example for formatting :
+    ! I5 for a 5-digit integer.
+    ! F10.4 for a floating-point number with 10 total characters, including 4 digits after the decimal point.
+    ! A for a character string.
+    ! 100 format(I5, F10.4, A)
+    1 format(I2, I2)
+#endif
 
-        !!!!!!!! start timing here
+    !!!!!!!! start timing here
     CALL perf_region_start(bench_id, bench_str//achar(0))
-
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
         result(i + sten_len/2) = 0
         do k = -sten_len/2,sten_len/2
-
-            ! TODO : is there a += operator ?
+#ifdef DEBUG
+        write(6, 1, advance="no") k, i + k
+#endif
             result(i) = result(i) + stencil(k) * array(i + k)
         end do
 
@@ -287,7 +282,6 @@ use tools
     ! we ignore edges in the computation which explains the shift in indexes
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     !!!!!!!! end timing here
     CALL perf_region_stop(bench_id)
 
@@ -296,9 +290,9 @@ use tools
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE
+end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
 
-SUBROUTINE TEST_COMPUTATION_2D_JI(bench_id,bench_str)
+SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -350,7 +344,6 @@ SUBROUTINE TEST_COMPUTATION_2D_JI(bench_id,bench_str)
 #ifdef DEBUG
                     write(6, 2, advance="no") k_1, i + k_1, k_2, i + k_2
 #endif
-                    ! TODO : is there a += operator ?
                     result(i,j) = result(i,j) + stencil(k_1,k_2) * array(i + k_1, j + k_2)
                     ! note : (k_1 - 1 - sten_len/2,k_2 - 1 - sten_len/2) is the centered index of the stencil
                 end do
@@ -374,9 +367,9 @@ SUBROUTINE TEST_COMPUTATION_2D_JI(bench_id,bench_str)
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE TEST_COMPUTATION_2D_JI
+end SUBROUTINE COMPUTATION_2D_JI
 
-SUBROUTINE TEST_COMPUTATION_2D_IJ(bench_id,bench_str)
+SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -428,7 +421,6 @@ SUBROUTINE TEST_COMPUTATION_2D_IJ(bench_id,bench_str)
 #ifdef DEBUG
                     write(6, 2, advance="no") k_1, i + k_1, k_2, i + k_2
 #endif
-                    ! TODO : is there a += operator ?
                     result(i,j) = result(i,j) + stencil(k_1,k_2) * array(i + k_1, j + k_2)
                     ! note : (k_1 - 1 - sten_len/2,k_2 - 1 - sten_len/2) is the centered index of the stencil
                 end do
@@ -452,21 +444,4 @@ SUBROUTINE TEST_COMPUTATION_2D_IJ(bench_id,bench_str)
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE TEST_COMPUTATION_2D_IJ
-
-
-SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
-    use tools
-    implicit none
-    real(dp), intent(in) :: written
-    integer :: descriptor
-    character(len=42) :: filename
-
-    filename = 'output.txt'
-    descriptor = 42
-
-    open(unit=descriptor, file=filename, status='unknown')
-    write(descriptor,*) written
-    close(descriptor)
-
-end SUBROUTINE ANTI_OPTIMISATION_WRITE
+end SUBROUTINE COMPUTATION_2D_IJ
