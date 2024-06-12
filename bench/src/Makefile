@@ -6,7 +6,7 @@ BUILD_DIR := ../build
 LIB_DIR   := ../lib
 VPATH = $(BUILD_DIR)
 
-MODULE_SRC := tools.f90 benchmark_names.f90
+MODULE_SRC := tools.f90 benchmark_names.f90 benchmark_parameters.f90
 # see https://www.gnu.org/software/make/manual/html_node/Text-Functions.html
 MODULE_MOD := $(patsubst %.f90,$(BUILD_DIR)/%.mod,$(MODULE_SRC))
 MODULE_O   := $(patsubst %.f90,$(BUILD_DIR)/%.o,$(MODULE_SRC)) $(BUILD_DIR)/benchmark_implementations.o

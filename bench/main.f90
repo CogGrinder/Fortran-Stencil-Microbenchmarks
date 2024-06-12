@@ -7,6 +7,7 @@
 #define ARRAY_LEN 1024
 ! #define ITERS 1
 #define ITERS 1024
+#define FLEXIBLE_STENCIL 0
 
 #ifdef array_len_OVERRIDE
     #define array_len array_len_OVERRIDE
@@ -92,15 +93,15 @@ CALL perf_regions_init()
         CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(3, bench_str, array_len)
     end do
     bench_str = '2D_JI'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_2D_JI(4, bench_str, array_len)
-    ! end do
+    WRITE(*,*) "Iterations: ", iters
+    do k = 1, iters
+        CALL COMPUTATION_2D_JI(4, bench_str, array_len)
+    end do
     bench_str = '2D_IJ'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_2D_IJ(5, bench_str, array_len)
-    ! end do
+    WRITE(*,*) "Iterations: ", iters
+    do k = 1, iters
+        CALL COMPUTATION_2D_IJ(5, bench_str, array_len)
+    end do
 
     ! PREVIOUSLY : READ FROM COMMAND LINE ARGUMENTS
     ! i = 1
@@ -330,6 +331,7 @@ end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
 SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     use tools
     use perf_regions_fortran
+    use benchmark_parameters
 #include "perf_regions_defines.h"
     
     ! stencil must be odd length
@@ -341,8 +343,8 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     integer :: sten_len
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(array_len,array_len))
-    allocate(result(array_len,array_len) , source=0.0_dp)
+    allocate(array(nx,ny))
+    allocate(result(nx,ny) , source=0.0_dp)
 
     stencil = reshape((/ 0, 1, 0, &
 &                        1, 1, 1, &
@@ -354,9 +356,11 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     write(*,*) stencil, sten_sum, sten_len
 #endif
 
-    do j = 1, array_len
-        do i = 1, array_len
-            call RANDOM_NUMBER(array(i,j))
+    do j = 1, ny
+        do i = 1, nx
+            array(i,j) = (i-1)*ny + j
+            result(i,j) = (i-1)*ny + j
+            ! call RANDOM_NUMBER(array(i,j))
         end do
     end do
     
@@ -373,22 +377,31 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 1 + sten_len/2, array_len - sten_len/2
-        do i = 1 + sten_len/2, array_len - sten_len/2
+    do j = 1 + sten_len/2, ny - sten_len/2
+        do i = 1 + sten_len/2, nx - sten_len/2
+#if FLEXIBLE_STENCIL
             do k_2 = -sten_len/2 ,sten_len/2
                 do k_1 = -sten_len/2 ,sten_len/2
-#ifdef DEBUG
+# ifdef DEBUG
                     write(6, 2, advance="no") k_1, i + k_1, k_2, i + k_2
-#endif
+# endif
                     result(i,j) = result(i,j) + stencil(k_1,k_2) * array(i + k_1, j + k_2)
                     ! note : (k_1 - 1 - sten_len/2,k_2 - 1 - sten_len/2) is the centered index of the stencil
                 end do
             end do
-#ifdef DEBUG        
-        write(*,*) " at index " , i,j
+# ifdef DEBUG        
+            write(*,*) " at index " , i,j
+# endif
+            ! normalize by sten_sum
+            result(i,j) = result(i,j)/sten_sum
+#else
+            result(i,j) = array(i - 1, j - 1) &
+            &           + array(i - 1, j + 1) &
+            &           + array(i    , j    ) &
+            &           + array(i + 1, j - 1) &
+            &           + array(i + 1, j + 1)
+            result(i,j) = result(i,j)/sten_sum
 #endif
-        ! normalize by sten_sum
-        result(i,j) = result(i,j)/sten_sum
         end do
     end do
     ! we ignore edges in the computation which explains the shift in indexes
@@ -400,8 +413,8 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,array_len),modulo(42,array_len)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,array_len),modulo(42,array_len)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),modulo(42,ny)))
 
 end SUBROUTINE COMPUTATION_2D_JI
 
@@ -453,20 +466,29 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do i = 1 + sten_len/2, array_len - sten_len/2
         do j = 1 + sten_len/2, array_len - sten_len/2
+#if FLEXIBLE_STENCIL
             do k_2 = -sten_len/2 ,sten_len/2
                 do k_1 = -sten_len/2 ,sten_len/2
-#ifdef DEBUG
+# ifdef DEBUG
                     write(6, 2, advance="no") k_1, i + k_1, k_2, i + k_2
-#endif
+# endif
                     result(i,j) = result(i,j) + stencil(k_1,k_2) * array(i + k_1, j + k_2)
                     ! note : (k_1 - 1 - sten_len/2,k_2 - 1 - sten_len/2) is the centered index of the stencil
                 end do
             end do
-#ifdef DEBUG        
+# ifdef DEBUG        
         write(*,*) " at index " , i,j
-#endif
+# endif
         ! normalize by sten_sum
         result(i,j) = result(i,j)/sten_sum
+#else
+            result(i,j) = array(i - 1, j - 1) &
+            &           + array(i - 1, j + 1) &
+            &           + array(i    , j    ) &
+            &           + array(i + 1, j - 1) &
+            &           + array(i + 1, j + 1)
+            result(i,j) = result(i,j)/sten_sum
+#endif
         end do
     end do
     ! we ignore edges in the computation which explains the shift in indexes
