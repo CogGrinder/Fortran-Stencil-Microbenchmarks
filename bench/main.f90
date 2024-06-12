@@ -77,9 +77,9 @@ CALL perf_regions_init()
     bench_str = '1D_FIXD'
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
-        CALL perf_region_start(1, "ITERS"//achar(0))
+        CALL perf_region_start(99, "ITERS"//achar(0))
         CALL COMPUTATION_FIXED_ARRAY(0, bench_str, array_len)
-        CALL perf_region_stop(1) !FOOA
+        CALL perf_region_stop(99) !FOOA
     end do
     bench_str = '1D_ALOC'
     WRITE(*,*) "Iterations: ", iters
