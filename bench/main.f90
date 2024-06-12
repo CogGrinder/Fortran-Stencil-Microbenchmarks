@@ -8,8 +8,8 @@
 ! #define ITERS 1
 #define ITERS 1024
 
-#ifdef ARRAY_LEN_OVERRIDE
-    #define ARRAY_LEN ARRAY_LEN_OVERRIDE
+#ifdef array_len_OVERRIDE
+    #define array_len array_len_OVERRIDE
 #endif
 
 PROGRAM main
@@ -24,33 +24,37 @@ PROGRAM main
 
     ! integer :: iters
     integer(KIND=4) :: bench_id
-    integer :: k,i,iters
+    integer :: k,i,iters,array_len
     character(len=32) :: arg
     character(len=7) :: bench_str
     
     
     INTERFACE
-        SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str)
-            integer, intent(in) :: iters
+        SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str, array_len)
+            integer, intent(in) :: iters, array_len
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE BENCH_SKELETON
-        SUBROUTINE WARMUP_COMPUTATION(sten_len)
-            integer, intent(in) :: sten_len
+        SUBROUTINE WARMUP_COMPUTATION(sten_len, array_len)
+            integer, intent(in) :: sten_len, array_len
         end SUBROUTINE WARMUP_COMPUTATION
-        SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
+        SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str, array_len)
+            integer, intent(in) :: array_len
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE COMPUTATION_FIXED_ARRAY
-        SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
+        SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
+            integer, intent(in) :: array_len
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
-        SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
+        SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
+            integer, intent(in) :: array_len
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE COMPUTATION_2D_JI
-        SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
+        SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
+            integer, intent(in) :: array_len
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE COMPUTATION_2D_IJ
@@ -61,41 +65,42 @@ PROGRAM main
 
 
     iters = ITERS
+    array_len = ARRAY_LEN
 
     !!!!!!!! initialize timing here
 CALL perf_regions_init()
     
-    CALL WARMUP_COMPUTATION(3)
+    CALL WARMUP_COMPUTATION(3,array_len)
 
     ! DEBUG VERSION : HARD CODED CALLS TO BENCHMARKS
     
     bench_str = '1D_FIXD'
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
-        CALL perf_region_start(2, "ITERS"//achar(0))
-        CALL COMPUTATION_FIXED_ARRAY(BENCH_FIXED_ARRAY, bench_str)
-        CALL perf_region_stop(2) !FOOA
+        CALL perf_region_start(1, "ITERS"//achar(0))
+        CALL COMPUTATION_FIXED_ARRAY(0, bench_str, array_len)
+        CALL perf_region_stop(1) !FOOA
     end do
     bench_str = '1D_ALOC'
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
-        CALL COMPUTATION_ALLOCATABLE_ARRAY(BENCH_ALLOCATABLE_ARRAY, bench_str)
+        CALL COMPUTATION_ALLOCATABLE_ARRAY(2, bench_str, array_len)
+    end do
+    bench_str = 'MODULE'
+    WRITE(*,*) "Iterations: ", iters
+    do k = 1, iters
+        CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(3, bench_str, array_len)
     end do
     bench_str = '2D_JI'
     ! WRITE(*,*) "Iterations: ", iters
     ! do k = 1, iters
-    !     CALL COMPUTATION_2D_JI(BENCH_2D_JI, bench_str)
+    !     CALL COMPUTATION_2D_JI(4, bench_str, array_len)
     ! end do
     bench_str = '2D_IJ'
     ! WRITE(*,*) "Iterations: ", iters
     ! do k = 1, iters
-    !     CALL COMPUTATION_2D_IJ(BENCH_2D_IJ, bench_str)
+    !     CALL COMPUTATION_2D_IJ(5, bench_str, array_len)
     ! end do
-    bench_str = 'MODULE'
-    WRITE(*,*) "Iterations: ", iters
-    do k = 1, iters
-        CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(3, bench_str)
-    end do
 
     ! PREVIOUSLY : READ FROM COMMAND LINE ARGUMENTS
     ! i = 1
@@ -132,7 +137,7 @@ CALL perf_regions_init()
     !                 write (*,*) 'Error: no such benchmark'
     !         end select
     !         if ( .not. bench_str .eq. 'ERROR') then
-    !             CALL BENCH_SKELETON(iters, bench_id, bench_str)
+    !             CALL BENCH_SKELETON(iters, bench_id, bench_str, array_len)
     !         end if
     !     endif
     !     i = i + 1
@@ -145,7 +150,7 @@ END PROGRAM main
 
 
 
-SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str)
+SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str, array_len)
 USE perf_regions_fortran
 USE benchmark_names
 #include "perf_regions_defines.h"
@@ -154,24 +159,26 @@ USE benchmark_names
     integer, intent(in) :: iters
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
+    integer, intent(in) :: array_len
+
 
     write (*,*) 'Running bench ', bench_str, '...'
     WRITE(*,*) "**************************************"
-    WRITE(*,*) "Mem size: ", ARRAY_LEN*0.001*sizeof(real) ," KByte"
+    WRITE(*,*) "Mem size: ", array_len*0.001*sizeof(real) ," KByte"
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
         CALL perf_region_start(99, "ITERS"//achar(0))
         select case (bench_id)
             case (BENCH_FIXED_ARRAY)
-                CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str)
+                CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str, array_len)
             case (BENCH_ALLOCATABLE_ARRAY)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str, array_len)
             case (BENCH_2D_JI)
-                CALL COMPUTATION_2D_JI(bench_id, bench_str)
+                CALL COMPUTATION_2D_JI(bench_id, bench_str, array_len)
             case (BENCH_2D_IJ)
-                CALL COMPUTATION_2D_IJ(bench_id, bench_str)
+                CALL COMPUTATION_2D_IJ(bench_id, bench_str, array_len)
             case (BENCH_ALLOCATABLE_ARRAY_MODULE)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str, array_len)
             case DEFAULT
                 write (*,*) 'Error: no such benchmark'
         end select
@@ -180,16 +187,16 @@ USE benchmark_names
   
 end SUBROUTINE BENCH_SKELETON
 
-SUBROUTINE WARMUP_COMPUTATION(sten_len)
-    integer, intent(in) :: sten_len
-    real, dimension(ARRAY_LEN) :: array
-    real, dimension(ARRAY_LEN) :: result
+SUBROUTINE WARMUP_COMPUTATION(sten_len, array_len)
+    integer, intent(in) :: sten_len, array_len
+    real, dimension(array_len) :: array
+    real, dimension(array_len) :: result
 
-    do i = 1, ARRAY_LEN
+    do i = 1, array_len
         call RANDOM_NUMBER(array(i))
     end do
 
-    do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
+    do i = 1 + sten_len/2, array_len - sten_len/2
         result(i + sten_len/2) = 0
         do j = 1,sten_len
 
@@ -200,13 +207,13 @@ SUBROUTINE WARMUP_COMPUTATION(sten_len)
     ! we ignore edges in the computation which explains the shift in indexes
 
     ! normalize by sten_sum
-    do i = 1, ARRAY_LEN
+    do i = 1, array_len
         result(i) = result(i)/sten_sum
     end do
 
 end SUBROUTINE WARMUP_COMPUTATION
 
-SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
+SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str, array_len)
 use perf_regions_fortran
 use tools
 #include "perf_regions_defines.h"
@@ -215,16 +222,17 @@ use tools
     integer, dimension(1:3) :: stencil
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
+    integer, intent(in) :: array_len
     real    :: sten_sum
     integer :: sten_len
-    real(dp), dimension(ARRAY_LEN) :: array
-    real(dp), dimension(ARRAY_LEN) :: result
+    real(dp), dimension(array_len) :: array
+    real(dp), dimension(array_len) :: result
 
     stencil = (/ 1, 0, 1/)
 
     CALL stencil_characteristics(stencil,sten_sum,sten_len)
 
-    do i = 1, ARRAY_LEN
+    do i = 1, array_len
         call RANDOM_NUMBER(array(i))
     end do
         !!!!!!!! start timing here
@@ -232,7 +240,7 @@ CALL perf_region_start(bench_id, bench_str//achar(0))
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
+    do i = 1 + sten_len/2, array_len - sten_len/2
         result(i + sten_len/2) = 0
         do k = 1,sten_len
 #ifdef DEBUG
@@ -252,12 +260,12 @@ CALL perf_region_stop(bench_id)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,array_len)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,array_len)))
 
 end SUBROUTINE COMPUTATION_FIXED_ARRAY
 
-SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
+SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -266,17 +274,18 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
     integer, dimension(-1:1) :: stencil
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
+    integer, intent(in) :: array_len
     real    :: sten_sum
     integer :: sten_len
     real(dp), allocatable :: array(:), result(:)
-    allocate(array(ARRAY_LEN))
-    allocate(result(ARRAY_LEN) , source=0.0_dp)
+    allocate(array(array_len))
+    allocate(result(array_len) , source=0.0_dp)
 
     stencil = (/ 1, 0, 1/)
 
     CALL stencil_characteristics(stencil,sten_sum,sten_len)
 
-    do i = 1, ARRAY_LEN
+    do i = 1, array_len
         call RANDOM_NUMBER(array(i))
     end do
     
@@ -293,7 +302,7 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
     CALL perf_region_start(bench_id, bench_str//achar(0))
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
+    do i = 1 + sten_len/2, array_len - sten_len/2
         result(i + sten_len/2) = 0
         do k = -sten_len/2,sten_len/2
 #ifdef DEBUG
@@ -313,12 +322,12 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,array_len)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,array_len)))
 
 end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
 
-SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
+SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -327,12 +336,13 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
     integer, dimension(-1:1,-1:1) :: stencil
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
+    integer, intent(in) :: array_len
     real    :: sten_sum
     integer :: sten_len
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(ARRAY_LEN,ARRAY_LEN))
-    allocate(result(ARRAY_LEN,ARRAY_LEN) , source=0.0_dp)
+    allocate(array(array_len,array_len))
+    allocate(result(array_len,array_len) , source=0.0_dp)
 
     stencil = reshape((/ 0, 1, 0, &
 &                        1, 1, 1, &
@@ -344,8 +354,8 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
     write(*,*) stencil, sten_sum, sten_len
 #endif
 
-    do j = 1, ARRAY_LEN
-        do i = 1, ARRAY_LEN
+    do j = 1, array_len
+        do i = 1, array_len
             call RANDOM_NUMBER(array(i,j))
         end do
     end do
@@ -363,8 +373,8 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 1 + sten_len/2, ARRAY_LEN - sten_len/2
-        do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
+    do j = 1 + sten_len/2, array_len - sten_len/2
+        do i = 1 + sten_len/2, array_len - sten_len/2
             do k_2 = -sten_len/2 ,sten_len/2
                 do k_1 = -sten_len/2 ,sten_len/2
 #ifdef DEBUG
@@ -390,12 +400,12 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,array_len),modulo(42,array_len)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,array_len),modulo(42,array_len)))
 
 end SUBROUTINE COMPUTATION_2D_JI
 
-SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
+SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
     use tools
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -404,12 +414,13 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
     integer, dimension(-1:1,-1:1) :: stencil
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
+    integer, intent(in) :: array_len
     real    :: sten_sum
     integer :: sten_len
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(ARRAY_LEN,ARRAY_LEN))
-    allocate(result(ARRAY_LEN,ARRAY_LEN) , source=0.0_dp)
+    allocate(array(array_len,array_len))
+    allocate(result(array_len,array_len) , source=0.0_dp)
 
     stencil = reshape((/ 0, 1, 0, &
 &                        1, 1, 1, &
@@ -421,8 +432,8 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
     write(*,*) stencil, sten_sum, sten_len
 #endif
 
-    do i = 1, ARRAY_LEN
-        do j = 1, ARRAY_LEN
+    do i = 1, array_len
+        do j = 1, array_len
             call RANDOM_NUMBER(array(i,j))
         end do
     end do
@@ -440,8 +451,8 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + sten_len/2, ARRAY_LEN - sten_len/2
-        do j = 1 + sten_len/2, ARRAY_LEN - sten_len/2
+    do i = 1 + sten_len/2, array_len - sten_len/2
+        do j = 1 + sten_len/2, array_len - sten_len/2
             do k_2 = -sten_len/2 ,sten_len/2
                 do k_1 = -sten_len/2 ,sten_len/2
 #ifdef DEBUG
@@ -467,7 +478,7 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN),modulo(42,ARRAY_LEN)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,array_len),modulo(42,array_len)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,array_len),modulo(42,array_len)))
 
 end SUBROUTINE COMPUTATION_2D_IJ
