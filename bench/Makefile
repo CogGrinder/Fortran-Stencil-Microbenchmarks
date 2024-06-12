@@ -1,11 +1,17 @@
 ### bench makefile ###
 
 FC:=gfortran
+CC:=gcc
+CXX:=g++
 FFLAGS = -cpp -Wall -Wextra -O3
 
-all: build_bench
+all:
+	make -C $(PERFREGION_SRC)
+	make bench_library
+	make $(MAIN)
+
 run: run_main
-clean: clean_bench
+clean: clean
 
 MAIN:= main
 
@@ -18,7 +24,12 @@ endif
 ### compilation flags ###
 BUILD_DIR := build
 BENCH_LIB_DIR   := lib
-BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.a -Ibuild
+
+BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.a
+# TODO : try .so library - you must also modify the Makefile in src
+# BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.so
+# TODO : try not using .a or .so
+# BENCH_LIB := -L$(BENCH_LIB_DIR)
 
 PAPI_LIB:=-L. -lpapi
 
@@ -34,11 +45,6 @@ PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 CFLAGS:= -I$(BUILD_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
-
-build_bench:
-	make -C $(PERFREGION_SRC)
-	make bench_library
-	make $(MAIN)
 
 bench_library : 
 	make -C src
@@ -56,7 +62,7 @@ $(MAIN) : main.f90
 	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 # -cpp option does preprocessing
 
-run_main : build_bench
+run_main : build
 # TODO : fix environment variable passing to script
 # export BENCH_EXECUTABLE='$(MAIN)'
 # export PERF_REGIONS='$(PERF_REGIONS_FOLDER)'
@@ -68,11 +74,11 @@ run_main : build_bench
 
 # clean depending on OS
 ifeq ($(OS),Windows_NT)
-clean_bench:
+clean:
 	rm *.exe
 	rm *.o
 else
-clean_bench:
+clean:
 	./perf_regions_instrumentation.py cleanup
 	-rm -f main main.o benchmark_implementations.o output.txt
 	-rm -f perf_region_list.txt
