@@ -48,13 +48,13 @@ PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 bench_library : 
 	make -C src
-	make benchmark_implementations.o
+	make $(BUILD_DIR)/benchmark_implementations.o
 	make -C src library
-benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
+$(BUILD_DIR)/benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
 	@echo
 $(BUILD_DIR)/benchmark_implementations.mod : src/benchmark_implementations.f90
 	./perf_regions_instrumentation.py cleanup
-	${FC} -c src/benchmark_implementations.f90 -cpp ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
+	${FC} -c src/benchmark_implementations.f90 -o $(BUILD_DIR)/benchmark_implementations.o -cpp ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
 # -cpp option does preprocessing
 
 $(MAIN) : main.f90
@@ -80,9 +80,9 @@ clean:
 else
 clean:
 	./perf_regions_instrumentation.py cleanup
-	-rm -f main main.o benchmark_implementations.o file.csv
+	-rm -f main main.o benchmark_implementations.o output.txt
 	-rm -f perf_region_list.txt
-	-rm build/*.mod
+	-rm build/*
 	-rm src/*.o src/*.mod
 	-rm lib/library.a
 endif
