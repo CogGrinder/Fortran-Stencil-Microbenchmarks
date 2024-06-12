@@ -24,12 +24,12 @@ endif
 ### compilation flags ###
 BUILD_DIR := build
 BENCH_LIB_DIR   := lib
+
 BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.a
 # TODO : try .so library - you must also modify the Makefile in src
 # BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.so
 # TODO : try not using .a or .so
 # BENCH_LIB := -L$(BENCH_LIB_DIR)
-
 
 PAPI_LIB:=-L. -lpapi
 
