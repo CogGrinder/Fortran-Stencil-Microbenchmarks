@@ -4,7 +4,7 @@
 ! #define MAX_SIZE 1024*1024*128
 
 ! #define ARRAY_LEN  10
-#define ARRAY_LEN 1024*128
+#define ARRAY_LEN 1024
 ! #define ITERS 1
 #define ITERS 1024
 
@@ -67,45 +67,76 @@ CALL perf_regions_init()
     
     CALL WARMUP_COMPUTATION(3)
 
-    i = 1
-    do
-        call get_command_argument(i,arg)
-        ! condition to leave do loop
-        if (len_trim(arg) == 0) then
-            exit
-        else if (index(arg, 'iters=') == 1) then
-            write(*,*) arg
-            CALL get_key_value(arg,iters)            
-        else
-            read(arg,*) bench_id
+    ! DEBUG VERSION : HARD CODED CALLS TO BENCHMARKS
     
-            WRITE(*,*) "**************************************"
-            WRITE(*,*) "**************************************"
-
-            write (*,*) 'Calling benchmark of id ', bench_id
-            
-            ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
-            select case (bench_id)
-                case (BENCH_FIXED_ARRAY)
-                    bench_str = '1D_FIXD'
-                case (BENCH_ALLOCATABLE_ARRAY)
-                    bench_str = '1D_ALOC'
-                case(BENCH_2D_JI)
-                    bench_str = '2D_JI'
-                case(BENCH_2D_IJ)
-                    bench_str = '2D_IJ'
-                case (BENCH_ALLOCATABLE_ARRAY_MODULE)
-                    bench_str = 'MODULE'
-                case DEFAULT
-                    bench_str = 'ERROR'
-                    write (*,*) 'Error: no such benchmark'
-            end select
-            if ( .not. bench_str .eq. 'ERROR') then
-                CALL BENCH_SKELETON(iters, bench_id, bench_str)
-            end if
-        endif
-        i = i + 1
+    bench_str = '1D_FIXD'
+    WRITE(*,*) "Iterations: ", iters
+    do k = 1, iters
+        CALL perf_region_start(2, "ITERS"//achar(0))
+        CALL COMPUTATION_FIXED_ARRAY(BENCH_FIXED_ARRAY, bench_str)
+        CALL perf_region_stop(2) !FOOA
     end do
+    bench_str = '1D_ALOC'
+    WRITE(*,*) "Iterations: ", iters
+    do k = 1, iters
+        CALL COMPUTATION_ALLOCATABLE_ARRAY(BENCH_ALLOCATABLE_ARRAY, bench_str)
+    end do
+    bench_str = '2D_JI'
+    ! WRITE(*,*) "Iterations: ", iters
+    ! do k = 1, iters
+    !     CALL COMPUTATION_2D_JI(BENCH_2D_JI, bench_str)
+    ! end do
+    bench_str = '2D_IJ'
+    ! WRITE(*,*) "Iterations: ", iters
+    ! do k = 1, iters
+    !     CALL COMPUTATION_2D_IJ(BENCH_2D_IJ, bench_str)
+    ! end do
+    bench_str = 'MODULE'
+    WRITE(*,*) "Iterations: ", iters
+    do k = 1, iters
+        CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(2, bench_str)
+    end do
+
+    ! PREVIOUSLY : READ FROM COMMAND LINE ARGUMENTS
+    ! i = 1
+    ! do
+    !     call get_command_argument(i,arg)
+    !     ! condition to leave do loop
+    !     if (len_trim(arg) == 0) then
+    !         exit
+    !     else if (index(arg, 'iters=') == 1) then
+    !         write(*,*) arg
+    !         CALL get_key_value(arg,iters)            
+    !     else
+    !         read(arg,*) bench_id
+    
+    !         WRITE(*,*) "**************************************"
+    !         WRITE(*,*) "**************************************"
+
+    !         write (*,*) 'Calling benchmark of id ', bench_id
+            
+    !         ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
+    !         select case (bench_id)
+    !             case (BENCH_FIXED_ARRAY)
+    !                 bench_str = '1D_FIXD'
+    !             case (BENCH_ALLOCATABLE_ARRAY)
+    !                 bench_str = '1D_ALOC'
+    !             case(BENCH_2D_JI)
+    !                 bench_str = '2D_JI'
+    !             case(BENCH_2D_IJ)
+    !                 bench_str = '2D_IJ'
+    !             case (BENCH_ALLOCATABLE_ARRAY_MODULE)
+    !                 bench_str = 'MODULE'
+    !             case DEFAULT
+    !                 bench_str = 'ERROR'
+    !                 write (*,*) 'Error: no such benchmark'
+    !         end select
+    !         if ( .not. bench_str .eq. 'ERROR') then
+    !             CALL BENCH_SKELETON(iters, bench_id, bench_str)
+    !         end if
+    !     endif
+    !     i = i + 1
+    ! end do
 
     !!!!!!!! finalize timing here
 CALL perf_regions_finalize()

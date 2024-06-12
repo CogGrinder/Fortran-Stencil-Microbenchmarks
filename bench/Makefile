@@ -6,12 +6,11 @@ CXX:=g++
 FFLAGS = -cpp -Wall -Wextra -O3
 
 all:
-	make -C $(PERFREGION_SRC)
+	make -C $(PERFREGION_SRC) --silent
 	make bench_library
 	make $(MAIN)
 
 run: run_main
-clean: clean
 
 MAIN:= main
 
@@ -50,6 +49,7 @@ bench_library :
 	make -C src
 	make $(BUILD_DIR)/benchmark_implementations.o
 	make -C src library
+	@touch $(BENCH_LIB_DIR)/library.a
 $(BUILD_DIR)/benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
 	@echo
 $(BUILD_DIR)/benchmark_implementations.mod : src/benchmark_implementations.f90
