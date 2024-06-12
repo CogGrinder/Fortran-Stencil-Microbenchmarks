@@ -24,7 +24,7 @@ PROGRAM main
 
     ! integer :: iters
     integer(KIND=4) :: bench_id
-    integer :: k,i
+    integer :: k,i,iters
     character(len=32) :: arg
     character(len=7) :: bench_str
     
@@ -35,10 +35,6 @@ PROGRAM main
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE BENCH_SKELETON
-        SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
-            ! warning : hard coded type
-            real(kind(0.d0)), intent(in) :: written
-        end SUBROUTINE ANTI_OPTIMISATION_WRITE
         SUBROUTINE WARMUP_COMPUTATION(sten_len)
             integer, intent(in) :: sten_len
         end SUBROUTINE WARMUP_COMPUTATION
@@ -180,7 +176,7 @@ SUBROUTINE WARMUP_COMPUTATION(sten_len)
 
 end SUBROUTINE WARMUP_COMPUTATION
 
-SUBROUTINE TEST_COMPUTATION_0(bench_id,bench_str)
+SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str)
 use perf_regions_fortran
 use tools
 #include "perf_regions_defines.h"
@@ -229,7 +225,7 @@ CALL perf_region_stop(bench_id)
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ARRAY_LEN)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN)))
 
-end SUBROUTINE
+end SUBROUTINE COMPUTATION_FIXED_ARRAY
 
 SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str)
     use tools

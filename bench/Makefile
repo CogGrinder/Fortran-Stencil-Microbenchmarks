@@ -62,7 +62,7 @@ $(MAIN) : main.f90
 	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 # -cpp option does preprocessing
 
-run_main : build
+run_main : all
 # TODO : fix environment variable passing to script
 # export BENCH_EXECUTABLE='$(MAIN)'
 # export PERF_REGIONS='$(PERF_REGIONS_FOLDER)'
