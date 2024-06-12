@@ -5,6 +5,7 @@
 
 ! #define ARRAY_LEN  10
 #define ARRAY_LEN 1024 * 16
+! #define ARRAY_LEN 1024 * 256
 ! #define ITERS 1
 #define ITERS 1024
 #define FLEXIBLE_STENCIL 0
@@ -19,6 +20,8 @@ PROGRAM main
     use tools
     USE benchmark_names
     USE benchmark_implementations
+    USE benchmark_2D_CPU
+    USE benchmark_2D_GPU
 
 #include "perf_regions_defines.h"
     implicit none
@@ -127,12 +130,19 @@ CALL perf_regions_init()
                     bench_str = '1D_FIXD'
                 case (BENCH_ALLOCATABLE_ARRAY)
                     bench_str = '1D_ALOC'
-                case(BENCH_2D_JI)
-                    bench_str = '2D_JI'
-                case(BENCH_2D_IJ)
-                    bench_str = '2D_IJ'
                 case (BENCH_ALLOCATABLE_ARRAY_MODULE)
-                    bench_str = 'MODULE'
+                    bench_str = '1D_MODU'
+                    
+                case(BENCH_2D_CPU_JI)
+                    bench_str = '2D_JI'
+                case(BENCH_2D_CPU_IJ)
+                    bench_str = '2D_IJ'
+                case (BENCH_2D_CPU_MODULE)
+                    bench_str = '2D_MODU'
+
+                case (BENCH_2D_GPU_OMP_BASE)
+                    bench_str = 'GPU'
+
                 case DEFAULT
                     bench_str = 'ERROR'
                     write (*,*) 'Error: no such benchmark'
@@ -157,6 +167,8 @@ USE benchmark_names
 USE benchmark_parameters
 #include "perf_regions_defines.h"
     use benchmark_implementations
+    use benchmark_2D_GPU
+    use benchmark_2D_CPU
     
     integer, intent(in) :: iters
     integer(KIND=4), intent(in) :: bench_id
@@ -181,12 +193,19 @@ USE benchmark_parameters
                 CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str, array_len)
             case (BENCH_ALLOCATABLE_ARRAY)
                 CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str, array_len)
-            case (BENCH_2D_JI)
-                CALL COMPUTATION_2D_JI(bench_id, bench_str, array_len)
-            case (BENCH_2D_IJ)
-                CALL COMPUTATION_2D_IJ(bench_id, bench_str, array_len)
             case (BENCH_ALLOCATABLE_ARRAY_MODULE)
                 CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str, array_len)
+
+            case (BENCH_2D_CPU_JI)
+                CALL COMPUTATION_2D_JI(bench_id, bench_str, array_len)
+            case (BENCH_2D_CPU_IJ)
+                CALL COMPUTATION_2D_IJ(bench_id, bench_str, array_len)
+            case (BENCH_2D_CPU_MODULE)
+                CALL COMPUTATION_2D_MODULE(bench_id, bench_str, array_len)
+
+            case (BENCH_2D_GPU_OMP_BASE)
+                CALL COMPUTATION_GPU_OMP_BASE(bench_id, bench_str, array_len)
+                
             case DEFAULT
                 write (*,*) 'Error: no such benchmark'
         end select

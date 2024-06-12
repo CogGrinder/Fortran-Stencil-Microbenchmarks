@@ -8,8 +8,9 @@ MODULE benchmark_implementations
     implicit none
     
     contains
-
-
+    
+    
+! to test 1D stencils in a module
 SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str,array_len)
     use tools
     use perf_regions_fortran

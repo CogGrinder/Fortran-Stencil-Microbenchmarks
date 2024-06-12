@@ -5,15 +5,14 @@ MODULE tools
         SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
             implicit none
             real(kind=dp), intent(in) :: written
-            integer :: descriptor
+            integer :: id = 42
             character(len=42) :: filename
-        
+            
             filename = 'output.txt'
-            descriptor = 42
         
-            open(unit=descriptor, file=filename, status='unknown')
-            write(descriptor,*) written
-            close(descriptor)
+            open(unit=id, file=filename, status='unknown')
+            write(id,*) written
+            close(id)
         end SUBROUTINE ANTI_OPTIMISATION_WRITE
         SUBROUTINE get_key_value(arg, value)
             character(len=*), intent(in) :: arg

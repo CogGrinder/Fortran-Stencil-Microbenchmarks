@@ -6,6 +6,8 @@ MODULE benchmark_names
     integer, parameter :: BENCH_FIXED_ARRAY = 0
     integer, parameter :: BENCH_ALLOCATABLE_ARRAY = 1
     integer, parameter :: BENCH_ALLOCATABLE_ARRAY_MODULE = 2
-    integer, parameter :: BENCH_2D_JI = 3
-    integer, parameter :: BENCH_2D_IJ = 4
+    integer, parameter :: BENCH_2D_CPU_JI = 3
+    integer, parameter :: BENCH_2D_CPU_IJ = 4
+    integer, parameter :: BENCH_2D_CPU_MODULE = 5
+    integer, parameter :: BENCH_2D_GPU_OMP_BASE = 6
 END MODULE benchmark_names

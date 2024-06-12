@@ -115,13 +115,34 @@ est deja present dans le code)
     - [X] more clear passing of number of iterations
     - [ ] documentation
 - [ ] retry module implementation
-    - [ ] use ``library_base.a`` for compilation before making ``library.a``
+    - note : not useful - use ``library_base.a`` for compilation before making ``library.a``
     - [X] compilation and execution
     - [ ] find out why the ``perf_regions`` is not working
 
-
-To do on 07/05 :
+Done on 07/05 :
 - [ ] investigate GPU computation
+    - could not get anything to compile, did alot of research on gfortran offloading
+
+Done on 11/05 :
+- [X] investigate GPU computation
+    - [X] compiled using nvfortran
+    - [X] tried out tutorials
+- [ ] retry module implementation & bugfixes
+    - [ ] find out why the ``perf_regions`` is not working
+        - [X] found a lead - only the index 0 was getting shown at the end
+    - [ ] find out why the module is not working
+        - no leads - started simplifying main code and cleaning makefiles for debugging
+
+
+
+To do on 12/05 :
+- [X] retry module implementation & bugfixes
+    - [X] find out why the ``perf_regions`` is not working
+        - was skipping non-defined ``perf_regions`` names - reported back to Martin and found a fix
+    - [X] find out why the module is not working
+        - module has to have implementation directly in ``contains`` statement
+- [ ] implement offload GPU benchmark
+
 
 ### Objectives from discussion on the 06/04
 - [X] Comme convenu il serait interessant de modifier le code de stencil

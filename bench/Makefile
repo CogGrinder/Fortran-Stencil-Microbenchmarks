@@ -55,7 +55,19 @@ $(BUILD_DIR)/benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementation
 $(BUILD_DIR)/benchmark_implementations.mod : src/benchmark_implementations.f90
 	./perf_regions_instrumentation.py cleanup
 	${FC} ${FFLAGS} -c src/benchmark_implementations.f90 -o $(BUILD_DIR)/benchmark_implementations.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
-# -cpp option does preprocessing
+
+$(BUILD_DIR)/benchmark_2D_CPU.o : $(BUILD_DIR)/benchmark_2D_CPU.mod
+	@echo
+$(BUILD_DIR)/benchmark_2D_CPU.mod : src/benchmark_2D_CPU.f90
+	./perf_regions_instrumentation.py cleanup
+	${FC} ${FFLAGS} -c src/benchmark_2D_CPU.f90 -o $(BUILD_DIR)/benchmark_2D_CPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
+
+
+$(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/benchmark_2D_GPU.mod
+	@echo
+$(BUILD_DIR)/benchmark_2D_GPU.mod : src/benchmark_2D_GPU.f90
+	./perf_regions_instrumentation.py cleanup
+	${FC} ${FFLAGS} -c src/benchmark_2D_GPU.f90 -o $(BUILD_DIR)/benchmark_2D_GPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
 
 $(MAIN) : main.f90
 	./perf_regions_instrumentation.py cleanup
@@ -80,7 +92,7 @@ clean:
 else
 clean:
 	./perf_regions_instrumentation.py cleanup
-	-rm -f main main.o benchmark_implementations.o output.txt
+	-rm -f main main.o output.txt
 	-rm -f perf_region_list.txt
 	-rm build/*
 	-rm src/*.o src/*.mod
