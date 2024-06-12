@@ -54,12 +54,12 @@ $(BUILD_DIR)/benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementation
 	@echo
 $(BUILD_DIR)/benchmark_implementations.mod : src/benchmark_implementations.f90
 	./perf_regions_instrumentation.py cleanup
-	${FC} -c src/benchmark_implementations.f90 -o $(BUILD_DIR)/benchmark_implementations.o -cpp ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
+	${FC} ${FFLAGS} -c src/benchmark_implementations.f90 -o $(BUILD_DIR)/benchmark_implementations.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
 # -cpp option does preprocessing
 
 $(MAIN) : main.f90
 	./perf_regions_instrumentation.py cleanup
-	${FC} -g -o $(MAIN) main.f90 -cpp ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${FC} ${FFLAGS} -g -o $(MAIN) main.f90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 # -cpp option does preprocessing
 
 run_main : all

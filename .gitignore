@@ -9,3 +9,4 @@ bench/benchmark_implementations.o
 bench/file.csv
 bench/output.txt
 bench/src/tools.mod
+perf_regions/src/perf_regions_fortran.mod

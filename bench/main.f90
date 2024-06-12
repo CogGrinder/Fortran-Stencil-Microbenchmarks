@@ -94,7 +94,7 @@ CALL perf_regions_init()
     bench_str = 'MODULE'
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
-        CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(2, bench_str)
+        CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(3, bench_str)
     end do
 
     ! PREVIOUSLY : READ FROM COMMAND LINE ARGUMENTS
@@ -154,7 +154,6 @@ USE benchmark_names
     integer, intent(in) :: iters
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
-    integer :: sten_sum, sten_len
 
     write (*,*) 'Running bench ', bench_str, '...'
     WRITE(*,*) "**************************************"

@@ -1,5 +1,5 @@
 ! #define DEBUG
-#define DEBUG_PERF
+! #define DEBUG_PERF
 
 #define ARRAY_LEN 1024*128
 
@@ -10,12 +10,6 @@ MODULE benchmark_implementations
     implicit none
     
     contains
-        SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
-            integer, intent(in) :: bench_id
-            character(len=7), intent(in) :: bench_str
-        end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE
-
-end MODULE
 
 
 SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
@@ -25,10 +19,10 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
     
     ! stencil must be odd length
     integer, dimension(-1:1) :: stencil
-    integer, intent(in) :: bench_id
+    integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
     real    :: sten_sum
-    integer :: sten_len
+    integer :: sten_len, i, k
     real(dp), allocatable :: array(:), result(:)
     allocate(array(ARRAY_LEN))
     allocate(result(ARRAY_LEN) , source=0.0_dp)
@@ -76,3 +70,5 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str)
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ARRAY_LEN)))
 
 end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE
+
+end MODULE
