@@ -1,5 +1,7 @@
 # Fortran microbenchmarks internship at LJK
 The goal is to develop microbenchmarks in Fortran to assess the performance of different finite difference kernels within Fortran
+## Documentation
+See [documentation markdown file](doc/main.md) for further details.
 
 ## File structure
 ``bench/`` subdirectory :
@@ -7,6 +9,10 @@ The goal is to develop microbenchmarks in Fortran to assess the performance of d
 
 ``tuto/`` subdirectory :
 - contains hello world and tutorial files used to learn Fortran
+
+``doc/`` subdirectory :
+- contains documentation
+
 ## Requirements
 Timing libraries
 - PAPI
