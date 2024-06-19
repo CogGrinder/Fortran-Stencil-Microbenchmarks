@@ -13,11 +13,11 @@ export PERF_REGIONS_COUNTERS=""
 export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
 # ./$BENCH_EXECUTABLE
-# TODO : add all new benchmarks to file.csv
-# ./$BENCH_EXECUTABLE |  grep TEST_BENCH | paste -sd ',\t' >> file.csv
+# TODO : add all new benchmarks to $filename.csv
+# ./$BENCH_EXECUTABLE |  grep TEST_BENCH | paste -sd ',\t' >> $filename.csv
 # ./$BENCH_EXECUTABLE 0 1 2 3
-# ./$BENCH_EXECUTABLE 0 1 2 3 |  grep -A100 Section | paste >> file.csv
-# cat file.csv
+# ./$BENCH_EXECUTABLE 0 1 2 3 |  grep -A100 Section | paste >> $filename.csv
+# cat $filename.csv
 
 
 
@@ -34,12 +34,26 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
 # ./$BENCH_EXECUTABLE iters=1024 0 1 2 iters=8 3 4 5 6
 
+filename=array_alloc
+
 description=( SMALLER_THAN_L3 SLIGHTLY_SMALLER_THAN_L3 SLIGHTLY_BIGGER_THAN_L3 BIGGER_THAN_L3 )
 
 for sizemode in 0 1 2 3
 do
     echo "Running mode ${description[sizemode]}..."
-    ./$BENCH_EXECUTABLE sizemode=${sizemode} 3 4 5
-    # |  grep -A100 Section | paste >> 1D_FIXD_1D_ALOC_variance.csv
+    echo -e "MODE\t${description[sizemode]}" >> $filename.csv
+    # ./$BENCH_EXECUTABLE sizemode=${sizemode} 0 1 2 3 4 5
+    
+    # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
+    while IFS= read -r line; do
+        echo "$line"
+        if [ "${line:0:1}" != " " ]
+        then
+            echo "$line" >> $filename.csv
+        fi
+        # grep -o 'action'
+    done < <( ./$BENCH_EXECUTABLE sizemode=${sizemode} 0 1 2 3 4 5 )
+    # |  grep -A100 Section | paste >> $filename.csv
 done
-# cat 1D_FIXD_1D_ALOC_variance.csv
+echo
+cat $filename.csv

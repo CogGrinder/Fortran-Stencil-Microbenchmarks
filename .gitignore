@@ -10,3 +10,4 @@ bench/file.csv
 bench/output.txt
 bench/src/*.mod
 perf_regions/src/perf_regions_fortran.mod
+bench/*.csv
