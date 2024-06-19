@@ -33,4 +33,13 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
 
 # ./$BENCH_EXECUTABLE iters=1024 0 1 2 iters=8 3 4 5 6
-./$BENCH_EXECUTABLE 0 1 2 3 4 5 6
+
+description=( SMALLER_THAN_L3 SLIGHTLY_SMALLER_THAN_L3 SLIGHTLY_BIGGER_THAN_L3 BIGGER_THAN_L3 )
+
+for sizemode in 0 1 2 3
+do
+    echo "Running mode ${description[sizemode]}..."
+    ./$BENCH_EXECUTABLE sizemode=${sizemode} 3 4 5
+    # |  grep -A100 Section | paste >> 1D_FIXD_1D_ALOC_variance.csv
+done
+# cat 1D_FIXD_1D_ALOC_variance.csv

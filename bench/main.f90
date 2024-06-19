@@ -30,7 +30,7 @@ PROGRAM main
 
     ! integer :: iters
     integer(KIND=4) :: bench_id
-    integer :: k,i,iters,array_len
+    integer :: k,i,iters,array_len,benchmark_size_mode
     character(len=32) :: arg
     character(len=7) :: bench_str
     
@@ -70,10 +70,13 @@ PROGRAM main
     ! see https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html
 
 
+    ! default values
     iters = ITERS
-    CALL set_nx_ny(BENCHMARK_SIZE_MODE,iters)
-    ! array_len = ARRAY_LEN
-    CALL set_1D_size(BENCHMARK_SIZE_MODE,array_len,iters)
+    array_len = ARRAY_LEN
+    benchmark_size_mode = BENCHMARK_SIZE_MODE
+
+    CALL set_nx_ny(benchmark_size_mode,iters)
+    CALL set_1D_size(benchmark_size_mode,array_len,iters)
 
     !!!!!!!! initialize timing here
 CALL perf_regions_init()
@@ -86,12 +89,17 @@ CALL perf_regions_init()
         ! condition to leave do loop
         if (len_trim(arg) == 0) then
             exit
+        else if (index(arg, 'sizemode=') == 1) then
+            write(*,*) arg
+            CALL get_key_value(arg,benchmark_size_mode) 
+            CALL set_nx_ny(benchmark_size_mode,iters)
+            CALL set_1D_size(benchmark_size_mode,array_len,iters)
         else if (index(arg, 'iters=') == 1) then
             write(*,*) arg
             CALL get_key_value(arg,iters)            
         else
             read(arg,*) bench_id
-    
+
             WRITE(*,*) "**************************************"
             WRITE(*,*) "**************************************"
 
