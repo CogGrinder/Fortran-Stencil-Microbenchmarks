@@ -25,7 +25,7 @@ The baseline uses
 
 
 ### [Part 1 - Array allocation benchmarks](01_array_alloc.md)
-#### [1.1 - ``allocatable`` allocated vs constant arrays](01_array_alloc.md/#using-allocatable--allocatable-allocated-vs-constant-arrays)
+#### [1.1 - ``allocatable`` allocated vs constant arrays](01_array_alloc.md#allocatable-benchmark--allocatable-allocated-vs-constant-arrays)
 
 ### [Part 2 - GPU parallelisation vs CPU benchmarks](02_gpu_cpu.md)
 

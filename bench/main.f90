@@ -1,4 +1,5 @@
-! #define DEBUG
+! see benchmark_parameters.f90 for options
+#define BENCHMARK_SIZE_MODE 3
 
 
 ! #define MAX_SIZE 1024*1024*128
@@ -22,6 +23,7 @@ PROGRAM main
     USE benchmark_implementations
     USE benchmark_2D_CPU
     USE benchmark_2D_GPU
+    USE benchmark_parameters
 
 #include "perf_regions_defines.h"
     implicit none
@@ -69,44 +71,15 @@ PROGRAM main
 
 
     iters = ITERS
-    array_len = ARRAY_LEN
+    CALL set_nx_ny(BENCHMARK_SIZE_MODE,iters)
+    ! array_len = ARRAY_LEN
+    CALL set_1D_size(BENCHMARK_SIZE_MODE,array_len,iters)
 
     !!!!!!!! initialize timing here
 CALL perf_regions_init()
     
     CALL WARMUP_COMPUTATION(3,array_len)
 
-    ! DEBUG VERSION : HARD CODED CALLS TO BENCHMARKS
-    
-    ! bench_str = '1D_FIXD'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL perf_region_start(99, "ITERS"//achar(0))
-    !     CALL COMPUTATION_FIXED_ARRAY(BENCH_FIXED_ARRAY, bench_str, array_len)
-    !     CALL perf_region_stop(99) !FOOA
-    ! end do
-    ! bench_str = '1D_ALOC'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_ALLOCATABLE_ARRAY(BENCH_ALLOCATABLE_ARRAY, bench_str, array_len)
-    ! end do
-    ! bench_str = 'MODULE'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(BENCH_ALLOCATABLE_ARRAY_MODULE, bench_str, array_len)
-    ! end do
-    ! bench_str = '2D_JI'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_2D_JI(BENCH_2D_JI, bench_str, array_len)
-    ! end do
-    ! bench_str = '2D_IJ'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_2D_IJ(BENCH_2D_IJ, bench_str, array_len)
-    ! end do
-
-    ! PREVIOUSLY : READ FROM COMMAND LINE ARGUMENTS
     i = 1
     do
         call get_command_argument(i,arg)
