@@ -20,9 +20,9 @@ MODULE benchmark_parameters
             case (SMALLER_THAN_L3)
                 nx = 128 * l3_size_in_mib
                 ny = 128
-                iters = 31*33 / BENCHMARK_ACCELERATION
                 ! here we adjust iters to use roughly as many computations as with 1024*1024
-                iters = iters * (1024**2 / 128**2)
+                iters = 31*33 * (1024**2 / 128**2)
+                iters = iters / BENCHMARK_ACCELERATION
             case (SLIGHTLY_SMALLER_THAN_L3)
                 nx = 1024 * l3_size_in_mib
                 ny = 992
@@ -49,7 +49,7 @@ MODULE benchmark_parameters
         select case (mode)
             case (SMALLER_THAN_L3)
                 size = 128 * 128 * l3_size_in_mib
-                iters = (31*33 / BENCHMARK_ACCELERATION) * (1024**2 / 128**2)
+                iters = (31*33 * (1024**2 / 128**2) / BENCHMARK_ACCELERATION)
             case (SLIGHTLY_SMALLER_THAN_L3)
                 size = 1024 * 992 * l3_size_in_mib
                 iters =  32*33 / BENCHMARK_ACCELERATION
