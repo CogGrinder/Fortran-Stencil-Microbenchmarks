@@ -1,6 +1,6 @@
 # ``allocatable`` benchmark : ``allocatable`` allocated vs constant arrays
 To use, set your CPU L3 cache size in [``benchmark_parameters.f90``](../bench/src/benchmark_parameters.f90)
-Set the desired type of array size by changing ``#define BENCHMARK_SIZE_MODE`` in [``main.f90``](../bench/main.f90) and setting it to a value between 0 and 4, using the following table :
+Set the desired type of array size by passing ``sizemode=<value>`` at execution (note: parameter has to be passed before any other) or changing ``#define BENCHMARK_SIZE_MODE`` in [``main.f90``](../bench/main.f90) at compilation and setting them to a value between 0 and 4, using the following table :
 
 |  BENCHMARK_SIZE_MODE  | Percentage of L3 Cache |
 | --------------------- | ---------------------- |
