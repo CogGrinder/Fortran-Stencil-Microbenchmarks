@@ -125,11 +125,11 @@ est deja present dans le code)
     - [X] compilation and execution
     - [ ] find out why the ``perf_regions`` is not working
 
-Done on 07/05 :
+Done on 06/07 :
 - [ ] investigate GPU computation
     - could not get anything to compile, did alot of research on gfortran offloading
 
-Done on 11/05 :
+Done on 06/11 :
 - [X] investigate GPU computation
     - [X] compiled using nvfortran
     - [X] tried out tutorials
@@ -141,7 +141,7 @@ Done on 11/05 :
 
 
 
-To do on 12/05 :
+Done on 06/12 :
 - [X] retry module implementation & bugfixes
     - [X] find out why the ``perf_regions`` is not working
         - was skipping non-defined ``perf_regions`` names - reported back to Martin and found a fix
@@ -149,6 +149,15 @@ To do on 12/05 :
         - module has to have implementation directly in ``contains`` statement
 - [ ] implement offload GPU benchmark
 
+Done on 06/19 :
+- [ ] document the proposed benchmarks and their results
+    - [X] started with [main doc file](doc/main.md) and [Part 1 - Array allocation benchmarks](01_array_alloc.md)
+    - [X] adjust source code to add support for size passing and different size scenarios based on L3 cache
+    - [X] made benchmark script that generates ``.csv`` file with all relevant measurements
+
+To do on 06/20 :
+- [ ] repair make redoing unnecessary compilations and being verbose
+    - [ ] try putting the compilation in ``bench/src`` only
 
 ### Objectives from discussion on the 06/04
 - [X] Comme convenu il serait interessant de modifier le code de stencil
