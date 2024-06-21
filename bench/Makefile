@@ -12,12 +12,13 @@ all:
 
 run: run_main
 
-MAIN:= bench
 
 # Here is the selector for which main to compile
 SUFFIX.:= 
+SUFFIX.ALLOC := _alloc
+SUFFIX.STATIC := _static
 
-
+MAIN:= bench${SUFFIX.${ALLOC_MODE}}
 
 
 # add .exe to executable name if Windows
@@ -43,9 +44,9 @@ PAPI_LIB:=-L. -lpapi
 
 # set PERF_REGIONS_FOLDER, default is in the folder next to 
 PERF_REGIONS_FOLDER:=../perf_regions
-ifdef PERF_REGIONS
-	PERF_REGIONS_FOLDER = $(PERF_REGIONS)
-endif
+# ifdef PERF_REGIONS
+# 	PERF_REGIONS_FOLDER = $(PERF_REGIONS)
+# endif
 
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
@@ -80,7 +81,7 @@ $(BUILD_DIR)/benchmark_2D_GPU.mod : src/benchmark_2D_GPU.f90
 
 $(BIN_DIR)/$(MAIN) : main.f90 | $(BIN_DIR)
 	./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -D ${ALLOC_MODE} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 # -cpp option does preprocessing
 
 run_main : all

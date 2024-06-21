@@ -9,7 +9,15 @@
 ! #define ARRAY_LEN 1024 * 256
 ! #define ITERS 1
 #define ITERS 1024
-#define BENCH_ID 5
+
+
+#if   ALLOC
+# define BENCH_ID 6
+#elif STATIC
+# define BENCH_ID 5
+#else
+# define BENCH_ID 0
+#endif
 
 #ifdef array_len_OVERRIDE
     #define array_len array_len_OVERRIDE
