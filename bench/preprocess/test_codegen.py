@@ -19,7 +19,6 @@ size_mode_number = {k: v for v, k in enumerate(size_suffixes.keys())}
 tree_depth = 2
 
 def codegen_bench_tree_branch(alloc_option,size_option):
-    print(f"alloc_option: {alloc_option} size_option: {size_option}")
     if alloc_option in allocation_suffixes.keys() and size_option in size_suffixes.keys() :
         alloc_directory = f"bench_tree/bench_execution{allocation_suffixes[alloc_option]}"
         if not pathlib.Path(alloc_directory).is_dir() :
@@ -93,7 +92,6 @@ def file_test():
 
 def main():
     phrase = shlex.join(sys.argv[1:])
-    print(f"Creating {phrase} benchmark script...")
     # file_test()
     # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
     param = ""
@@ -107,13 +105,20 @@ def main():
         os.mkdir("bench_tree")
     
     if param == "clean":
-        shutil.rmtree("bench_tree")
+        print("Cleaning benchmark script tree... Y/n ?")
+        if (str(input()) == "Y") :
+            shutil.rmtree("bench_tree")
+            print("Cleaned")
+        else :
+            print("Aborted")
     elif param == "all":
         # shutil.rmtree("bench_tree")
+        print(f"Creating all benchmark scripts...")
         for alloc_option in allocation_suffixes.keys() :
             for size_option in size_suffixes.keys() :
                 codegen_bench_tree_branch(alloc_option,size_option)
     else :
+        print(f"Creating {phrase} benchmark script...")
         codegen_bench_tree_branch(param,param2)
     return 0
 
