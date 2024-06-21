@@ -16,11 +16,14 @@ all:
 	make $(BIN_DIR)/$(MAIN)
 
 run: run_main
+pre:preprocessing
+preprocessing:
+	cd preprocess;python3 test_codegen.py all;./run_bench_tree.sh
 
 
 # Here is the selector for which main to compile
 SUFFIX.:=
-SUFFIX.NONE :=
+SUFFIX.NONE := _default
 SUFFIX.ALLOC := _alloc
 SUFFIX.STATIC := _static
 

@@ -1,5 +1,5 @@
 ! this value is a power of 2 between 1 and 32 - recommended is 32
-#define BENCHMARK_ACCELERATION 8
+#define BENCHMARK_ACCELERATION 32
 
 MODULE benchmark_parameters
     ! here set your processor's L3 cache size in Mib

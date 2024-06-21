@@ -30,6 +30,10 @@ run: run_bench
 run_bench:
 	$(MAKE) -C $(BENCH) run
 
+pre:preprocessing
+preprocessing:
+	$(MAKE) -C $(BENCH) preprocessing
+
 make_tuto:
 	$(MAKE) -C $(TUTO)
 run_tuto:
