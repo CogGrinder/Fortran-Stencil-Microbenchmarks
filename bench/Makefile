@@ -5,7 +5,12 @@ CC:=gcc
 CXX:=g++
 FFLAGS = -cpp -Wall -Wextra -O3
 
+ifndef ALLOC_MODE
+export ALLOC_MODE=NONE
+endif
+
 all:
+	export |grep ALLOC_MODE
 	make -C $(PERFREGION_SRC) --silent
 	make bench_library
 	make $(BIN_DIR)/$(MAIN)
@@ -14,11 +19,13 @@ run: run_main
 
 
 # Here is the selector for which main to compile
-SUFFIX.:= 
+SUFFIX.:=
+SUFFIX.NONE :=
 SUFFIX.ALLOC := _alloc
 SUFFIX.STATIC := _static
 
 MAIN:= bench${SUFFIX.${ALLOC_MODE}}
+
 
 
 # add .exe to executable name if Windows

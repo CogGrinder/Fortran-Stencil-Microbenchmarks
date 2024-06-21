@@ -3,10 +3,11 @@ import os
 import shlex
 
 mode_suffixes = {   "ALLOC" : "_alloc",
-                    "STATIC" : "_static"}
+                    "STATIC" : "_static",
+                    "" : ""}
 
 def create_bench_run(param):
-    if param in ["ALLOC","STATIC"] :
+    if param in ["","ALLOC","STATIC"] :
 
         f = open("test_codegen_run.sh", "w")
         os.chmod("test_codegen_run.sh",0b111111111)
@@ -26,7 +27,9 @@ export LD_LIBRARY_PATH="$PERF_REGIONS/build:$LD_LIBRARY_PATH"
 export PERF_REGIONS_COUNTERS=""
 export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
-make -C $BENCH_MAKE_DIR ALLOC_MODE={param}
+export ALLOC_MODE="{param}"
+
+make -C $BENCH_MAKE_DIR
 
 filename=array_alloc
 
@@ -64,7 +67,7 @@ def file_test():
 
 def main():
     phrase = shlex.join(sys.argv[1:])
-    print(phrase)
+    print(f"Creating {phrase} benchmark script...")
     # file_test()
     # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
     param = ""

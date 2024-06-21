@@ -3,7 +3,7 @@
 # set BENCH_EXECUTABLE and PERF_REGIONS
 export PERF_REGIONS="../../perf_regions"
 export BENCH_MAKE_DIR="../"
-export BENCH_EXECUTABLE=../bin/bench_alloc
+export BENCH_EXECUTABLE=../bin/bench_static
 
 # set perf_regions variables here
 export PERF_REGIONS_VERBOSITY=0
@@ -13,7 +13,9 @@ export LD_LIBRARY_PATH="$PERF_REGIONS/build:$LD_LIBRARY_PATH"
 export PERF_REGIONS_COUNTERS=""
 export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
-make -C $BENCH_MAKE_DIR ALLOC_MODE=ALLOC
+export ALLOC_MODE="STATIC"
+
+make -C $BENCH_MAKE_DIR
 
 filename=array_alloc
 
