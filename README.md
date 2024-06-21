@@ -6,12 +6,16 @@ See [documentation markdown file](doc/main.md) for further details.
 ## File structure
 ``bench/`` subdirectory :
 - contains benchmark files
-
-``tuto/`` subdirectory :
-- contains hello world and tutorial files used to learn Fortran
+    - ``preprocess/`` contains a codegen Python script and a Bash script to generate the benchmark variation tree and its output data
 
 ``doc/`` subdirectory :
 - contains documentation
+
+``perf_regions/`` subdirectory :
+- contains necessary files from eponymous library (see [requirements](#requirements))
+
+``tuto/`` subdirectory :
+- contains hello world and tutorial files used to learn Fortran
 
 ## Requirements
 Timing libraries
@@ -21,10 +25,12 @@ Timing libraries
 ### Compilation
 
 ``Makefile`` compiles all subdirectories, and has options:
+- ``preprocessing`` or ``pre`` to run preprocessing scripts that execute all relevant benchmark variations in the generated benchmark variation tree
 - ``run`` to do ``make run`` in all subdirectories, executing the main files and scripts
     - ``run_bench`` and ``run_tuto`` to ``make run`` specifically the bench folder or the tuto folder
 - ``clean`` to clean all executable files and temporary files in the subdirectories from the current OS
-- set ``PERF_REGIONS=<relative directory of PerfRegions>`` if PerfRegions is not installed in the main folder 
+- set ``PERF_REGIONS=<relative directory of PerfRegions>`` if PerfRegions is not installed in the main folder
+    - TODO note : has to be changed manually in codegen code for the time being
 Other options:
 - use preprocessing macro ``DEBUG=1`` in ``main.f90`` if you are debugging
 
@@ -155,8 +161,17 @@ Done on 06/19 :
     - [X] adjust source code to add support for size passing and different size scenarios based on L3 cache
     - [X] made benchmark script that generates ``.csv`` file with all relevant measurements
 
-To do on 06/20 :
+Done on 06/20 :
 - [ ] repair make redoing unnecessary compilations and being verbose
+    - [ ] try putting the compilation in ``bench/src`` only
+- [X] discussed goals with Martin and Hugo
+
+Done on 06/21 :
+- [X] Made initial V0 -> V2 of codegen in test_codegen.py and corresponding modifications for compiling separately every variation of the bench binaries
+    - This process took alot of testing to execute with satisfactory readability and UX
+
+To do soon (TM) :
+- [ ] repair make redoing unnecessary compilations and being verbose to improve speed of test runs - each bench uses a separate executable now
     - [ ] try putting the compilation in ``bench/src`` only
 
 ### Objectives from discussion on the 06/04
