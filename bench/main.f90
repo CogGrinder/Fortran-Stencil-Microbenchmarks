@@ -1,15 +1,28 @@
-! see benchmark_parameters.f90 for options
-#define BENCHMARK_SIZE_MODE 3
-
-
 ! #define MAX_SIZE 1024*1024*128
 
+! default value macros
 ! #define ARRAY_LEN  10
 #define ARRAY_LEN 1024 * 16
 ! #define ARRAY_LEN 1024 * 256
 ! #define ITERS 1
 #define ITERS 1024
 
+! see benchmark_parameters.f90 for options
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEWARE : benchmark_size_mode isn't compile time fixed, it only has a default option, unlike bench_id
+! TODO : make an option to fix at compile time / keep flexible for different compiler optimisations
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#if     SMALLER_THAN_L3
+# define BENCHMARK_SIZE_MODE 0
+#elif     SLIGHTLY_SMALLER_THAN_L3
+# define BENCHMARK_SIZE_MODE 1
+#elif     SLIGHTLY_BIGGER_THAN_L3
+# define BENCHMARK_SIZE_MODE 2
+#elif     BIGGER_THAN_L3
+# define BENCHMARK_SIZE_MODE 3
+#else
+# define BENCHMARK_SIZE_MODE 3
+#endif
 
 #if   ALLOC
 # define BENCH_ID 6

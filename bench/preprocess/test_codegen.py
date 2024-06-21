@@ -4,19 +4,35 @@ import pathlib
 import shlex
 import shutil
 
-mode_suffixes = {   "ALLOC" : "_alloc",
-                    "STATIC" : "_static",
-                    "" : "_default"}
+allocation_suffixes = { "ALLOC"                 : "_alloc",
+                        "STATIC"                : "_static",
+                        ""                      : "_defaultalloc"}
+size_suffixes =       { "SMALLER_THAN_L3"           : "_smallerl3",
+                        "SLIGHTLY_SMALLER_THAN_L3"  : "_ssmallerl3",
+                        "SLIGHTLY_BIGGER_THAN_L3"   : "_sbiggerl3",
+                        "BIGGER_THAN_L3"            : "_biggerl3",
+                        ""                          : "_defaultsize"}
+# dictionary containing number related to size identifier
+# thank you Abhijit at https://stackoverflow.com/questions/36459969/how-to-convert-a-list-to-a-dictionary-with-indexes-as-values
+size_mode_number = {k: v for v, k in enumerate(size_suffixes.keys())}
 
-tree_depth = 1
+tree_depth = 2
 
-def codegen_bench_tree_branch(param):
-    if param in mode_suffixes.keys() :
-        directory = f"bench_tree/bench_execution{mode_suffixes[param]}"
+def codegen_bench_tree_branch(alloc_option,size_option):
+    print(f"alloc_option: {alloc_option} size_option: {size_option}")
+    if alloc_option in allocation_suffixes.keys() and size_option in size_suffixes.keys() :
+        alloc_directory = f"bench_tree/bench_execution{allocation_suffixes[alloc_option]}"
+        if not pathlib.Path(alloc_directory).is_dir() :
+            os.mkdir(alloc_directory)
+        size_directory  = alloc_directory+f"/{size_suffixes[size_option]}"
+        if not pathlib.Path(size_directory).is_dir() :
+            os.mkdir(size_directory)
         
-        if not pathlib.Path(directory).is_dir() :
-            os.mkdir(directory)
-        filename = f"{directory}/run.sh"
+        # the last depth directory is the full directory
+        fulldirectory = size_directory
+        print(fulldirectory)
+
+        filename = f"{fulldirectory}/run.sh"
         f = open(filename, "w")
         os.chmod(filename,0b111111111)
         
@@ -26,7 +42,7 @@ def codegen_bench_tree_branch(param):
 # set BENCH_EXECUTABLE and PERF_REGIONS
 export PERF_REGIONS="../{"../"*(tree_depth+2)}perf_regions"
 export BENCH_MAKE_DIR="{"../"*(tree_depth+2)}"
-export BENCH_EXECUTABLE="{"../"*(tree_depth+2)}bin/bench{mode_suffixes[param]}"
+export BENCH_EXECUTABLE="{"../"*(tree_depth+2)}bin/bench{allocation_suffixes[alloc_option]}{size_suffixes[size_option]}"
 
 # set perf_regions variables here
 export PERF_REGIONS_VERBOSITY=0
@@ -36,7 +52,8 @@ export LD_LIBRARY_PATH="$PERF_REGIONS/build:$LD_LIBRARY_PATH"
 export PERF_REGIONS_COUNTERS=""
 export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
-export ALLOC_MODE="{param}"
+export ALLOC_MODE="{alloc_option}"
+export SIZE_MODE="{size_option}"
 
 make -C $BENCH_MAKE_DIR
 
@@ -44,12 +61,12 @@ filename=out
 
 description=( SMALLER_THAN_L3 SLIGHTLY_SMALLER_THAN_L3 SLIGHTLY_BIGGER_THAN_L3 BIGGER_THAN_L3 )
 
-for sizemode in 0 1 2 3
-do
-    echo "Running mode ${{description[sizemode]}}..."
-    echo -e "MODE\\t${{description[sizemode]}}" >> $filename.csv
+# for sizemode in 0 1 2 3
+# do
+    echo "Running mode ${{description[{size_mode_number[size_option]}]}}..."
+    # echo -e "MODE\\t${{description[{size_mode_number[size_option]}]}}" >> $filename.csv
     
-    # ./$BENCH_EXECUTABLE sizemode=${{sizemode}}
+    # ./$BENCH_EXECUTABLE
     # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
     while IFS= read -r line; do
         echo "$line"
@@ -58,9 +75,9 @@ do
             echo "$line" >> $filename.csv
         fi
         # grep -o 'action'
-    done < <( ./$BENCH_EXECUTABLE sizemode=${{sizemode}} )
+    done < <( ./$BENCH_EXECUTABLE )
     # |  grep -A100 Section | paste >> $filename.csv
-done
+# done
 echo
 cat $filename.csv""")
         f.close()
@@ -80,8 +97,11 @@ def main():
     # file_test()
     # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
     param = ""
-    if len(sys.argv) > 1:
+    param2 = ""
+    if len(sys.argv) >= 2:
         param = sys.argv[1]
+    if len(sys.argv) >= 3:
+        param2 = sys.argv[2]
     
     if not pathlib.Path("bench_tree").is_dir() :
         os.mkdir("bench_tree")
@@ -90,10 +110,11 @@ def main():
         shutil.rmtree("bench_tree")
     elif param == "all":
         # shutil.rmtree("bench_tree")
-        for option in mode_suffixes.keys() :
-            codegen_bench_tree_branch(option)
+        for alloc_option in allocation_suffixes.keys() :
+            for size_option in size_suffixes.keys() :
+                codegen_bench_tree_branch(alloc_option,size_option)
     else :
-        codegen_bench_tree_branch(param)
+        codegen_bench_tree_branch(param,param2)
     return 0
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html

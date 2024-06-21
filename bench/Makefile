@@ -3,10 +3,14 @@
 FC:=gfortran
 CC:=gcc
 CXX:=g++
-FFLAGS = -cpp -Wall -Wextra -O3
+FFLAGS = -cpp -O3 #-Wall -Wextra 
 
 ifndef ALLOC_MODE
 export ALLOC_MODE=NONE
+endif
+
+ifndef SIZE_MODE
+export SIZE_MODE=NONE
 endif
 
 all:
@@ -23,18 +27,24 @@ preprocessing:
 
 # Here is the selector for which main to compile
 SUFFIX.:=
-SUFFIX.NONE := _default
+SUFFIX.NONE := _defaultalloc
 SUFFIX.ALLOC := _alloc
 SUFFIX.STATIC := _static
 
-MAIN:= bench${SUFFIX.${ALLOC_MODE}}
+SUFFIX.${ALLOC_MODE}. :=						${SUFFIX.${ALLOC_MODE}}
+SUFFIX.${ALLOC_MODE}.NONE :=					${SUFFIX.${ALLOC_MODE}}_defaultsize
+SUFFIX.${ALLOC_MODE}.SMALLER_THAN_L3 :=			${SUFFIX.${ALLOC_MODE}}_smallerl3
+SUFFIX.${ALLOC_MODE}.SLIGHTLY_SMALLER_THAN_L3 :=${SUFFIX.${ALLOC_MODE}}_ssmallerl3
+SUFFIX.${ALLOC_MODE}.SLIGHTLY_BIGGER_THAN_L3 :=	${SUFFIX.${ALLOC_MODE}}_sbiggerl3
+SUFFIX.${ALLOC_MODE}.BIGGER_THAN_L3 :=			${SUFFIX.${ALLOC_MODE}}_biggerl3
 
-
+MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
 
 # add .exe to executable name if Windows
 ifeq ($(OS),Windows_NT)
 MAIN:= $(MAIN).exe
 endif
+
 
 
 BIN_DIR := bin
@@ -91,7 +101,7 @@ $(BUILD_DIR)/benchmark_2D_GPU.mod : src/benchmark_2D_GPU.f90
 
 $(BIN_DIR)/$(MAIN) : main.f90 | $(BIN_DIR)
 	./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -D ${ALLOC_MODE} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -D${ALLOC_MODE} -D${SIZE_MODE} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 # -cpp option does preprocessing
 
 run_main : all

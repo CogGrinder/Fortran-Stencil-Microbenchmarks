@@ -17,23 +17,23 @@ MODULE benchmark_parameters
         integer, intent(in) :: mode
         integer, intent(out) :: iters
         select case (mode)
-            case (SMALLER_THAN_L3)
+            case (smaller_than_l3)
                 nx = 128 * l3_size_in_mib
                 ny = 128
                 ! here we adjust iters to use roughly as many computations as with 1024*1024
                 iters = 31*33 * (1024**2 / 128**2)
                 iters = iters / BENCHMARK_ACCELERATION
-            case (SLIGHTLY_SMALLER_THAN_L3)
+            case (slightly_smaller_than_l3)
                 nx = 1024 * l3_size_in_mib
                 ny = 992
                 ! iters chosen to compensate change in ny
                 iters = 32*33 / BENCHMARK_ACCELERATION
-            case (SLIGHTLY_BIGGER_THAN_L3)
+            case (slightly_bigger_than_l3)
                 nx = 1024 * l3_size_in_mib
                 ny = 1056
                 ! iters chosen to compensate change in ny
                 iters = 32*31 / BENCHMARK_ACCELERATION
-            case (BIGGER_THAN_L3)
+            case (bigger_than_l3)
                 nx = 1024 * 3 * l3_size_in_mib
                 ny = 992
                 iters = 32*33 / BENCHMARK_ACCELERATION
@@ -47,16 +47,16 @@ MODULE benchmark_parameters
         integer, intent(in) :: mode
         integer, intent(out) :: size, iters
         select case (mode)
-            case (SMALLER_THAN_L3)
+            case (smaller_than_l3)
                 size = 128 * 128 * l3_size_in_mib
                 iters = (31*33 * (1024**2 / 128**2) / BENCHMARK_ACCELERATION)
-            case (SLIGHTLY_SMALLER_THAN_L3)
+            case (slightly_smaller_than_l3)
                 size = 1024 * 992 * l3_size_in_mib
                 iters =  32*33 / BENCHMARK_ACCELERATION
-            case (SLIGHTLY_BIGGER_THAN_L3)
+            case (slightly_bigger_than_l3)
                 size = 1024 * 1056 * l3_size_in_mib
                 iters =  32*31 / BENCHMARK_ACCELERATION
-            case (BIGGER_THAN_L3)
+            case (bigger_than_l3)
                 size = 1024 * 992 * 3 * l3_size_in_mib
                 iters = (32*33 / BENCHMARK_ACCELERATION) / 3
             case DEFAULT

@@ -1,16 +1,24 @@
 #!/bin/bash
-ls
 cd bench_tree
-ls
-directories=$(find -mindepth 1 -type d)
-echo $directories
+directories_1=$(find -mindepth 1 -maxdepth 1 -type d)
+echo $directories_1
+echo
+sleep 0.5
 
-for directory in $directories
+for directory_1 in $directories_1
 do
-    cd $(basename $directory)
-    ls
-    ./run.sh
-    # remove the anti-optimisation file
-    rm output.txt
+    cd $(basename $directory_1)
+    directories_2=$(find -mindepth 1 -maxdepth 1 -type d)
+    echo $directories_2
+    echo
+    sleep 0.1
+    for directory_2 in $directories_2
+    do
+        cd $(basename $directory_2)
+        ./run.sh
+        # remove the anti-optimisation file
+        rm output.txt
+        cd ..
+    done
     cd ..
 done
