@@ -29,7 +29,6 @@ PROGRAM main
     implicit none
 
     ! integer :: iters
-    integer(KIND=4) :: bench_id
     integer :: k,i,iters,array_len,benchmark_size_mode
     character(len=32) :: arg
     character(len=7) :: bench_str
@@ -71,7 +70,6 @@ PROGRAM main
 
 
     ! default values
-    bench_id = BENCH_ID
     iters = ITERS
     array_len = ARRAY_LEN
     benchmark_size_mode = BENCHMARK_SIZE_MODE
@@ -107,10 +105,10 @@ CALL perf_regions_init()
     WRITE(*,*) "**************************************"
     WRITE(*,*) "**************************************"
 
-    write (*,*) 'Calling benchmark of id ', bench_id
+    write (*,*) 'Calling benchmark of id ', BENCH_ID
     
     ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
-    select case (bench_id)
+    select case (BENCH_ID)
         case (BENCH_FIXED_ARRAY)
             bench_str = '1D_FIXD'
         case (BENCH_ALLOCATABLE_ARRAY)
@@ -135,7 +133,7 @@ CALL perf_regions_init()
             write (*,*) 'Error: no such benchmark'
     end select
     if ( .not. bench_str .eq. 'ERROR') then
-        CALL BENCH_SKELETON(iters, bench_id, bench_str, array_len)
+        CALL BENCH_SKELETON(iters, bench_str, array_len)
     end if
 
     !!!!!!!! finalize timing here
@@ -145,7 +143,7 @@ END PROGRAM main
 
 
 
-SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str, array_len)
+SUBROUTINE BENCH_SKELETON(iters, bench_str, array_len)
 USE perf_regions_fortran
 USE benchmark_names
 USE benchmark_parameters
@@ -155,16 +153,15 @@ USE benchmark_parameters
     use benchmark_2D_CPU
     
     integer, intent(in) :: iters
-    integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
     integer, intent(in) :: array_len
 
 
     write (*,*) 'Running bench ', bench_str, '...'
     WRITE(*,*) "**************************************"
-    if (     bench_id == BENCH_FIXED_ARRAY              &
-        .or. bench_id == BENCH_ALLOCATABLE_ARRAY        &
-        .or. bench_id == BENCH_ALLOCATABLE_ARRAY_MODULE) then
+    if (     BENCH_ID == BENCH_FIXED_ARRAY              &
+        .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY        &
+        .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY_MODULE) then
         WRITE(*,*) "Mem size: ", array_len*0.001*sizeof(real) ," KByte"
     else
         WRITE(*,*) "Mem size: ", nx*ny*0.001*sizeof(real) ," KByte"
@@ -174,25 +171,25 @@ USE benchmark_parameters
 #ifdef DEBUG
         CALL perf_region_start(99, "DEBUG"//achar(0))
 #endif
-        select case (bench_id)
+        select case (BENCH_ID)
             case (BENCH_FIXED_ARRAY)
-                CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str, array_len)
+                CALL COMPUTATION_FIXED_ARRAY(BENCH_ID, bench_str, array_len)
             case (BENCH_ALLOCATABLE_ARRAY)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str, array_len)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY(BENCH_ID, bench_str, array_len)
             case (BENCH_ALLOCATABLE_ARRAY_MODULE)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str, array_len)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(BENCH_ID, bench_str, array_len)
 
             case (BENCH_2D_CPU_JI)
-                CALL COMPUTATION_2D_JI(bench_id, bench_str, array_len)
+                CALL COMPUTATION_2D_JI(BENCH_ID, bench_str, array_len)
             case (BENCH_2D_CPU_IJ)
-                CALL COMPUTATION_2D_IJ(bench_id, bench_str, array_len)
+                CALL COMPUTATION_2D_IJ(BENCH_ID, bench_str, array_len)
             case (BENCH_2D_CPU_MODULE)
-                CALL COMPUTATION_2D_MODULE(bench_id, bench_str, array_len)
+                CALL COMPUTATION_2D_MODULE(BENCH_ID, bench_str, array_len)
             case (BENCH_2D_CPU_MODULE_STATIC)
-                CALL COMPUTATION_2D_MODULE_FIXED(bench_id, bench_str, array_len)
+                CALL COMPUTATION_2D_MODULE_FIXED(BENCH_ID, bench_str, array_len)
 
             case (BENCH_2D_GPU_OMP_BASE)
-                CALL COMPUTATION_GPU_OMP_BASE(bench_id, bench_str, array_len)
+                CALL COMPUTATION_GPU_OMP_BASE(BENCH_ID, bench_str, array_len)
                 
             case DEFAULT
                 write (*,*) 'Error: no such benchmark'
