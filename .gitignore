@@ -3,7 +3,9 @@ perf_regions/doc
 .gitconfig
 .vscode
 bench/main
+bench/bench
 bench/build
+bench/bin
 bench/lib
 bench/benchmark_implementations.o
 bench/file.csv
@@ -11,3 +13,4 @@ bench/output.txt
 bench/src/*.mod
 perf_regions/src/perf_regions_fortran.mod
 bench/*.csv
+bench/preprocess/test_codegen_run.sh

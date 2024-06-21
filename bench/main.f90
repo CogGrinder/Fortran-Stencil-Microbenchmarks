@@ -9,7 +9,7 @@
 ! #define ARRAY_LEN 1024 * 256
 ! #define ITERS 1
 #define ITERS 1024
-#define FLEXIBLE_STENCIL 0
+#define BENCH_ID 5
 
 #ifdef array_len_OVERRIDE
     #define array_len array_len_OVERRIDE
@@ -71,6 +71,7 @@ PROGRAM main
 
 
     ! default values
+    bench_id = BENCH_ID
     iters = ITERS
     array_len = ARRAY_LEN
     benchmark_size_mode = BENCHMARK_SIZE_MODE
@@ -96,46 +97,46 @@ CALL perf_regions_init()
             CALL set_1D_size(benchmark_size_mode,array_len,iters)
         else if (index(arg, 'iters=') == 1) then
             write(*,*) arg
-            CALL get_key_value(arg,iters)            
-        else
-            read(arg,*) bench_id
-
-            WRITE(*,*) "**************************************"
-            WRITE(*,*) "**************************************"
-
-            write (*,*) 'Calling benchmark of id ', bench_id
-            
-            ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
-            select case (bench_id)
-                case (BENCH_FIXED_ARRAY)
-                    bench_str = '1D_FIXD'
-                case (BENCH_ALLOCATABLE_ARRAY)
-                    bench_str = '1D_ALOC'
-                case (BENCH_ALLOCATABLE_ARRAY_MODULE)
-                    bench_str = '1D_MODU'
-                    
-                case(BENCH_2D_CPU_JI)
-                    bench_str = '2D_JI'
-                case(BENCH_2D_CPU_IJ)
-                    bench_str = '2D_IJ'
-                case (BENCH_2D_CPU_MODULE)
-                    bench_str = '2D_MODU'
-                case (BENCH_2D_CPU_MODULE_STATIC)
-                    bench_str = '2D_FIXD'
-
-                case (BENCH_2D_GPU_OMP_BASE)
-                    bench_str = 'GPU'
-
-                case DEFAULT
-                    bench_str = 'ERROR'
-                    write (*,*) 'Error: no such benchmark'
-            end select
-            if ( .not. bench_str .eq. 'ERROR') then
-                CALL BENCH_SKELETON(iters, bench_id, bench_str, array_len)
-            end if
+            CALL get_key_value(arg,iters)
         endif
         i = i + 1
     end do
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!! BENCH CALL !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    WRITE(*,*) "**************************************"
+    WRITE(*,*) "**************************************"
+
+    write (*,*) 'Calling benchmark of id ', bench_id
+    
+    ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
+    select case (bench_id)
+        case (BENCH_FIXED_ARRAY)
+            bench_str = '1D_FIXD'
+        case (BENCH_ALLOCATABLE_ARRAY)
+            bench_str = '1D_ALOC'
+        case (BENCH_ALLOCATABLE_ARRAY_MODULE)
+            bench_str = '1D_MODU'
+            
+        case(BENCH_2D_CPU_JI)
+            bench_str = '2D_JI'
+        case(BENCH_2D_CPU_IJ)
+            bench_str = '2D_IJ'
+        case (BENCH_2D_CPU_MODULE)
+            bench_str = '2D_MODU'
+        case (BENCH_2D_CPU_MODULE_STATIC)
+            bench_str = '2D_FIXD'
+
+        case (BENCH_2D_GPU_OMP_BASE)
+            bench_str = 'GPU'
+
+        case DEFAULT
+            bench_str = 'ERROR'
+            write (*,*) 'Error: no such benchmark'
+    end select
+    if ( .not. bench_str .eq. 'ERROR') then
+        CALL BENCH_SKELETON(iters, bench_id, bench_str, array_len)
+    end if
 
     !!!!!!!! finalize timing here
 CALL perf_regions_finalize()

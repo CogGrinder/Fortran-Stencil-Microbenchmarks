@@ -1,8 +1,8 @@
 #! /bin/bash
 
 # set BENCH_EXECUTABLE and PERF_REGIONS
-export PERF_REGIONS="../perf_regions"
-export BENCH_EXECUTABLE=main
+export PERF_REGIONS="../../perf_regions"
+export BENCH_EXECUTABLE=../bin/bench
 # set verbosity here
 export PERF_REGIONS_VERBOSITY=0
 

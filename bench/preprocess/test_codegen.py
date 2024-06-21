@@ -1,13 +1,15 @@
 import sys
+import os
 import shlex
 
 def create_bench_run(param):
     f = open("test_codegen_run.sh", "w")
+    os.chmod("test_codegen_run.sh",0b111111111)
     f.write("""#! /bin/bash
 
 # set BENCH_EXECUTABLE and PERF_REGIONS
-export PERF_REGIONS="../perf_regions"
-export BENCH_EXECUTABLE=main
+export PERF_REGIONS="../../perf_regions"
+export BENCH_EXECUTABLE=../bin/bench
 # set verbosity here
 export PERF_REGIONS_VERBOSITY=0
 

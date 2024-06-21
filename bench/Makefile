@@ -8,11 +8,17 @@ FFLAGS = -cpp -Wall -Wextra -O3
 all:
 	make -C $(PERFREGION_SRC) --silent
 	make bench_library
-	make $(MAIN)
+	make $(BIN_DIR)/$(MAIN)
 
 run: run_main
 
-MAIN:= main
+MAIN:= bench
+
+# Here is the selector for which main to compile
+SUFFIX.:= 
+
+
+
 
 # add .exe to executable name if Windows
 ifeq ($(OS),Windows_NT)
@@ -20,10 +26,13 @@ MAIN:= $(MAIN).exe
 endif
 
 
-### compilation flags ###
+BIN_DIR := bin
 BUILD_DIR := build
 BENCH_LIB_DIR   := lib
 
+
+
+### compilation flags ###
 BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.a
 # TODO : try .so library - you must also modify the Makefile in src
 # BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.so
@@ -69,9 +78,9 @@ $(BUILD_DIR)/benchmark_2D_GPU.mod : src/benchmark_2D_GPU.f90
 	./perf_regions_instrumentation.py cleanup
 	${FC} ${FFLAGS} -c src/benchmark_2D_GPU.f90 -o $(BUILD_DIR)/benchmark_2D_GPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
 
-$(MAIN) : main.f90
+$(BIN_DIR)/$(MAIN) : main.f90 | $(BIN_DIR)
 	./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -g -o $(MAIN) main.f90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 # -cpp option does preprocessing
 
 run_main : all
@@ -95,6 +104,12 @@ clean:
 	-rm -f main main.o output.txt
 	-rm -f perf_region_list.txt
 	-rm build/*
+	-rm bin/*
 	-rm src/*.o src/*.mod
 	-rm lib/library.a
 endif
+
+
+# DIRECTORIES
+$(BIN_DIR) :
+	-@mkdir $@
