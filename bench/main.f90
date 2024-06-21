@@ -35,9 +35,8 @@ PROGRAM main
     
     
     INTERFACE
-        SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str, array_len)
+        SUBROUTINE BENCH_SKELETON(iters,bench_str, array_len)
             integer, intent(in) :: iters, array_len
-            integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE BENCH_SKELETON
         SUBROUTINE WARMUP_COMPUTATION(sten_len, array_len)
