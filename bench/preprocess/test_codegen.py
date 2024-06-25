@@ -54,7 +54,7 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 export ALLOC_MODE="{alloc_option}"
 export SIZE_MODE="{size_option}"
 
-make -C $BENCH_MAKE_DIR
+make -C $BENCH_MAKE_DIR bin/bench{allocation_suffixes[alloc_option]}{size_suffixes[size_option]}
 
 filename=out
 
@@ -78,7 +78,8 @@ description=( SMALLER_THAN_L3 SLIGHTLY_SMALLER_THAN_L3 SLIGHTLY_BIGGER_THAN_L3 B
     # |  grep -A100 Section | paste >> $filename.csv
 # done
 echo
-cat $filename.csv""")
+# cat $filename.csv
+""")
         f.close()
     else:
         raise ValueError("Parameter wrong - read script for more information")

@@ -66,9 +66,9 @@ PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 ####################### main compilation #######################
 main : $(BIN_DIR)/$(MAIN)
-$(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
+$(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
 	@./perf_regions_instrumentation.py cleanup
 	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -D${ALLOC_MODE} -D${SIZE_MODE} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 
