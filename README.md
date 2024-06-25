@@ -171,8 +171,12 @@ Done on 06/21 :
     - This process took alot of testing to execute with satisfactory readability and UX
 
 To do soon (TM) :
-- [ ] repair make redoing unnecessary compilations and being verbose to improve speed of test runs - each bench uses a separate executable now
-    - [ ] try putting the compilation in ``bench/src`` only
+- [X] repair make redoing unnecessary compilations and being verbose to improve speed of test runs - each bench uses a separate executable now
+    - [X] try putting the compilation in ``bench/src`` only
+
+To do soon (TM) :
+- [ ] need to rename and compile with 1Mb, 2Mb etc bruteforce
+
 
 ### Objectives from discussion on the 06/04
 - [X] Comme convenu il serait interessant de modifier le code de stencil
