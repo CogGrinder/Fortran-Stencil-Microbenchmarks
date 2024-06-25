@@ -2,7 +2,7 @@
 
 # set BENCH_EXECUTABLE and PERF_REGIONS
 export PERF_REGIONS="../perf_regions"
-export BENCH_EXECUTABLE=bin/bench
+export BENCH_EXECUTABLE=bin/bench_defaultalloc_defaultsize
 # set verbosity here
 export PERF_REGIONS_VERBOSITY=0
 

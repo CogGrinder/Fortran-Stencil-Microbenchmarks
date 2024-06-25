@@ -16,3 +16,4 @@ bench/*.csv
 bench/preprocess/bench_tree
 bench/preprocess/test_codegen_run.sh
 bench/preprocess/array_alloc.csv
+bench/postprocess/data.csv
