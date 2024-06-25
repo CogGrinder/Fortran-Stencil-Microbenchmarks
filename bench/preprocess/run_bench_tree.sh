@@ -15,6 +15,8 @@ do
     for directory_2 in $directories_2
     do
         cd $(basename $directory_2)
+        # remove previous data
+        @rm out.csv
         ./run.sh
         # remove the anti-optimisation file
         rm output.txt

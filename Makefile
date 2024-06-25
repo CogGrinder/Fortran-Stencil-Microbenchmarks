@@ -22,9 +22,9 @@ endif
 all:
 	@echo make: $(MAKE)
 # add MODE=debug as a trailing option for debugging
-# -cd $(PERF_REGIONS_FOLDER) && $(MAKE) MODE=debug
-	-cd $(PERF_REGIONS_FOLDER) && $(MAKE)
-	-cd $(BENCH) && $(MAKE) PERF_REGIONS=../$(PERF_REGIONS_FOLDER)
+# -$(MAKE) -C $(PERF_REGIONS_FOLDER) MODE=debug
+	-$(MAKE) -C $(PERF_REGIONS_FOLDER) --silent
+	-$(MAKE) -C $(BENCH)
 
 run: run_bench
 run_bench:
@@ -39,7 +39,15 @@ make_tuto:
 run_tuto:
 	cd $(TUTO) && $(MAKE) run
 
+clean_all: clean clean_perf_regions clean_tuto
 clean:
-# -cd $(PERF_REGIONS_FOLDER) && $(MAKE) clean
-	-cd $(BENCH) && $(MAKE) clean
-	-cd $(TUTO) && $(MAKE) clean
+	-$(MAKE) -C $(BENCH) clean
+
+clean_perf_regions:
+	-$(MAKE) -C $(PERF_REGIONS_FOLDER) clean
+
+clean_tuto:
+	-$(MAKE) -C $(TUTO) clean
+
+clean_preprocess:
+	cd bench/preprocess;python3 ./test_codegen.py clean
