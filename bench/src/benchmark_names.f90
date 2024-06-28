@@ -15,10 +15,11 @@ MODULE benchmark_names
     integer, parameter :: BENCH_2D_GPU_OMP_BASE = 7
 
     ! mode numbering
-    integer, parameter :: smaller_than_l3 = 0
-    integer, parameter :: slightly_smaller_than_l3 = 1
-    integer, parameter :: slightly_bigger_than_l3 = 2
-    integer, parameter :: bigger_than_l3 = 3
+    ! modes up to 99 are number of Mb
+    integer, parameter :: smaller_than_l3           = 100
+    integer, parameter :: slightly_smaller_than_l3  = 101
+    integer, parameter :: slightly_bigger_than_l3   = 102
+    integer, parameter :: bigger_than_l3            = 103
     ! see benchmark_parameters.f90 for usage in practice
 
 END MODULE benchmark_names

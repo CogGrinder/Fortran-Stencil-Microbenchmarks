@@ -33,6 +33,11 @@ SUFFIX.${ALLOC_MODE}.SLIGHTLY_SMALLER_THAN_L3 :=${SUFFIX.${ALLOC_MODE}}_ssmaller
 SUFFIX.${ALLOC_MODE}.SLIGHTLY_BIGGER_THAN_L3 :=	${SUFFIX.${ALLOC_MODE}}_sbiggerl3
 SUFFIX.${ALLOC_MODE}.BIGGER_THAN_L3 :=			${SUFFIX.${ALLOC_MODE}}_biggerl3
 
+SIZE_MODE_IS_NUMBER :=$(shell echo "$(SIZE_MODE)" | grep -Eq '^[0-9]*$$' && echo "1" || echo "0")
+ifeq ($(SIZE_MODE_IS_NUMBER),1)
+	SUFFIX.${ALLOC_MODE}.${SIZE_MODE} := ${SUFFIX.${ALLOC_MODE}}_${shell printf "%02d" $(SIZE_MODE)}Mb
+endif
+
 MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
 
 # add .exe to executable name if Windows
@@ -45,6 +50,7 @@ endif
 ####################### compilation flags ########################
 BIN_DIR := bin
 BUILD_DIR := build
+SRC_DIR := src
 LIB_DIR   := lib
 
 BENCH_LIB := -L$(LIB_DIR) -l:library.a
@@ -66,11 +72,12 @@ PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 ####################### main compilation #######################
 main : $(BIN_DIR)/$(MAIN)
+$(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
-$(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
 	@./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -D${ALLOC_MODE} -D${SIZE_MODE} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)
 	./run_benches.sh
@@ -91,12 +98,61 @@ clean:
 	-@rm lib/*
 endif
 
+# MODULE LIBRARY COMPILATION - # TODO : fixing make dependencies checking by using no ../
+MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
+MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))
+$(LIB_DIR)/library.a : $(MODULE_O)
+	make -C src library
+	@touch $(LIB_DIR)/library.a
+$(MODULE_O) : #$(MODULE_f90)
+	@echo .f90 files newer than .o files :
+	@echo $?
+	make -C src
+
+# library: $(LIB_DIR)/library.a
+
+# # default rule
+# $(BUILD_DIR)/%.o $(BUILD_DIR)/%.mod : $(SRC_DIR)/%.f90 | $(BUILD_DIR)
+# 	$(FC) $(FFLAGS) -c $< -o $(basename $@).o -J$(BUILD_DIR)
+# 	@touch $@
+
+# $(BUILD_DIR)/benchmark_implementations.o $(BUILD_DIR)/benchmark_implementations.mod : $(SRC_DIR)/benchmark_implementations.f90 | $(BUILD_DIR)
+# # ./perf_regions_instrumentation.py cleanup
+# 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_implementations.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+# 	@touch $@
+
+# $(BUILD_DIR)/benchmark_2D_CPU.o $(BUILD_DIR)/benchmark_2D_CPU.mod : $(SRC_DIR)/benchmark_2D_CPU.f90 | $(BUILD_DIR)
+# # ./perf_regions_instrumentation.py cleanup
+# 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_CPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+# 	@touch $@
+
+
+# $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : $(SRC_DIR)/benchmark_2D_GPU.f90 | $(BUILD_DIR)
+# # ./perf_regions_instrumentation.py cleanup
+# 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_GPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+# 	@touch $@
+
+# # Additional rules :
+# $(BUILD_DIR)/benchmark_2D_CPU.o : $(BUILD_DIR)/tools.mod
+# $(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/tools.mod
+
+
+# # $(BUILD_DIR)/benchmark_implementations.o $(BUILD_DIR)/benchmark_implementations.mod : benchmark_implementations.f90
+# # 	make -C .. build/benchmark_implementations.o
+# # $(BUILD_DIR)/benchmark_2D_CPU.o $(BUILD_DIR)/benchmark_2D_CPU.mod : benchmark_2D_CPU.f90
+# # 	make -C .. build/benchmark_2D_CPU.o
+# # $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : benchmark_2D_GPU.f90
+# # 	make -C .. build/benchmark_2D_GPU.o
+
+# $(LIB_DIR)/library.a : $(MODULE_O) | $(LIB_DIR)
+# 	ar cr $(LIB_DIR)/library.a $(MODULE_O)
+# 	@touch $(LIB_DIR)/library.a
+
 
 # DIRECTORIES
-$(BIN_DIR) :
+$(BUILD_DIR) $(LIB_DIR) $(BIN_DIR) :
 	-@mkdir $@
-$(LIB_DIR)/library.a :
-	make -C src library
+
 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so :
 	make -C $(PERFREGION_SRC)
 #--silent

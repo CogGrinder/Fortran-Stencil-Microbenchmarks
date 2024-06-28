@@ -12,28 +12,39 @@
 ! BEWARE : benchmark_size_mode isn't compile time fixed, it only has a default option, unlike bench_id
 ! TODO : make an option to fix at compile time / keep flexible for different compiler optimisations
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#if     SMALLER_THAN_L3
-# define BENCHMARK_SIZE_MODE 0
-#elif     SLIGHTLY_SMALLER_THAN_L3
-# define BENCHMARK_SIZE_MODE 1
-#elif     SLIGHTLY_BIGGER_THAN_L3
-# define BENCHMARK_SIZE_MODE 2
-#elif     BIGGER_THAN_L3
-# define BENCHMARK_SIZE_MODE 3
-#else
-# define BENCHMARK_SIZE_MODE 3
+#ifndef SIZE_MODE
+! default SIZE_MODE in Mb
+# define SIZE_MODE 16
 #endif
 
-#if   ALLOC
+! BENCHMARK_SIZE_MODE is SIZE_MODE except when overruled by L3-relative sizes
+#if         SIZE_MODE == SMALLER_THAN_L3
+# define BENCHMARK_SIZE_MODE 100
+#elif       SIZE_MODE == SLIGHTLY_SMALLER_THAN_L3
+# define BENCHMARK_SIZE_MODE 101
+#elif       SIZE_MODE == SLIGHTLY_BIGGER_THAN_L3
+# define BENCHMARK_SIZE_MODE 102
+#elif       SIZE_MODE == BIGGER_THAN_L3
+# define BENCHMARK_SIZE_MODE 103
+#elif       SIZE_MODE == NONE
+# define BENCHMARK_SIZE_MODE 0
+#else
+# define BENCHMARK_SIZE_MODE (int(SIZE_MODE))
+#endif
+
+! TODO : change from BENCH_ID paradigm
+#if     ALLOC_MODE == ALLOC
 # define BENCH_ID 6
-#elif STATIC
+#elif   ALLOC_MODE == STATIC
 # define BENCH_ID 5
+#elif   ALLOC_MODE == NONE
+# define BENCH_ID 0
 #else
 # define BENCH_ID 0
 #endif
 
-#ifdef array_len_OVERRIDE
-    #define array_len array_len_OVERRIDE
+#ifdef ARRAY_LEN_OVERRIDE
+    #define ARRAY_LEN ARRAY_LEN_OVERRIDE
 #endif
 
 PROGRAM main

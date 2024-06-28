@@ -4,6 +4,50 @@ all: tuto
 run: run_tuto
 clean: clean_tuto
 
+string1 := a20
+bool1 :=$(shell echo "$(string1)" | grep -Eq '^[0-9]*$$' && echo "matched" || echo "did not match")
+string2 := 4269
+bool2 :=$(shell echo "$(string2)" | grep -Eq '^[0-9]*$$' && echo "matched" || echo "did not match")
+
+reg1 :=$(shell echo $(string1) | grep -Eo '[0-9]*' | xargs echo)
+reg2 :=$(shell echo $(string2) | grep -Eo '[0-9]*' | xargs echo)
+
+VAR.0 := HELLO
+
+ifeq ($(string1), $(reg1))
+# export value1="number$(bool1)"
+	value1="number$(bool1)"
+else
+# export value1="not a number$(bool1)"
+	value1="not a number$(bool1)"
+endif
+# $([[ $bar =~ ^[0-9.]+$ ]])
+
+# ifeq ($(bool2), matched)
+ifeq ($(string2), $(reg2))
+	export value2="number$(bool2)"
+else
+	export value2="not a number$(bool2)"
+endif
+
+
+test:
+	echo $(string1) | grep -Eo '[0-9]*' | xargs echo
+	echo $(string2) | grep -Eo '[0-9]*' | xargs echo
+
+	@echo $(string1)
+	@echo [[ $(string1) =~ ^[0-9.]+$ ]]
+	@echo $(value1)
+	@echo $(reg1)
+	@echo [[ $(string2) =~ ^[0-9.]+$ ]]
+	@echo $(value2)
+	@echo $(reg2)
+	@echo $(VAR.0)
+
+
+
+
+
 ECHO:= echo
 OMP := omp
 # add .exe to executable name if Windows

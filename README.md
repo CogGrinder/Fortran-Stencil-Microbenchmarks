@@ -170,12 +170,30 @@ Done on 06/21 :
 - [X] Made initial V0 -> V2 of codegen in test_codegen.py and corresponding modifications for compiling separately every variation of the bench binaries
     - This process took alot of testing to execute with satisfactory readability and UX
 
-To do soon (TM) :
+Done on 06/25 :
 - [X] repair make redoing unnecessary compilations and being verbose to improve speed of test runs - each bench uses a separate executable now
     - [X] try putting the compilation in ``bench/src`` only
 
+Done on 06/28 :
+- [x] need to rename and compile with 1Mb, 2Mb etc bruteforce
+
 To do soon (TM) :
-- [ ] need to rename and compile with 1Mb, 2Mb etc bruteforce
+- [ ] Stencils and their documentation
+        - Implement about 4 different stencils
+        - Existing one
+        - Only in x direction
+        - Only in y direction
+        - Larger one (5 x 5)
+- [ ] How are the iteration bounds given
+    - As variable
+    - As constant
+- [ ] Different variants (some of them already implemented):
+        - [ ] How is memory allocated? (almost DONE: missing Static one for 2D stencils)
+            - Allocatable
+            - Module
+            - Static
+            - VM: do we need a module version for every variant ? in which case there might need to be more preprocessing and less individual functions to limit coding errors
+- [ ] investigate recompilation cascade at https://fortran-lang.discourse.group/t/the-recompilation-cascade-issue-and-its-solutions/4641/2
 
 
 ### Objectives from discussion on the 06/04

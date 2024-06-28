@@ -49,5 +49,6 @@ clean_perf_regions:
 clean_tuto:
 	-$(MAKE) -C $(TUTO) clean
 
+clean_pre:clean_preprocess
 clean_preprocess:
 	cd bench/preprocess;python3 ./test_codegen.py clean
