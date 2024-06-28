@@ -175,9 +175,12 @@ Done on 06/25 :
     - [X] try putting the compilation in ``bench/src`` only
 
 Done on 06/28 :
-- [x] need to rename and compile with 1Mb, 2Mb etc bruteforce
+- [x] renamed and made codegen with 1Mb, 2Mb etc bruteforce
 
 To do soon (TM) :
+- [ ] Change the number of iterations to make sense
+    - first idea is using factorial
+    - second idea is make total number of calculations constant equal to factorial, and divide by approximations of 1Mb, 2Mb etc
 - [ ] Stencils and their documentation
         - Implement about 4 different stencils
         - Existing one
