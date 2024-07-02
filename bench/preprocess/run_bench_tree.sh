@@ -1,6 +1,6 @@
 #!/bin/bash
 cd bench_tree
-directories_1=$(find -mindepth 1 -maxdepth 1 -type d)
+directories_1=$(ls -d */)
 echo $directories_1
 echo
 # sleep 0.5
@@ -8,7 +8,7 @@ echo
 for directory_1 in $directories_1
 do
     cd $(basename $directory_1)
-    directories_2=$(find -mindepth 1 -maxdepth 1 -type d)
+    directories_2=$(ls -d */)
     echo $directories_2
     echo
     # sleep 0.1

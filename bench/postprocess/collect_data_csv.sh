@@ -4,8 +4,10 @@ default=bench_execution_defaultalloc_defaultsize
 defaultpath=bench_execution_defaultalloc/_defaultsize
 tree_depth=2
 
+rm -f $(basename $OUTPUT_FILE)
+
 cd ../preprocess/bench_tree
-directories_1=$(find -mindepth 1 -maxdepth 1 -type d)
+directories_1=$(ls -d */)
 echo $directories_1
 echo
 
@@ -28,7 +30,7 @@ done
 for directory_1 in $directories_1
 do
     cd $(basename $directory_1)
-    directories_2=$(find -mindepth 1 -maxdepth 1 -type d)
+    directories_2=$(ls -d */)
     echo $directories_2
     echo
     for directory_2 in $directories_2

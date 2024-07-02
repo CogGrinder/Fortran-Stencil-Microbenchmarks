@@ -15,11 +15,16 @@ endif
 
 all: main
 run: run_main
-.PHONY: preprocess
+.PHONY: preprocess postprocess
 pre:preprocess
 preprocessing:preprocess
 preprocess:
 	cd preprocess;python3 test_codegen.py all;./run_bench_tree.sh
+
+post:postprocess
+postprocessing:postprocess
+postprocess:
+	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py;./run_bench_tree.sh
 
 
 # Here is the selector for which main to compile

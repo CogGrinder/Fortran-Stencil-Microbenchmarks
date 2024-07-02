@@ -36,7 +36,13 @@ run_bench:
 pre:preprocess
 preprocessing:preprocess
 preprocess:
-	$(MAKE) -C $(BENCH) preprocessing
+	$(MAKE) -C $(BENCH) preprocess
+
+post:postprocess
+postprocessing:postprocess
+postprocess:
+	$(MAKE) -C $(BENCH) postprocess
+
 
 make_tuto:
 	$(MAKE) -C $(TUTO)
