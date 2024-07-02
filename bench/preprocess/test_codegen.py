@@ -3,6 +3,8 @@ import os
 import pathlib
 import shlex
 import shutil
+import json
+from typing import Union
 
 allocation_suffixes = { "ALLOC"                 : "_alloc",
                         "STATIC"                : "_static",
@@ -18,7 +20,10 @@ size_mode_number = {k: v+100 for v, k in enumerate(size_suffixes.keys())}
 
 tree_depth = 2
 
-def codegen_bench_tree_branch(alloc_option,size_option):
+
+def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str]):
+    """ TODO: Comment function
+    """
     if alloc_option in allocation_suffixes.keys()\
         and (size_option in size_suffixes.keys() or int(size_option) in range(0,100)) :
 
@@ -117,8 +122,10 @@ def main():
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
+        all_parameters = {}
         for alloc_option in allocation_suffixes.keys() :
             for size_option in range(1,17) :
+                # TODO: all_parameters[param_id] = {"size_otion": size_option, alloc_otion: ...}
                 codegen_bench_tree_branch(alloc_option,size_option)
     elif param == "all_l3":
         # shutil.rmtree("bench_tree")
@@ -129,6 +136,7 @@ def main():
     else :
         print(f"Creating {phrase} benchmark script...")
         codegen_bench_tree_branch(param,param2)
+    json.dump(all_parameters)
     return 0
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html
