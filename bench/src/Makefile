@@ -47,6 +47,7 @@ CFLAGS:= -I$(BUILD_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 # Additional rules :
+$(BUILD_DIR)/benchmark_parameters.o : $(BUILD_DIR)/benchmark_names.mod
 $(BUILD_DIR)/benchmark_implementations.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_names.mod
 $(BUILD_DIR)/benchmark_2D_CPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 $(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
