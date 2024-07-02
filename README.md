@@ -177,6 +177,19 @@ Done on 06/25 :
 Done on 06/28 :
 - [x] renamed and made codegen with 1Mb, 2Mb etc bruteforce
 
+Done on 07/02 :
+- [x] improved postprocessing and parsing of benchmarks to get readable graphing
+    - [x] tried multiple versions of bar plotting multidimensional data
+    - settled for 2D plot with "subplot" grouping
+    - [ ] need to separate into subgraphs to enable non logarithmic comparison
+
+To do on 07/03 :
+- [ ] Write kernel with 2 versions (preprocessed) 
+    - [ ] include file with kernel code
+    - [ ] subroutine call with kernel code (should be inlined by compiler)
+    - [ ] Test execution time
+    - [ ] Look at assembly code: should look the same: `gfortran -S`
+
 To do soon (TM) :
 - [ ] Change the number of iterations to make sense
     - first idea is using factorial
