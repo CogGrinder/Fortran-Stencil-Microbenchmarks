@@ -15,8 +15,10 @@ endif
 
 all: main
 run: run_main
-pre:preprocessing
-preprocessing:
+.PHONY: preprocess
+pre:preprocess
+preprocessing:preprocess
+preprocess:
 	cd preprocess;python3 test_codegen.py all;./run_bench_tree.sh
 
 
@@ -75,7 +77,7 @@ main : $(BIN_DIR)/$(MAIN)
 $(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
-	@./perf_regions_instrumentation.py cleanup
+# @./perf_regions_instrumentation.py cleanup
 	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 	@touch $(BIN_DIR)/$(MAIN)
 
@@ -86,25 +88,28 @@ run_main : $(BIN_DIR)/$(MAIN)
 # clean depending on OS
 ifeq ($(OS),Windows_NT)
 clean:
-	rm *.exe
-	rm *.o
+	rm -f *.exe
+	rm -f *.o
 else
 clean:
 	./perf_regions_instrumentation.py cleanup
-	-@rm -f main main.o output.txt
-	-@rm -f perf_region_list.txt
-	-@rm build/*
-	-@rm bin/*
-	-@rm lib/*
+	rm -f main main.o output.txt
+	rm -f perf_region_list.txt
+	rm -f build/*
+	rm -f bin/*
+	rm -f lib/*
 endif
 
 # MODULE LIBRARY COMPILATION - # TODO : fixing make dependencies checking by using no ../
 MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
 MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))
+# using .SECONDARY
+.SECONDARY : $(MODULE_O) 
+# see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 $(LIB_DIR)/library.a : $(MODULE_O)
 	make -C src library
 	@touch $(LIB_DIR)/library.a
-$(MODULE_O) : #$(MODULE_f90)
+$(MODULE_O) : $(MODULE_f90)
 	@echo .f90 files newer than .o files :
 	@echo $?
 	make -C src

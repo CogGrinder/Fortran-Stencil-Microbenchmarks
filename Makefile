@@ -1,5 +1,8 @@
 
 # thank you to https://makefiletutorial.com/
+# debug timestamps with
+# make | ts '[%Y-%m-%d %H:%M:%.S]'
+# ls -t -l --time-style=full-iso
 
 # set PerfRegions folder (https://github.com/schreiberx/perf_regions) - relative to main folder
 PERF_REGIONS_FOLDER:=perf_regions
@@ -30,8 +33,9 @@ run: run_bench
 run_bench:
 	$(MAKE) -C $(BENCH) run
 
-pre:preprocessing
-preprocessing:
+pre:preprocess
+preprocessing:preprocess
+preprocess:
 	$(MAKE) -C $(BENCH) preprocessing
 
 make_tuto:

@@ -18,9 +18,9 @@ CFLAGS:=${CFLAGS} ${mode.${MODE}}
 F90FLAGS:=${F90FLAGS} ${mode.${MODE}}
 
 SRCS_C:=$(wildcard *.c)
-SRCS_F90:=$(wildcard *.F90)
-OBJS:=$(patsubst %.c,${BUILD_DIR}/%.o,$(SRCS_C)) $(patsubst %.F90,${BUILD_DIR}/%.o,$(SRCS_F90))
-MODS:=$(patsubst %.F90,${BUILD_DIR}/%.mod,$(SRCS_F90))
+SRCS_F90:=$(wildcard *.f90)
+OBJS:=$(patsubst %.c,${BUILD_DIR}/%.o,$(SRCS_C)) $(patsubst %.f90,${BUILD_DIR}/%.o,$(SRCS_F90))
+MODS:=$(patsubst %.f90,${BUILD_DIR}/%.mod,$(SRCS_F90))
 TARGET_LIB:=${BUILD_DIR}/libperf_regions.so
 
 all:
@@ -40,16 +40,16 @@ ${BUILD_DIR}/%.o: %.c %.h
 	${MPICC} ${CFLAGS} -c -g $< -o $@
 
 # Generate Fortran ugly interfaces
-${BUILD_DIR}/perf_regions_fortran.o: perf_regions_fortran.F90
+${BUILD_DIR}/perf_regions_fortran.o: perf_regions_fortran.f90
 	mkdir -p ${BUILD_DIR}
-	${F90} -cpp -c perf_regions_fortran.F90 -o ${BUILD_DIR}/perf_regions_fortran.o
+	${F90} -cpp -c perf_regions_fortran.f90 -o ${BUILD_DIR}/perf_regions_fortran.o
 	mv -f perf_regions_fortran.mod "${BUILD_DIR}"
 
 -include Makefile.deps
 
 Makefile.deps:
 	$(CC) $(CFLAGS) -MM *.c > $@
-	$(F90) $(F90FLAGS) -MM *.F90 >> $@
+	$(F90) $(F90FLAGS) -MM *.f90 >> $@
 
 
 clean:

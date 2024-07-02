@@ -23,7 +23,7 @@ $(BUILD_DIR)/%.o $(BUILD_DIR)/%.mod : $(SRC_DIR)/%.f90 | $(BUILD_DIR)
 	@echo .f90 files newer than .o files :
 	@echo $?
 	$(FC) $(FFLAGS) -c $< -o $(BUILD_DIR)/$(basename $<).o -J$(BUILD_DIR)
-	@touch $@
+# @touch $@
 
 # according to https://www1.udel.edu/topics_css/software/special/language/fortran/fortran-docs/fortran-libraries1.html
 # need this to override default modula2 compiling
@@ -47,6 +47,7 @@ CFLAGS:= -I$(BUILD_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 # Additional rules :
+$(BUILD_DIR)/benchmark_parameters.o : $(BUILD_DIR)/benchmark_names.mod
 $(BUILD_DIR)/benchmark_implementations.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_names.mod
 $(BUILD_DIR)/benchmark_2D_CPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 $(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
@@ -76,8 +77,12 @@ $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : $(SRC_DIR)/b
 # $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : benchmark_2D_GPU.f90
 # 	make -C .. build/benchmark_2D_GPU.o
 
+
+# please note: timestamp resolution in archives is lower according to
+# documentation of make's .LOW_RESOLUTION_TIME at
+# https://www.gnu.org/software/make/manual/html_node/Special-Targets.html
 $(LIB_DIR)/library.a : $(MODULE_O) | $(LIB_DIR)
-	ar crv $(LIB_DIR)/library.a $^
+	ar crUuv $(LIB_DIR)/library.a $^
 # @touch $(LIB_DIR)/library.a
 
 
