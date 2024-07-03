@@ -1,4 +1,4 @@
-#to debug preprocessor, use cpp -E benchmark_2D_CPU.f90 -DSIZE_AT_COMPILATION=1 -I../../perf_regions/src
+#to debug preprocessor, use cpp -E benchmark_2D_CPU.f90 -DSIZE_AT_COMPILATION=1 -DNX=1024 -DNY=1024 -I../../perf_regions/src
 #thank you https://aoterodelaroza.github.io/devnotes/modern-fortran-makefiles/
 .SUFFIXES: #disable automatic rules (avoid .mod being interpreted as modula-2 source files)
 FC = gfortran
@@ -23,7 +23,7 @@ library: $(LIB_DIR)/library.a
 $(BUILD_DIR)/%.o $(BUILD_DIR)/%.mod : $(SRC_DIR)/%.f90 | $(BUILD_DIR)
 # @echo .f90 files newer than .o files :
 # @echo $??
-	$(FC) $(FFLAGS) -c $< -o $(BUILD_DIR)/$(basename $<).o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -J$(BUILD_DIR)
+	$(FC) $(FFLAGS) -c $< -o $(BUILD_DIR)/$(basename $<).o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNX=${NX} -DNY=${NY} -J$(BUILD_DIR)
 # @touch $@
 
 # according to https://www1.udel.edu/topics_css/software/special/language/fortran/fortran-docs/fortran-libraries1.html
@@ -59,17 +59,17 @@ $(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_
 
 $(BUILD_DIR)/benchmark_implementations.o $(BUILD_DIR)/benchmark_implementations.mod : $(SRC_DIR)/benchmark_implementations.f90 | $(BUILD_DIR)
 # ./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_implementations.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_implementations.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNX=${NX} -DNY=${NY} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
 	@touch $@
 
 $(BUILD_DIR)/benchmark_2D_CPU.o $(BUILD_DIR)/benchmark_2D_CPU.mod : $(SRC_DIR)/benchmark_2D_CPU.f90 | $(BUILD_DIR)
 # ./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_CPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_CPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNX=${NX} -DNY=${NY} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
 	@touch $@
 
 $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : $(SRC_DIR)/benchmark_2D_GPU.f90 | $(BUILD_DIR)
 # ./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_GPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_GPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNX=${NX} -DNY=${NY} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
 	@touch $@
 
 

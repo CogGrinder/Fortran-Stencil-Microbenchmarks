@@ -7,6 +7,7 @@ import shlex
 import shutil
 import json
 from typing import Union
+import math
 
 DEBUG = False
 
@@ -65,6 +66,9 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str], i
         f = open(filename, "w")
         os.chmod(filename,0b111111111)
         
+        if type(size_option)==int:
+            nx = int(math.sqrt(1024*1024*(size_option)))
+            ny = 1024*1024*(size_option) // nx
 
         # see https://realpython.com/python-f-strings/
         f.write(f"""#! /bin/bash
@@ -85,6 +89,8 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 export ALLOC_MODE="{alloc_option}"
 export SIZE_MODE="{size_option}"
 export SIZE_AT_COMPILATION="{int(compilation_time_size)}"
+export NX="{nx if type(size_option)==int else ""}"
+export NY="{ny if type(size_option)==int else ""}"
 
 make -C $BENCH_MAKE_DIR bin/bench{allocation_suffixes[alloc_option]}{size_suffix} {"_PERF_REGIONS_FOLDER=../"+ "../"*(tree_depth+2)+"perf_regions" if compilation_time_size else ""}
 
@@ -123,6 +129,8 @@ def main():
     # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
     param = ""
     param2 = ""
+    all_alloc_options = list(allocation_suffixes.keys())
+    all_alloc_options.remove("")
     all_parameters = {}
     if len(sys.argv) >= 2:
         param = sys.argv[1]
@@ -143,7 +151,8 @@ def main():
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
-        for alloc_option in allocation_suffixes.keys() :
+        
+        for alloc_option in all_alloc_options :
             for size_option in range(1,17) :
                 filename = codegen_bench_tree_branch(alloc_option,size_option)
                 all_parameters[filename] = {"size_option": size_option, "alloc_option": alloc_option, "iters": 42}
@@ -151,14 +160,14 @@ def main():
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
-        for alloc_option in allocation_suffixes.keys() :
-            for size_option in range(1,4) :
+        for alloc_option in all_alloc_options :
+            for size_option in range(1,17) :
                 filename = codegen_bench_tree_branch(alloc_option,size_option,compilation_time_size=True)
                 all_parameters[filename] = {"size_option": size_option, "alloc_option": alloc_option, "iters": 42, "compilation_time_size": True}
     elif param == "all_l3":
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
-        for alloc_option in allocation_suffixes.keys() :
+        for alloc_option in all_alloc_options :
             for size_option in size_suffixes.keys() :
                 codegen_bench_tree_branch(alloc_option,size_option)
     else :

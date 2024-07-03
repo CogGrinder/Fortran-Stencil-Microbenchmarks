@@ -25,9 +25,7 @@
 #if SIZE_AT_COMPILATION==1
 ! SIZE_AT_COMPILATION is 1
 
-# define NX(BENCHMARK_SIZE_MODE) int(sqrt(real(1024*1024*(BENCHMARK_SIZE_MODE))))
-# define NY(BENCHMARK_SIZE_MODE,var2) 1024*1024*(BENCHMARK_SIZE_MODE) / (var2)
-# define nx NX(BENCHMARK_SIZE_MODE)
-# define ny NY(BENCHMARK_SIZE_MODE,NX(BENCHMARK_SIZE_MODE))
+# define nx (NX)
+# define ny (NY)
 #endif
 ! included .h file
