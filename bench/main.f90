@@ -16,6 +16,11 @@
 ! default SIZE_MODE in Mb
 # define SIZE_MODE 16
 #endif
+! SIZE_AT_COMPILATION only supports SIZE_MODE from 1 to 99 ! TODO: support 3D and 1D
+#ifndef SIZE_AT_COMPILATION
+! default is to determine size at compilation
+# define SIZE_AT_COMPILATION 0
+#endif
 
 ! BENCHMARK_SIZE_MODE is SIZE_MODE except when overruled by L3-relative sizes
 #if         SIZE_MODE == SMALLER_THAN_L3
@@ -61,7 +66,10 @@ PROGRAM main
     implicit none
 
     ! integer :: iters
-    integer :: k,i,iters,array_len,benchmark_size_mode
+    integer :: k,i,iters,array_len
+#if SIZE_AT_COMPILATION == 0
+    integer :: benchmark_size_mode
+#endif
     character(len=32) :: arg
     character(len=7) :: bench_str
     
@@ -103,7 +111,9 @@ PROGRAM main
     ! default values
     iters = ITERS
     array_len = ARRAY_LEN
+#if SIZE_AT_COMPILATION == 0
     benchmark_size_mode = BENCHMARK_SIZE_MODE
+#endif
 
     CALL set_nx_ny(benchmark_size_mode,iters)
     CALL set_1D_size(benchmark_size_mode,array_len,iters)

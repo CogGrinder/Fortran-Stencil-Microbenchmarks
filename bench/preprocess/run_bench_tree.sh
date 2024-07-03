@@ -19,7 +19,10 @@ do
         rm -f out.csv
         ./run.sh
         # remove the anti-optimisation file
-        rm output.txt
+        # used for output of elements of the array being computed
+        # to prevent compiler from removing computations from zero-closure
+        # the choice of a file output is because it removes the verbosity from the terminal output
+        rm tmp.txt
         cd ..
     done
     cd ..

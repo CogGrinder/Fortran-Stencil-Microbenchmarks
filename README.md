@@ -195,22 +195,22 @@ To do soon (TM) :
     - first idea is using factorial
     - second idea is make total number of calculations constant equal to factorial, and divide by approximations of 1Mb, 2Mb etc
 - [ ] Stencils and their documentation
-        - Implement about 4 different stencils
-        - Existing one
-        - Only in x direction
-        - Only in y direction
-        - Larger one (5 x 5)
+    - Implement about 4 different stencils
+    - Existing one
+    - Only in x direction
+    - Only in y direction
+    - Larger one (5 x 5)
 - [ ] How are the iteration bounds given
     - As variable
     - As constant
     - VM: should not matter because it is not counted in the performance metrics (but maybe it matters if it changes cache preloading?)
 - [ ] Different variants (some of them already implemented):
-        - [ ] How is memory allocated? (almost DONE: missing Static one for 2D stencils)
-            - Allocatable
-            - Module
-            - Static
-            - VM: do we need a module version for every variant ? in which case there might need to be more preprocessing and less individual functions to limit coding errors
-                - VM note on 07/03 : I think we should do more 
+    - [ ] How is memory allocated? (almost DONE: missing Static one for 2D stencils)
+        - Allocatable
+        - Module
+        - Static
+        - VM: do we need a module version for every variant ? in which case there might need to be more preprocessing and less individual functions to limit coding errors
+            - VM note on 07/03 : I think we should do more 
 - [x] investigate recompilation cascade at https://fortran-lang.discourse.group/t/the-recompilation-cascade-issue-and-its-solutions/4641/2
     - found out the cause for recompilation was invalid dates
 

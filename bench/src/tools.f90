@@ -8,7 +8,7 @@ MODULE tools
             integer :: id = 42
             character(len=42) :: filename
             
-            filename = 'output.txt'
+            filename = 'tmp.txt'
         
             open(unit=id, file=filename, status='unknown')
             write(id,*) written

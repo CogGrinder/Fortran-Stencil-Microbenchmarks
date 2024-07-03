@@ -26,6 +26,7 @@ MODULE benchmark_parameters
                 write(*,*) nx, ny
                 ! write(*,FMT='(A,F2.2,A)') "Approximation by ", ( 1.0*nx*ny/1024*1024*mode -1 ), "%"
                 iters = 1024 / BENCHMARK_ACCELERATION
+            
             case (smaller_than_l3)
                 nx = 128 * l3_size_in_mib
                 ny = 128
@@ -68,6 +69,7 @@ MODULE benchmark_parameters
                 write(*,*) size
                 ! write(*,FMT='(A,F2.2,A)') "Approximation by ", ( 1.0*nx*ny/1024*1024*mode -1 ), "%"
                 iters = 1024 / BENCHMARK_ACCELERATION
+            
             case (smaller_than_l3)
                 size = 128 * 128 * l3_size_in_mib
                 iters = (31*33 * (1024**2 / 128**2) / BENCHMARK_ACCELERATION)

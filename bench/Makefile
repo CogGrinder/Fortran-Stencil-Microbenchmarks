@@ -13,6 +13,10 @@ ifndef SIZE_MODE
 export SIZE_MODE=NONE
 endif
 
+ifndef SIZE_AT_COMPILATION
+export SIZE_AT_COMPILATION=0
+endif
+
 all: main
 run: run_main
 .PHONY: preprocess postprocess
@@ -45,7 +49,13 @@ ifeq ($(SIZE_MODE_IS_NUMBER),1)
 	SUFFIX.${ALLOC_MODE}.${SIZE_MODE} := ${SUFFIX.${ALLOC_MODE}}_${shell printf "%02d" $(SIZE_MODE)}Mb
 endif
 
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}. := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.1 := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}_sizecompiled
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.0 := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}_sizenotcompiled
+
+
 MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
+# MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}
 
 # add .exe to executable name if Windows
 ifeq ($(OS),Windows_NT)
@@ -83,7 +93,7 @@ $(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
 # @./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)
