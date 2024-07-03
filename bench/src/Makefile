@@ -38,7 +38,11 @@ BENCH_LIB := -L$(LIB_DIR) -l:library.a
 PAPI_LIB:=-L. -lpapi
 
 # set PERF_REGIONS_FOLDER, default is in the folder next to bench
+ifdef PERF_REGIONS
+PERF_REGIONS_FOLDER=../$(PERF_REGIONS)
+else
 PERF_REGIONS_FOLDER:=../../perf_regions
+endif
 
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src

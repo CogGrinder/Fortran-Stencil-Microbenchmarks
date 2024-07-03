@@ -18,7 +18,7 @@
 #endif
 ! SIZE_AT_COMPILATION only supports SIZE_MODE from 1 to 99 ! TODO: support 3D and 1D
 #ifndef SIZE_AT_COMPILATION
-! default is to determine size at compilation
+! default is to not determine size at compilation
 # define SIZE_AT_COMPILATION 0
 #endif
 
