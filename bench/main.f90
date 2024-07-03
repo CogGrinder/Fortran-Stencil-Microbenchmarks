@@ -12,30 +12,8 @@
 ! BEWARE : benchmark_size_mode isn't compile time fixed, it only has a default option, unlike bench_id
 ! TODO : make an option to fix at compile time / keep flexible for different compiler optimisations
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#ifndef SIZE_MODE
-! default SIZE_MODE in Mb
-# define SIZE_MODE 16
-#endif
-! SIZE_AT_COMPILATION only supports SIZE_MODE from 1 to 99 ! TODO: support 3D and 1D
-#ifndef SIZE_AT_COMPILATION
-! default is to not determine size at compilation
-# define SIZE_AT_COMPILATION 0
-#endif
 
-! BENCHMARK_SIZE_MODE is SIZE_MODE except when overruled by L3-relative sizes
-#if         SIZE_MODE == SMALLER_THAN_L3
-# define BENCHMARK_SIZE_MODE 100
-#elif       SIZE_MODE == SLIGHTLY_SMALLER_THAN_L3
-# define BENCHMARK_SIZE_MODE 101
-#elif       SIZE_MODE == SLIGHTLY_BIGGER_THAN_L3
-# define BENCHMARK_SIZE_MODE 102
-#elif       SIZE_MODE == BIGGER_THAN_L3
-# define BENCHMARK_SIZE_MODE 103
-#elif       SIZE_MODE == NONE
-# define BENCHMARK_SIZE_MODE 0
-#else
-# define BENCHMARK_SIZE_MODE (int(SIZE_MODE))
-#endif
+#include "src/benchmark_compilation_fixed_parameters.h"
 
 ! TODO : change from BENCH_ID paradigm
 #if     ALLOC_MODE == ALLOC
@@ -67,9 +45,9 @@ PROGRAM main
 
     ! integer :: iters
     integer :: k,i,iters,array_len
-#if SIZE_AT_COMPILATION == 0
+! #if SIZE_AT_COMPILATION == 0
     integer :: benchmark_size_mode
-#endif
+! #endif
     character(len=32) :: arg
     character(len=7) :: bench_str
     
@@ -203,9 +181,14 @@ USE benchmark_parameters
     if (     BENCH_ID == BENCH_FIXED_ARRAY              &
         .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY        &
         .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY_MODULE) then
-        WRITE(*,*) "Mem size: ", array_len*0.001*sizeof(real) ," KByte"
+        WRITE(*,*) "Mem size: ", array_len*0.001 ," KByte"
     else
-        WRITE(*,*) "Mem size: ", nx*ny*0.001*sizeof(real) ," KByte"
+        nxx = nx
+        nyy = ny
+        ! write(*,*) "nx", nxx
+        ! write(*,*) "ny", nyy
+        WRITE(*,*) "Mem size: ", nxx* &
+                                nyy*0.001 ," KByte"
     end if
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
@@ -379,8 +362,10 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,ny))
-    allocate(result(nx,ny) , source=-1.0_dp)
+    allocate(array(nx,&
+                    ny))
+    allocate(result(nx,&
+                    ny) , source=-1.0_dp)
 
     do j = 1, ny
         do i = 1, nx
@@ -413,8 +398,10 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),&
+                                    modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),&
+                                    modulo(42,ny)))
 
 end SUBROUTINE COMPUTATION_2D_JI
 
@@ -431,8 +418,10 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
     integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,ny))
-    allocate(result(nx,ny) , source=-1.0_dp)
+    allocate(array(nx,&
+                    ny))
+    allocate(result(nx,&
+                    ny) , source=-1.0_dp)
 
     do i = 1, nx
         do j = 1, ny
@@ -464,7 +453,9 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),&
+                                    modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),&
+                                    modulo(42,ny)))
 
 end SUBROUTINE COMPUTATION_2D_IJ

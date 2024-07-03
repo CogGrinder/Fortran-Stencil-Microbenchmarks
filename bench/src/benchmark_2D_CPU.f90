@@ -1,3 +1,4 @@
+#include "benchmark_compilation_fixed_parameters.h"
 ! #define DEBUG
 ! #define DEBUG_PERF
 
@@ -24,8 +25,10 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
     integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,ny))
-    allocate(result(nx,ny) , source=-1.0_dp)
+    allocate(array(nx,&
+                    ny))
+    allocate(result(nx,&
+                    ny) , source=-1.0_dp)
 
     do j = 1, ny
         do i = 1, nx
@@ -58,8 +61,10 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),&
+                                    modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),&
+                                    modulo(42,ny)))
 
 end SUBROUTINE COMPUTATION_2D_MODULE
 
@@ -77,8 +82,10 @@ SUBROUTINE COMPUTATION_2D_MODULE_FIXED(bench_id,bench_str,array_len)
     integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,ny))
-    allocate(result(nx,ny) , source=-1.0_dp)
+    allocate(array(nx,&
+                    ny))
+    allocate(result(nx,&
+                    ny) , source=-1.0_dp)
 
     do j = 1, ny
         do i = 1, nx
@@ -111,8 +118,10 @@ SUBROUTINE COMPUTATION_2D_MODULE_FIXED(bench_id,bench_str,array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),&
+                                    modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),&
+                                    modulo(42,ny)))
 
 end SUBROUTINE COMPUTATION_2D_MODULE_FIXED
 

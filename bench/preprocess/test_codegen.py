@@ -8,6 +8,8 @@ import shutil
 import json
 from typing import Union
 
+DEBUG = False
+
 allocation_suffixes = { "ALLOC"                 : "_alloc",
                         "STATIC"                : "_static",
                         ""                      : "_defaultalloc"}
@@ -23,6 +25,8 @@ size_mode_number = {k: v+100 for v, k in enumerate(size_suffixes.keys())}
 tree_depth = 2
 src = pathlib.Path("../src/")
 mainfile = pathlib.Path("../main.f90")
+if DEBUG:
+    mainfile = pathlib.Path("../main.test.f90")
 makefile = pathlib.Path("../Makefile")
 
 
@@ -80,27 +84,25 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
 export ALLOC_MODE="{alloc_option}"
 export SIZE_MODE="{size_option}"
+export SIZE_AT_COMPILATION="{int(compilation_time_size)}"
 
-make -C $BENCH_MAKE_DIR bin/bench{allocation_suffixes[alloc_option]}{size_suffix} {"PERF_REGIONS=../"+ "../"*(tree_depth+2)+"perf_regions" if compilation_time_size else ""}
+make -C $BENCH_MAKE_DIR bin/bench{allocation_suffixes[alloc_option]}{size_suffix} {"_PERF_REGIONS_FOLDER=../"+ "../"*(tree_depth+2)+"perf_regions" if compilation_time_size else ""}
 
 filename=out
 
-# for sizemode in 0 1 2 3
-# do
-    echo "Running mode {size_suffix}..."    
-    ls
-    # ./$BENCH_EXECUTABLE
-    # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
-    while IFS= read -r line; do
-        echo "$line"
-        if [ "${{line:0:1}}" != " " ]
-        then
-            echo "$line" >> $filename.csv
-        fi
-        # grep -o 'action'
-    done < <( ./$BENCH_EXECUTABLE iters={iters} )
-    # |  grep -A100 Section | paste >> $filename.csv
-# done
+echo "Running mode {size_suffix}..."    
+ls
+# ./$BENCH_EXECUTABLE
+# thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
+while IFS= read -r line; do
+    echo "$line"
+    if [ "${{line:0:1}}" != " " ]
+    then
+        echo "$line" >> $filename.csv
+    fi
+    # grep -o 'action'
+done < <( ./$BENCH_EXECUTABLE iters={iters} )
+# |  grep -A100 Section | paste >> $filename.csv
 echo
 # cat $filename.csv
 """)
@@ -137,7 +139,7 @@ def main():
             print("Cleaned")
         else :
             print("Aborted")
-    elif param == "all_no_compilation_time":
+    elif param in ["all_old","all_no_compilation_time"]:
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")

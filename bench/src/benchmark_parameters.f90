@@ -1,10 +1,26 @@
 ! this value is a power of 2 between 1 and 32 - recommended is 32
 #define BENCHMARK_ACCELERATION 32
+#include "benchmark_compilation_fixed_parameters.h"
 
 MODULE benchmark_parameters
+
     ! here set your processor's L3 cache size in Mib - useful for modes 100 to 103
     integer, parameter :: l3_size_in_mib = 6
 
+#if SIZE_AT_COMPILATION==1
+    contains
+    SUBROUTINE set_nx_ny(mode,iters)
+        integer, intent(in) :: mode
+        integer, intent(in) :: iters
+        write(*,*) "SIZE_AT_COMPILATION successfully set to 1"
+    END SUBROUTINE
+    SUBROUTINE set_1D_size(mode,size,iters)
+        integer, intent(in) :: mode
+        integer, intent(in) :: size
+        integer, intent(in) :: iters
+        write(*,*) "SIZE_AT_COMPILATION successfully set to 1"
+    END SUBROUTINE
+#else
     ! nx is the i/row-size
     integer :: nx = 128
     ! ny is the j/column-size
@@ -87,5 +103,5 @@ MODULE benchmark_parameters
                 " defaulting to macro value"
         end select
     END SUBROUTINE
-
+#endif /* end of SIZE_AT_COMPILATION*/
 END MODULE benchmark_parameters

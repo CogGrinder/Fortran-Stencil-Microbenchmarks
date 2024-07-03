@@ -79,8 +79,8 @@ BENCH_LIB := -L$(LIB_DIR) -l:library.a
 PAPI_LIB:=-L. -lpapi
 
 # set PERF_REGIONS_FOLDER, default is in the folder next
-ifdef PERF_REGIONS
-PERF_REGIONS_FOLDER:=$(PERF_REGIONS)
+ifdef _PERF_REGIONS_FOLDER
+PERF_REGIONS_FOLDER:=$(_PERF_REGIONS_FOLDER)
 else
 PERF_REGIONS_FOLDER:=../perf_regions
 endif
@@ -94,10 +94,12 @@ PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 ####################### main compilation #######################
 main : $(BIN_DIR)/$(MAIN)
 $(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
+# $(BIN_DIR)/$(MAIN) : main.test.f90 | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
 # @./perf_regions_instrumentation.py cleanup
 	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+# ${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.test.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION}
 	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)
