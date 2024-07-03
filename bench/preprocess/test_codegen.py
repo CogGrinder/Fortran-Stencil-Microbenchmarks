@@ -21,7 +21,7 @@ size_mode_number = {k: v+100 for v, k in enumerate(size_suffixes.keys())}
 tree_depth = 2
 
 
-def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str]):
+def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str], iters=42):
     """ TODO: Comment function
     """
     if alloc_option in allocation_suffixes.keys()\
@@ -80,17 +80,17 @@ filename=out
             echo "$line" >> $filename.csv
         fi
         # grep -o 'action'
-    done < <( ./$BENCH_EXECUTABLE )
+    done < <( ./$BENCH_EXECUTABLE iters={iters} )
     # |  grep -A100 Section | paste >> $filename.csv
 # done
 echo
 # cat $filename.csv
 """)
         f.close()
+        return filename
     else:
         raise ValueError("Parameter wrong - read script for more information")
 
-    return
 
 def file_test():
     f = open("test_codegen_run.sh", "r")
@@ -103,6 +103,7 @@ def main():
     # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
     param = ""
     param2 = ""
+    all_parameters = {}
     if len(sys.argv) >= 2:
         param = sys.argv[1]
     if len(sys.argv) >= 3:
@@ -122,11 +123,10 @@ def main():
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
-        all_parameters = {}
         for alloc_option in allocation_suffixes.keys() :
             for size_option in range(1,17) :
-                # TODO: all_parameters[param_id] = {"size_otion": size_option, alloc_otion: ...}
-                codegen_bench_tree_branch(alloc_option,size_option)
+                filename = codegen_bench_tree_branch(alloc_option,size_option)
+                all_parameters[filename] = {"size_option": size_option, "alloc_option": alloc_option, "iters": 42}
     elif param == "all_l3":
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
@@ -136,7 +136,9 @@ def main():
     else :
         print(f"Creating {phrase} benchmark script...")
         codegen_bench_tree_branch(param,param2)
-    json.dump(all_parameters)
+    filename = "all_benchmark_parameters.json"
+    f = open(filename, "w")
+    print(json.dump(all_parameters,f,sort_keys=True, indent=4))
     return 0
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html

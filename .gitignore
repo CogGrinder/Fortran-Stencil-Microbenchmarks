@@ -15,6 +15,7 @@ perf_regions/src/perf_regions_fortran.mod
 bench/*.csv
 bench/preprocess/bench_tree
 bench/preprocess/test_codegen_run.sh
+bench/preprocess/all_benchmark_parameters.json
 bench/preprocess/array_alloc.csv
 bench/postprocess/data.csv
 bench/postprocess/data.old.csv

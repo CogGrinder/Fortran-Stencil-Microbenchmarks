@@ -203,13 +203,16 @@ To do soon (TM) :
 - [ ] How are the iteration bounds given
     - As variable
     - As constant
+    - VM: should not matter because it is not counted in the performance metrics (but maybe it matters if it changes cache preloading?)
 - [ ] Different variants (some of them already implemented):
         - [ ] How is memory allocated? (almost DONE: missing Static one for 2D stencils)
             - Allocatable
             - Module
             - Static
             - VM: do we need a module version for every variant ? in which case there might need to be more preprocessing and less individual functions to limit coding errors
-- [ ] investigate recompilation cascade at https://fortran-lang.discourse.group/t/the-recompilation-cascade-issue-and-its-solutions/4641/2
+                - VM note on 07/03 : I think we should do more 
+- [x] investigate recompilation cascade at https://fortran-lang.discourse.group/t/the-recompilation-cascade-issue-and-its-solutions/4641/2
+    - found out the cause for recompilation was invalid dates
 
 
 ### Objectives from discussion on the 06/04
