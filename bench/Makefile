@@ -28,7 +28,7 @@ preprocess:
 post:postprocess
 postprocessing:postprocess
 postprocess:
-	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py;./run_bench_tree.sh
+	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py
 
 
 # Here is the selector for which main to compile
@@ -54,8 +54,8 @@ SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.1 := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}_size
 SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.0 := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}_sizenotcompiled
 
 
-MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
-# MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}
+# MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
+MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}
 
 # add .exe to executable name if Windows
 ifeq ($(OS),Windows_NT)
