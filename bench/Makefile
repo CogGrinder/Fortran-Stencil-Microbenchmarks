@@ -131,15 +131,16 @@ MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
 MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))
 # using .SECONDARY
 .SECONDARY : $(MODULE_O) 
-.LOW_RESOLUTION_TIME : $(MODULE_f90)
+# .LOW_RESOLUTION_TIME : $(MODULE_f90)
 # see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 $(LIB_DIR)/library.a : $(MODULE_O)
 	make -C src library
 	@touch $(LIB_DIR)/library.a
-$(MODULE_O) : $(MODULE_f90)
-	@echo .f90 files newer than .o files :
-	@echo $?
-	make -C src $(patsubst $(BUILD_DIR)/%.o, ../$(BUILD_DIR)/%.o, $@)
+$(MODULE_O) : #$(MODULE_f90)
+# @echo .f90 files newer than .o files :
+# @echo $?
+	make -C src library --silent
+#$(patsubst $(BUILD_DIR)/%.o, ../$(BUILD_DIR)/%.o, $@)
 
 # library: $(LIB_DIR)/library.a
 

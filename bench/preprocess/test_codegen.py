@@ -1,3 +1,4 @@
+import argparse
 import sys
 import os
 import shutil
@@ -8,6 +9,8 @@ import shutil
 import json
 from typing import Union
 import math
+
+ACCURACY_SCORE = 1
 
 DEBUG = False
 
@@ -43,6 +46,13 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str], i
     """
     nx=0
     ny=0
+    iters=42
+    if size_option in size_suffixes.keys() or int(size_option) == 0:
+        iters = math.ceil(ACCURACY_SCORE*32)
+    else:
+        # max is used to insure there is at least 1 iteration
+        iters = max(1,int(ACCURACY_SCORE*100//size_option))
+
     if alloc_option in allocation_suffixes.keys()\
         and (size_option in size_suffixes.keys() or int(size_option) in range(0,100)) :
 
@@ -73,7 +83,7 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str], i
         # see in the f.write() conditionals to change the make directory and BENCH_EXECUTABLE bin directory
         if is_compilation_time_size :
             fulldirectory_absolute = pathlib.Path(fulldirectory).resolve()
-            print(fulldirectory_absolute)
+            # print(fulldirectory_absolute)
             shutil.copytree(src.resolve(),str(fulldirectory_absolute)+"/src",dirs_exist_ok=True)
             shutil.copy2(mainfile.resolve(),fulldirectory_absolute)
             shutil.copy2(makefile.resolve(),fulldirectory_absolute)
@@ -133,7 +143,7 @@ echo
 # cat $filename.csv
 """)
         f.close()
-        return filename, nx, ny
+        return filename, iters, nx, ny
     else:
         raise ValueError("Parameter wrong - read script for more information")
 
@@ -144,6 +154,9 @@ def file_test():
     return
 
 def main():
+    # courtesy of https://stackoverflow.com/questions/20063/whats-the-best-way-to-parse-command-line-arguments
+    parser = argparse.ArgumentParser(description="Code generator for benchmarking with various options in a tree structure")
+
     phrase = shlex.join(sys.argv[1:])
     # file_test()
     # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
@@ -153,13 +166,36 @@ def main():
     all_alloc_options = list(allocation_suffixes.keys())
     all_alloc_options.remove("")
     all_parameters = {}
-    if len(sys.argv) >= 2:
-        param1 = sys.argv[1]
-    if len(sys.argv) >= 3:
-        param2 = sys.argv[2]
-    if len(sys.argv) >= 4:
-        param2 = sys.argv[3]
+    parser.add_argument('param1', nargs='?',
+                    help=f'Can be all, all_old, all_l3 - can also be a alloc_option in {" ".join(list(allocation_suffixes.keys()))}')
+    # if len(sys.argv) >= 2:
+    #     param1 = sys.argv[1]
+    parser.add_argument('param2', nargs='?',
+                    help=f'A size_option in {" ".join(list(size_suffixes.keys()))} or between 0 and 99')
+    # if len(sys.argv) >= 3:
+    #     param2 = sys.argv[2]
+    parser.add_argument('param3', nargs='?', type=bool,
+                help=f'A compilation time size option within {" ".join(list(map(str,is_compilation_time_size_suffixes.keys())))}')
+    # if len(sys.argv) >= 4:
+    #     param3 = sys.argv[3]
+    # Optional argument
+    parser.add_argument('--ACCURACY_SCORE', type=float,
+                        help='An optional ACCURACY_SCORE parameter that accelerates the bench if below 1 and makes it more accurate above 1')
     
+    args = parser.parse_args()
+    if args.ACCURACY_SCORE is not None and args.ACCURACY_SCORE < 0:
+        parser.error("ACCURACY_SCORE cannot be lower than 0")
+    
+    if args.param1 is not None:
+        param1 = args.param1
+    print(param1)
+    if args.param2 is not None:
+        param2 = args.param2
+    print(param2)
+    if args.param3 is not None:
+        param3 = args.param3
+    print(param3)
+
     if not pathlib.Path("bench_tree").is_dir() :
         os.mkdir("bench_tree")
     
@@ -177,10 +213,10 @@ def main():
         
         for alloc_option in all_alloc_options :
             for size_option in range(1,17) :
-                filename,_,_ = codegen_bench_tree_branch(alloc_option,size_option)
+                filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option)
                 all_parameters[filename] = {"size_option": size_option,
                                             "alloc_option": alloc_option,
-                                            "iters": 42,
+                                            "iters": iters,
                                             "is_compilation_time_size": False}
     elif param1 in ["all","all_compilation_time"]:
         # shutil.rmtree("bench_tree")
@@ -189,13 +225,13 @@ def main():
         for alloc_option in all_alloc_options :
             for size_option in range(1,17) :
                 for is_compilation_time_size in [False,True] :
-                    filename, nx, ny  = codegen_bench_tree_branch(alloc_option,size_option,\
+                    filename, iters, nx, ny  = codegen_bench_tree_branch(alloc_option,size_option,\
                                                 is_compilation_time_size=is_compilation_time_size)
                     all_parameters[filename] = {"size_option": size_option,
                                                 "nx": nx,
                                                 "ny": ny,
                                                 "alloc_option": alloc_option,
-                                                "iters": 42,
+                                                "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size}
     elif param1 == "all_l3":
         # shutil.rmtree("bench_tree")
@@ -206,17 +242,18 @@ def main():
         for alloc_option in all_alloc_options :
             for size_option in all_l3_relative_size_options :
                 for is_compilation_time_size in [False,True] :
-                    filename, nx, ny = codegen_bench_tree_branch(alloc_option,size_option,\
+                    filename, iters, nx, ny = codegen_bench_tree_branch(alloc_option,size_option,\
                                                 is_compilation_time_size=is_compilation_time_size)
                     all_parameters[filename] = {"size_option": size_option,
                                                 "alloc_option": alloc_option,
-                                                "iters": 42,
+                                                "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size}
     else :
         print(f"Creating {phrase} benchmark script...")
-        all_parameters[codegen_bench_tree_branch(param1,param2,param3)] = {"size_option": param1,
+        filename,iters,_,_ = codegen_bench_tree_branch(param1,param2,param3)
+        all_parameters[filename] = {"size_option": param1,
                                                 "alloc_option": param2,
-                                                "iters": 42,
+                                                "iters": iters,
                                                 "is_compilation_time_size": param3}
     # JSON dump of all parameters used
     filename = "all_benchmark_parameters.json"
