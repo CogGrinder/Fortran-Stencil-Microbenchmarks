@@ -195,14 +195,26 @@ def main():
                                                 "is_compilation_time_size": is_compilation_time_size}
     elif param1 == "all_l3":
         # shutil.rmtree("bench_tree")
-        print(f"Creating all benchmark scripts...")
+        all_l3_relative_size_options = list(size_suffixes.keys())
+        all_l3_relative_size_options.remove("")
+        # TODO : pass L3 size as compilation/execution time parameter - using grep and command
+        print(f"Creating all L3-relative benchmark scripts...")
         for alloc_option in all_alloc_options :
-            for size_option in size_suffixes.keys() :
+            for size_option in all_l3_relative_size_options :
                 for is_compilation_time_size in [False,True] :
-                    codegen_bench_tree_branch(alloc_option,size_option,is_compilation_time_size=is_compilation_time_size)
+                    filename = codegen_bench_tree_branch(alloc_option,size_option,\
+                                                is_compilation_time_size=is_compilation_time_size)
+                    all_parameters[filename] = {"size_option": size_option,
+                                                "alloc_option": alloc_option,
+                                                "iters": 42,
+                                                "is_compilation_time_size": is_compilation_time_size}
     else :
         print(f"Creating {phrase} benchmark script...")
-        codegen_bench_tree_branch(param1,param2)
+        all_parameters[codegen_bench_tree_branch(param1,param2,param3)] = {"size_option": param1,
+                                                "alloc_option": param2,
+                                                "iters": 42,
+                                                "is_compilation_time_size": param3}
+    # JSON dump of all parameters used
     filename = "all_benchmark_parameters.json"
     f = open(filename, "w")
     json.dump(all_parameters,f,sort_keys=True, indent=4)

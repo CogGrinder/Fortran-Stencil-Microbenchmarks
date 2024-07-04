@@ -18,7 +18,7 @@ do
         directories_3=$(ls -d */)
         echo $directories_3
         echo
-        sleep 2
+        # sleep 2
         for directory_3 in $directories_3
         do
             cd $(basename $directory_3)

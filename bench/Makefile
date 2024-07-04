@@ -25,11 +25,16 @@ preprocessing:preprocess
 preprocess:
 	cd preprocess;python3 test_codegen.py all;./run_bench_tree.sh
 
+pre_old:preprocess_old
+preprocess_old:
+	cd preprocess;python3 test_codegen.py all_old;./run_bench_tree.sh
+
 post:postprocess
 postprocessing:postprocess
 postprocess:
 	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py
-
+clean_pre:
+	cd preprocess;python3 test_codegen.py clean
 
 # Here is the selector for which main to compile
 SUFFIX.:=

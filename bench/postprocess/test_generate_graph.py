@@ -97,7 +97,7 @@ def show_graph_2D() :
                 plt.bar(tickleft_alloc + offset,data_alloc[i],width=sub_width, label=label, alpha=1)
                 plt.bar(tickleft_static + offset,data_static[i],width=sub_width/3, label="static variants", alpha=1, color='grey')
                 index += 1
-        plt.yscale('log')
+        # plt.yscale('log')
         # plt.xticks(rotation=90)
         plt.xticks(ticks=tickleft_static +sub_width*(len(labels)-2 -1)/2.0,labels=benchnames, rotation=60, ha='right')
         plt.legend(bbox_to_anchor=(1.05, 1),
