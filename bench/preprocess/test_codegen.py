@@ -41,6 +41,8 @@ makefile = pathlib.Path("../Makefile")
 def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str], iters=42, is_compilation_time_size=False):
     """ TODO: Comment function
     """
+    nx=0
+    ny=0
     if alloc_option in allocation_suffixes.keys()\
         and (size_option in size_suffixes.keys() or int(size_option) in range(0,100)) :
 
@@ -131,7 +133,7 @@ echo
 # cat $filename.csv
 """)
         f.close()
-        return filename
+        return filename, nx, ny
     else:
         raise ValueError("Parameter wrong - read script for more information")
 
@@ -175,7 +177,7 @@ def main():
         
         for alloc_option in all_alloc_options :
             for size_option in range(1,17) :
-                filename = codegen_bench_tree_branch(alloc_option,size_option)
+                filename,_,_ = codegen_bench_tree_branch(alloc_option,size_option)
                 all_parameters[filename] = {"size_option": size_option,
                                             "alloc_option": alloc_option,
                                             "iters": 42,
@@ -187,9 +189,11 @@ def main():
         for alloc_option in all_alloc_options :
             for size_option in range(1,17) :
                 for is_compilation_time_size in [False,True] :
-                    filename = codegen_bench_tree_branch(alloc_option,size_option,\
+                    filename, nx, ny  = codegen_bench_tree_branch(alloc_option,size_option,\
                                                 is_compilation_time_size=is_compilation_time_size)
                     all_parameters[filename] = {"size_option": size_option,
+                                                "nx": nx,
+                                                "ny": ny,
                                                 "alloc_option": alloc_option,
                                                 "iters": 42,
                                                 "is_compilation_time_size": is_compilation_time_size}
@@ -202,7 +206,7 @@ def main():
         for alloc_option in all_alloc_options :
             for size_option in all_l3_relative_size_options :
                 for is_compilation_time_size in [False,True] :
-                    filename = codegen_bench_tree_branch(alloc_option,size_option,\
+                    filename, nx, ny = codegen_bench_tree_branch(alloc_option,size_option,\
                                                 is_compilation_time_size=is_compilation_time_size)
                     all_parameters[filename] = {"size_option": size_option,
                                                 "alloc_option": alloc_option,

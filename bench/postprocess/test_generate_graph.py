@@ -2,6 +2,7 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
 import sys
+import json
 
 import csv
 
@@ -11,11 +12,14 @@ DEBUG = False
 # global data
 # global benchnames
 
-def main():
+def import_data(normalise: bool):
     global labels
     global data
     global data_masked
     global benchnames
+    f = open("../preprocess/all_benchmark_parameters.json", "r")
+    param_dict = json.load(f)
+
     with open('data.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t', quotechar='|')
         
@@ -23,21 +27,28 @@ def main():
         data = [[] for i in range(len(labels)) ]
         benchnames = []
         for row in reader:
-            benchname = row[0].lstrip("bench_execution_")
+            benchname = row[0]
+            benchname = benchname.lstrip("bench_tree/bench_execution_")
+            benchname = benchname.rstrip("/run.sh")
+            benchname = benchname.replace("/","")
+            print(benchname)
             if not 'default' in benchname:
                 benchnames.append(benchname)
                 for j, number in enumerate(row[1:]):
-                    # if not labels[j] in ['SPOILED','COUNTER'] :
-                    if not labels[j]=="WALLCLOCKTIME":
-                        data[j].append(int(float(number)))
+                    imported_data = float(number)
+                    if labels[j]=="WALLCLOCKTIME":
                         if (DEBUG):
-                            print(int(float(number)),end="int ")
+                            print(imported_data,end="flo ")        
                     else :
-                        data[j].append(float(number))
+                        imported_data = int(imported_data)
                         if (DEBUG):
-                            print(float(number),end="flo ")        
-            if (DEBUG):
-                print()
+                            print(imported_data,end="int ")
+                    if normalise:
+                        # print(param_dict[benchname]["iters"])
+                        # print(param_dict[benchname]["size_option"])
+                        imported_data /= param_dict[row[0]]["iters"] * param_dict[row[0]]["nx"] * param_dict[row[0]]["ny"]
+                    data[j].append(imported_data)
+                            
 
         data = np.array(data)
         global label_mask 
@@ -53,7 +64,7 @@ def main():
             print(benchnames)
         show_graph_2D()
         # show_graph_3D_2()
-
+        
 def show_graph_2D() :
         global labels
         global data
@@ -172,6 +183,12 @@ def show_graph_3D_2() :
         ax.legend()
         # plt.tight_layout()
         plt.show()
+
+def main():
+    normalise = True
+    if len(sys.argv) >= 2:
+        normalise = sys.argv[1]
+    import_data(normalise)
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html
 if __name__ == '__main__':
