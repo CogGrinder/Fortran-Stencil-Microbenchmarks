@@ -1,0 +1,4 @@
+Performance counters profiling:
+----------------------
+Section	PAPI_L1_TCM	PAPI_L2_TCM	PAPI_L3_TCM	SPOILED	WALLCLOCKTIME	COUNTER
+2D_MODU	1	2	3	0	1.1e-01	42

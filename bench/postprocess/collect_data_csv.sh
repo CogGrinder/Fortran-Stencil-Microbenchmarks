@@ -53,7 +53,7 @@ do
                 then
                     echo "$line"
                     # TODO : replace with json benchmark name or executable name
-                    echo -e "$(basename $directory_1)$(basename $directory_2)$(basename $directory_3)\t${line:9}" >> $OUTPUT_FILE
+                    echo -e "$(basename $directory_1)$(basename $directory_2)$(basename $directory_3)\t${line:8}" >> $OUTPUT_FILE
                 fi
                 # grep -o 'action'
             done < <( cat out.csv )

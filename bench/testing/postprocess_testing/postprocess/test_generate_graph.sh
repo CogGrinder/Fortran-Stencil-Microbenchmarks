@@ -1,0 +1,1 @@
+python3 ./../../../postprocess/test_generate_graph.py
