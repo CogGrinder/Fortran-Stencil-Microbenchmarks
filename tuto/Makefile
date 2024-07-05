@@ -4,11 +4,11 @@ all: tuto
 run: run_tuto
 clean: clean_tuto
 
+# testing regex support in make
 string1 := a20
 bool1 :=$(shell echo "$(string1)" | grep -Eq '^[0-9]*$$' && echo "matched" || echo "did not match")
 string2 := 4269
 bool2 :=$(shell echo "$(string2)" | grep -Eq '^[0-9]*$$' && echo "matched" || echo "did not match")
-
 reg1 :=$(shell echo $(string1) | grep -Eo '[0-9]*' | xargs echo)
 reg2 :=$(shell echo $(string2) | grep -Eo '[0-9]*' | xargs echo)
 
@@ -30,7 +30,7 @@ else
 	export value2="not a number$(bool2)"
 endif
 
-
+# testing regex support in make
 test:
 	echo $(string1) | grep -Eo '[0-9]*' | xargs echo
 	echo $(string2) | grep -Eo '[0-9]*' | xargs echo
@@ -44,8 +44,16 @@ test:
 	@echo $(reg2)
 	@echo $(VAR.0)
 
-
-
+# testing scope of variables in make
+# ALLOC_MODE?=0
+ifndef ALLOC_MODE
+export ALLOC_MODE=0
+endif
+test2:
+	make -C dummy_folder
+	make -C dummy_folder ALLOC_MODE=${ALLOC_MODE}
+	${MAKE} -C dummy_folder
+	${MAKE} -C dummy_folder ALLOC_MODE=${ALLOC_MODE}
 
 
 ECHO:= echo

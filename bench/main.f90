@@ -50,6 +50,7 @@ PROGRAM main
 ! #endif
     character(len=32) :: arg
     character(len=7) :: bench_str
+    character(len=32) :: kernel_name
     
     
     INTERFACE
@@ -125,6 +126,19 @@ CALL perf_regions_init()
     WRITE(*,*) "**************************************"
 
     write (*,*) 'Calling benchmark of id ', BENCH_ID
+    select case (KERNEL_MODE)
+        case (DEFAULT_KERNEL)
+            kernel_name = 'default_kernel'
+        case (X_KERNEL)
+            kernel_name = 'x direction kernel'
+        case (Y_KERNEL)
+            kernel_name = 'y direction kernel'
+        case (SIZE_5_KERNEL)
+            kernel_name = 'size 5 kernel'
+        case DEFAULT
+            kernel_name = 'default_kernel'
+    end select
+    write (*,*) 'Using ', kernel_name
     
     ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
     select case (BENCH_ID)
@@ -381,12 +395,24 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do j = 1 + sten_len/2, ny - sten_len/2
         do i = 1 + sten_len/2, nx - sten_len/2
+#ifdef NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
                         + 3.0_dp * array(i    , j    ) &
                         + 4.0_dp * array(i + 1, j - 1) &
                         + 5.0_dp * array(i + 1, j + 1)
             result(i,j) = result(i,j)/15.0_dp
+#else
+# if   KERNEL_MODE == X_KERNEL
+#  include "kernels/kernel_2D_x.h"
+# elif KERNEL_MODE == Y_KERNEL
+#  include "kernels/kernel_2D_y.h"
+# elif KERNEL_MODE == SIZE_5_KERNEL
+#  include "kernels/kernel_2D_size_5.h"
+# else
+#  include "kernels/kernel_2D_default.h"
+# endif /*KERNEL_MODE*/
+#endif /*NO_INCLUDE*/
         end do
     end do
     ! we ignore edges in the computation which explains the shift in indexes
@@ -436,12 +462,24 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do i = 1 + sten_len/2, nx - sten_len/2
         do j = 1 + sten_len/2, ny - sten_len/2
+#ifdef NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
                         + 3.0_dp * array(i    , j    ) &
                         + 4.0_dp * array(i + 1, j - 1) &
                         + 5.0_dp * array(i + 1, j + 1)
             result(i,j) = result(i,j)/15.0_dp
+#else
+# if   KERNEL_MODE == X_KERNEL
+#  include "kernels/kernel_2D_x.h"
+# elif KERNEL_MODE == Y_KERNEL
+#  include "kernels/kernel_2D_y.h"
+# elif KERNEL_MODE == SIZE_5_KERNEL
+#  include "kernels/kernel_2D_size_5.h"
+# else
+#  include "kernels/kernel_2D_default.h"
+# endif /*KERNEL_MODE*/
+#endif /*NO_INCLUDE*/
         end do
     end do
     ! we ignore edges in the computation which explains the shift in indexes

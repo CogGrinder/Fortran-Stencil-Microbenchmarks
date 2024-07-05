@@ -3,7 +3,7 @@ cd bench_tree
 directories_1=$(ls -d */)
 echo $directories_1
 echo
-# sleep 0.5
+# sleep 1
 for directory_1 in $directories_1
 do
     cd $(basename $directory_1)
@@ -22,14 +22,23 @@ do
         for directory_3 in $directories_3
         do
             cd $(basename $directory_3)
-            # remove previous data
-            rm -f out.csv
-            ./run.sh
-            # remove the anti-optimisation file
-            # used for output of elements of the array being computed
-            # to prevent compiler from removing computations from zero-closure
-            # the choice of a file output is because it removes the verbosity from the terminal output
-            rm tmp.txt
+            directories_4=$(ls -d */)
+            echo $directories_4
+            echo
+            # sleep 2
+            for directory_4 in $directories_4
+            do
+                cd $(basename $directory_4)
+                # remove previous data
+                rm -f out.csv
+                ./run.sh
+                # remove the anti-optimisation file
+                # used for output of elements of the array being computed
+                # to prevent compiler from removing computations from zero-closure
+                # the choice of a file output is because it removes the verbosity from the terminal output
+                rm tmp.txt
+                cd ..
+            done
             cd ..
         done
         cd ..

@@ -3,6 +3,7 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import sys
 import json
+import datetime
 
 import csv
 
@@ -28,17 +29,20 @@ def import_data(normalise: bool):
         benchnames = []
         for row in reader:
             benchname = row[0]
-            benchname = benchname.lstrip("bench_tree/bench_execution_")
+            benchname = benchname.lstrip("bench_tree/bench_")
             benchname = benchname.rstrip("/run.sh")
             benchname = benchname.replace("/","")
-            print(benchname)
-            if not 'default' in benchname:
+            if DEBUG:
+                print(benchname)
+            if not 'defaultalloc' in benchname:
                 benchnames.append(benchname)
                 for j, number in enumerate(row[1:]):
                     imported_data = float(number)
                     if labels[j]=="WALLCLOCKTIME":
                         if (DEBUG):
-                            print(imported_data,end="flo ")        
+                            print(imported_data,end="flo ")
+                        if normalise:
+                            imported_data *= float("5e+8")
                     else :
                         imported_data = int(imported_data)
                         if (DEBUG):
@@ -62,8 +66,11 @@ def import_data(normalise: bool):
 
         if (DEBUG):
             print(benchnames)
-        show_graph_2D()
-        # show_graph_3D_2()
+        
+        # JSON export
+        filename = "data.json"
+        f = open(filename, "w")
+        json.dump(data.tolist(),f, indent=4)
         
 def show_graph_2D() :
         global labels
@@ -71,6 +78,8 @@ def show_graph_2D() :
         global data_masked
         global benchnames
         global label_mask
+
+        plt.figure(figsize=(40,20))
 
         benchnames_mask =  [
             [ "alloc"  in benchmark_name for benchmark_name in benchnames],
@@ -106,7 +115,7 @@ def show_graph_2D() :
                 print(data_alloc[i].shape)
                 print(tickleft_alloc.shape)
                 plt.bar(tickleft_alloc + offset,data_alloc[i],width=sub_width, label=label, alpha=1)
-                plt.bar(tickleft_static + offset,data_static[i],width=sub_width/3, label="static variants", alpha=1, color='grey')
+                plt.bar(tickleft_static + offset,data_static[i],width=sub_width/3, label="static variants", alpha=1, color='black')
                 index += 1
         # plt.yscale('log')
         # plt.xticks(rotation=90)
@@ -114,6 +123,10 @@ def show_graph_2D() :
         plt.legend(bbox_to_anchor=(1.05, 1),
                          loc='upper left', borderaxespad=0.)
         plt.tight_layout()
+
+        now = datetime.date.today()
+        plt.savefig("fig" + str(now) + ".pdf")
+
         plt.show()
 
 def show_graph_3D_1() :
@@ -189,6 +202,8 @@ def main():
     if len(sys.argv) >= 2:
         normalise = sys.argv[1]
     import_data(normalise)
+    show_graph_2D()
+    # show_graph_3D_2()
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html
 if __name__ == '__main__':

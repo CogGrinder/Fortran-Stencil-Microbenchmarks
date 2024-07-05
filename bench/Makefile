@@ -5,6 +5,10 @@ CC:=gcc
 CXX:=g++
 FFLAGS = -cpp -O3 #-Wall -Wextra 
 
+# default value variables - managed with export to avoid explicit passing to recursive make
+# for details on alternatives:
+# see https://www.gnu.org/software/make/manual/html_node/Setting.html
+
 ifndef ALLOC_MODE
 export ALLOC_MODE=NONE
 endif
@@ -17,17 +21,22 @@ ifndef SIZE_AT_COMPILATION
 export SIZE_AT_COMPILATION=0
 endif
 
+ifndef KERNEL_MODE
+export KERNEL_MODE=DEFAULT_KERNEL
+endif
+
+
 all: main
 run: run_main
 .PHONY: preprocess postprocess
 pre:preprocess
 preprocessing:preprocess
 preprocess:
-	cd preprocess;python3 test_codegen.py all;./run_bench_tree.sh
+	cd preprocess;python3 test_codegen.py all ACCURACY_SCORE=${ACCURACY_SCORE} --v;./run_bench_tree.sh
 
 pre_old:preprocess_old
 preprocess_old:
-	cd preprocess;python3 test_codegen.py all_old;./run_bench_tree.sh
+	cd preprocess;python3 test_codegen.py all_old ACCURACY_SCORE=${ACCURACY_SCORE};./run_bench_tree.sh
 
 post:postprocess
 postprocessing:postprocess
@@ -54,13 +63,19 @@ ifeq ($(SIZE_MODE_IS_NUMBER),1)
 	SUFFIX.${ALLOC_MODE}.${SIZE_MODE} := ${SUFFIX.${ALLOC_MODE}}_${shell printf "%02d" $(SIZE_MODE)}Mb
 endif
 
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}. := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.  := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
 SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.1 := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}_sizecompiled
 SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.0 := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}_sizenotcompiled
 
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}. 				:= ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_defaultkernel
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.X_KERNEL 		:= ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_xkernel
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.Y_KERNEL 		:= ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_ykernel
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.SIZE_5_KERNEL 	:= ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_size5kernel
+SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.DEFAULT_KERNEL := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_defaultkernel
+
 
 # MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
-MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}
+MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.${KERNEL_MODE}}
 
 # add .exe to executable name if Windows
 ifeq ($(OS),Windows_NT)
@@ -93,18 +108,19 @@ endif
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
-CFLAGS:= -I$(BUILD_DIR) -I$(PERFREGION_SRC)
+CFLAGS:= -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 ####################### main compilation #######################
+print_main:
+	echo from make:___$(BIN_DIR)/$(MAIN)
 main : $(BIN_DIR)/$(MAIN)
 $(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
-# $(BIN_DIR)/$(MAIN) : main.test.f90 | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
-# @./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNX=${NX} -DNY=${NY} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
-# ${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.test.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNX=${NX} -DNY=${NY}
+	@export |grep SIZE_AT_COMPILATION
+	@export |grep KERNEL_MODE
+	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNX=${NX} -DNY=${NY} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)

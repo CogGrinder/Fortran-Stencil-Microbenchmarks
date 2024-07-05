@@ -17,8 +17,8 @@ bench/preprocess/bench_tree
 bench/preprocess/test_codegen_run.sh
 bench/preprocess/all_benchmark_parameters.json
 bench/preprocess/array_alloc.csv
-bench/postprocess/data.csv
-bench/postprocess/data.old.csv
+bench/postprocess/data.*
+bench/postprocess/*.pdf
 tuto/echo
 venv
 bench/testing/postprocess_testing/postprocess/data.csv
