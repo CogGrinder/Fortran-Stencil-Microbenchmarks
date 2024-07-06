@@ -1,4 +1,7 @@
 #!/bin/bash
+# if struggling to execute on windows subsystem for linux
+# see https://askubuntu.com/questions/304999/not-able-to-execute-a-sh-file-bin-bashm-bad-interpreter
+#!usr/bin/bash
 cd bench_tree
 directories_1=$(ls -d */)
 echo $directories_1
