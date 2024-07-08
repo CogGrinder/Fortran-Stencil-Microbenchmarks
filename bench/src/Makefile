@@ -11,6 +11,22 @@ LIB_DIR   := ../lib
 SRC_DIR   := .
 VPATH = $(BUILD_DIR)
 
+ifndef ALLOC_MODE
+export ALLOC_MODE=NONE
+endif
+
+ifndef SIZE_MODE
+export SIZE_MODE=NONE
+endif
+
+ifndef SIZE_AT_COMPILATION
+export SIZE_AT_COMPILATION=0
+endif
+
+ifndef KERNEL_MODE
+export KERNEL_MODE=DEFAULT_KERNEL
+endif
+
 MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
 # see https://www.gnu.org/software/make/manual/html_node/Text-Functions.html
 MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))

@@ -138,7 +138,7 @@ clean:
 	rm -f *.o
 else
 clean:
-	./perf_regions_instrumentation.py cleanup
+	python3 perf_regions_instrumentation.py cleanup
 	rm -f main main.o output.txt
 	rm -f perf_region_list.txt
 	rm -f build/*
