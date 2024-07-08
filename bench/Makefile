@@ -36,18 +36,18 @@ run: run_main
 pre:preprocess
 preprocessing:preprocess
 preprocess:
-	cd preprocess;python3 test_codegen.py all --speed=${SPEED} --v;./run_bench_tree.sh
+	cd preprocess;python3 codegen.py all --speed=${SPEED} --v;./run_bench_tree.sh
 
 pre_old:preprocess_old
 preprocess_old:
-	cd preprocess;python3 test_codegen.py all_old --speed=${SPEED};./run_bench_tree.sh
+	cd preprocess;python3 codegen.py all_old --speed=${SPEED};./run_bench_tree.sh
 
 post:postprocess
 postprocessing:postprocess
 postprocess:
 	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py
 clean_pre:
-	cd preprocess;python3 test_codegen.py clean
+	cd preprocess;python3 codegen.py clean
 
 ####################### mainfile selector ########################
 SUFFIX.:=
@@ -119,6 +119,8 @@ PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 print_main:
 	echo from make:___$(BIN_DIR)/$(MAIN)
 main : $(BIN_DIR)/$(MAIN)
+## Why not mkdir -d $(BIN_DIR)?
+#https://stackoverflow.com/questions/64036620/what-is-the-use-of-or-operator-in-dependency-list
 $(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
