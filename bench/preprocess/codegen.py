@@ -16,6 +16,7 @@ ACCURACY = 1
 global VERBOSE
 VERBOSE = False
 DEBUG = False
+L3_SIZE = 16
 
 # this parameter is used for readable implementation of relative directories, with "../" prefixes
 TREE_DEPTH = 4
@@ -50,6 +51,14 @@ if DEBUG:
 makefile = pathlib.Path("../Makefile")
 
 
+def generate_2d_array_size(size_in_mb):
+    # default is 16
+    if size_in_mb == 0:
+        size_in_mb = 16
+    ni = int(math.sqrt(1024*1024*(size_in_mb)))
+    nj = math.floor(1024*1024*(size_in_mb) // ni)
+    return ni,nj
+
 def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],iters=42, is_compilation_time_size=False, kernel_mode=""):
     """Function for generating script that compiles and execute benchmark
 
@@ -73,8 +82,8 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
         kernel_mode (str, optional): String that represents which stencil computation
             kernel is used. Defaults to "".
     """    
-    nx=0
-    ny=0
+    ni=0
+    nj=0
     iters=42
     if size_option in size_suffixes.keys() or int(size_option) == 0:
         iters = math.ceil(ACCURACY*32)
@@ -94,9 +103,12 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
             os.mkdir(directory)
         
         # size_suffix in the _01Mb format or _{option suffix} format
-        size_suffix = "_"+str(size_option).zfill(2)+"Mb"\
-            if (size_option!="" and int(size_option) in range(0,100))\
-            else size_suffixes[size_option]
+        # size_suffix = "_"+str(size_option).zfill(2)+"Mb"\
+        #     if (size_option!="" and int(size_option) in range(0,100))\
+        #     else size_suffixes[size_option]
+        size_suffix = size_suffixes[size_option] if (size_option in size_suffixes.keys())\
+              else "_"+str(size_option).zfill(2)+"Mb"
+            
         directory += f"/{size_suffix}"
         if not pathlib.Path(directory).is_dir() :
             os.mkdir(directory)
@@ -137,9 +149,21 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
         ####### pre-compilation bench parameters #######
         # here compute the bench parameters for using at compile time if is_compilation_time_size
         if type(size_option)==int:
-            nx = int(math.sqrt(1024*1024*(size_option)))
-            ny = 1024*1024*(size_option) // nx
-            # TODO : compute number of iters here
+            ni, nj = generate_2d_array_size(size_option)
+        else:
+            percentage_of_l3 = 100
+            match size_option:
+                case "SMALLER_THAN_L3":
+                    percentage_of_l3 = 15.625
+                case "SLIGHTLY_SMALLER_THAN_L3":
+                    percentage_of_l3 = 96.875
+                case "SLIGHTLY_BIGGER_THAN_L3":
+                    percentage_of_l3 = 103.125
+                case "BIGGER_THAN_L3":
+                    percentage_of_l3 = 300.0
+                case _:
+                    pass
+            ni, nj = generate_2d_array_size(L3_SIZE*percentage_of_l3/100.0)
 
         # see https://realpython.com/python-f-strings/
         f.write(f"""#! /bin/bash
@@ -162,8 +186,8 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 export ALLOC_MODE="{alloc_option}"
 export SIZE_MODE="{size_option}"
 export SIZE_AT_COMPILATION="{int(is_compilation_time_size)}"
-export NX="{nx if type(size_option)==int else ""}"
-export NY="{ny if type(size_option)==int else ""}"
+export NI="{ni}"
+export NJ="{nj}"
 export KERNEL_MODE="{kernel_mode}"
 
 make -C $BENCH_MAKE_DIR print_main {"_PERF_REGIONS_FOLDER=../"+ "../"*(TREE_DEPTH+2)+"perf_regions" if is_copy_bench_files else ""}
@@ -189,7 +213,7 @@ echo
 # cat $filename.csv
 """)
         f.close()
-        return filename, iters, nx, ny
+        return filename, iters, ni, nj
     else:
         raise ValueError("Parameter wrong - read script for more information")
 
@@ -302,12 +326,12 @@ def main():
             for size_option in range(1,17) :
                 for is_compilation_time_size in [False,True] :
                     for kernel_mode in all_kernel_modes:
-                        filename, iters, nx, ny  = codegen_bench_tree_branch(alloc_option,size_option,\
+                        filename, iters, ni, nj  = codegen_bench_tree_branch(alloc_option,size_option,\
                                                     is_compilation_time_size=is_compilation_time_size,kernel_mode=kernel_mode)
                         all_parameters[filename] = {"kernel_mode": kernel_mode,
                                                     "size_option": size_option,
-                                                    "nx": nx,
-                                                    "ny": ny,
+                                                    "ni": ni,
+                                                    "nj": nj,
                                                     "alloc_option": alloc_option,
                                                     "iters": iters,
                                                     "is_compilation_time_size": is_compilation_time_size}
@@ -320,9 +344,11 @@ def main():
         for alloc_option in all_alloc_options :
             for size_option in all_l3_relative_size_options :
                 for is_compilation_time_size in [False,True] :
-                    filename, iters, nx, ny = codegen_bench_tree_branch(alloc_option,size_option,\
+                    filename, iters, ni, nj = codegen_bench_tree_branch(alloc_option,size_option,\
                                                 is_compilation_time_size=is_compilation_time_size)
                     all_parameters[filename] = {"size_option": size_option,
+                                                "ni": ni,
+                                                "nj": nj,
                                                 "alloc_option": alloc_option,
                                                 "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size}

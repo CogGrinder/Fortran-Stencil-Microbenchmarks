@@ -1,10 +1,7 @@
 ! #define MAX_SIZE 1024*1024*128
 
 ! default value macros
-! #define ARRAY_LEN  10
 #define ARRAY_LEN 1024 * 16
-! #define ARRAY_LEN 1024 * 256
-! #define ITERS 1
 #define ITERS 1024
 
 ! see benchmark_parameters.f90 for options
@@ -94,7 +91,7 @@ PROGRAM main
     benchmark_size_mode = BENCHMARK_SIZE_MODE
 #endif
 
-    CALL set_nx_ny(benchmark_size_mode,iters)
+    CALL set_ni_nj(benchmark_size_mode,iters)
     CALL set_1D_size(benchmark_size_mode,array_len,iters)
 
     !!!!!!!! initialize timing here
@@ -111,7 +108,7 @@ CALL perf_regions_init()
         else if (index(arg, 'sizemode=') == 1) then
             write(*,*) arg
             CALL get_key_value(arg,benchmark_size_mode) 
-            CALL set_nx_ny(benchmark_size_mode,iters)
+            CALL set_ni_nj(benchmark_size_mode,iters)
             CALL set_1D_size(benchmark_size_mode,array_len,iters)
         else if (index(arg, 'iters=') == 1) then
             write(*,*) arg
@@ -197,12 +194,12 @@ USE benchmark_parameters
         .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY_MODULE) then
         WRITE(*,*) "Mem size: ", array_len*0.001 ," KByte"
     else
-        nxx = nx
-        nyy = ny
-        ! write(*,*) "nx", nxx
-        ! write(*,*) "ny", nyy
-        WRITE(*,*) "Mem size: ", nxx* &
-                                nyy*0.001 ," KByte"
+        nii = ni
+        njj = nj
+        ! write(*,*) "ni", nii
+        ! write(*,*) "nj", njj
+        WRITE(*,*) "Mem size: ", nii* &
+                                njj*0.001 ," KByte"
     end if
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
@@ -376,14 +373,14 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,&
-                    ny))
-    allocate(result(nx,&
-                    ny) , source=-1.0_dp)
+    allocate(array(ni,&
+                    nj))
+    allocate(result(ni,&
+                    nj) , source=-1.0_dp)
 
-    do j = 1, ny
-        do i = 1, nx
-            array(i,j) = (i-1)*ny + j
+    do j = 1, nj
+        do i = 1, ni
+            array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
     end do
@@ -393,9 +390,9 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 1 + sten_len/2, ny - sten_len/2
-        do i = 1 + sten_len/2, nx - sten_len/2
-#ifdef NO_INCLUDE
+    do j = 1 + 2, nj - 2
+        do i = 1 + 2, ni - 2
+#if KERNEL_MODE == NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
                         + 3.0_dp * array(i    , j    ) &
@@ -403,7 +400,9 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
                         + 5.0_dp * array(i + 1, j + 1)
             result(i,j) = result(i,j)/15.0_dp
 #else
-# if   KERNEL_MODE == X_KERNEL
+# if   KERNEL_MODE == DEFAULT_KERNEL
+#  include "kernels/kernel_2D_default.h"
+# elif KERNEL_MODE == X_KERNEL
 #  include "kernels/kernel_2D_x.h"
 # elif KERNEL_MODE == Y_KERNEL
 #  include "kernels/kernel_2D_y.h"
@@ -424,10 +423,10 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),&
-                                    modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),&
-                                    modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ni),&
+                                    modulo(42,nj)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
+                                    modulo(42,nj)))
 
 end SUBROUTINE COMPUTATION_2D_JI
 
@@ -444,14 +443,14 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
     integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,&
-                    ny))
-    allocate(result(nx,&
-                    ny) , source=-1.0_dp)
+    allocate(array(ni,&
+                    nj))
+    allocate(result(ni,&
+                    nj) , source=-1.0_dp)
 
-    do i = 1, nx
-        do j = 1, ny
-            array(i,j) = (i-1)*ny + j
+    do i = 1, ni
+        do j = 1, nj
+            array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
     end do
@@ -460,9 +459,9 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + sten_len/2, nx - sten_len/2
-        do j = 1 + sten_len/2, ny - sten_len/2
-#ifdef NO_INCLUDE
+    do i = 1 + 2, ni - 2
+        do j = 1 + 2, nj - 2
+#if KERNEL_MODE == NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
                         + 3.0_dp * array(i    , j    ) &
@@ -470,7 +469,9 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
                         + 5.0_dp * array(i + 1, j + 1)
             result(i,j) = result(i,j)/15.0_dp
 #else
-# if   KERNEL_MODE == X_KERNEL
+# if   KERNEL_MODE == DEFAULT_KERNEL
+#  include "kernels/kernel_2D_default.h"
+# elif KERNEL_MODE == X_KERNEL
 #  include "kernels/kernel_2D_x.h"
 # elif KERNEL_MODE == Y_KERNEL
 #  include "kernels/kernel_2D_y.h"
@@ -491,9 +492,9 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),&
-                                    modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),&
-                                    modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ni),&
+                                    modulo(42,nj)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
+                                    modulo(42,nj)))
 
 end SUBROUTINE COMPUTATION_2D_IJ

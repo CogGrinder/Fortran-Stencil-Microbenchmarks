@@ -25,14 +25,14 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
     integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,&
-                    ny))
-    allocate(result(nx,&
-                    ny) , source=-1.0_dp)
+    allocate(array(ni,&
+                    nj))
+    allocate(result(ni,&
+                    nj) , source=-1.0_dp)
 
-    do j = 1, ny
-        do i = 1, nx
-            array(i,j) = (i-1)*ny + j
+    do j = 1, nj
+        do i = 1, ni
+            array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
     end do
@@ -42,9 +42,9 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 1 + sten_len/2, ny - sten_len/2
-        do i = 1 + sten_len/2, nx - sten_len/2
-#ifdef NO_INCLUDE
+    do j = 1 + 2, nj - 2
+        do i = 1 + 2, ni - 2
+#if KERNEL_MODE == NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
                         + 3.0_dp * array(i    , j    ) &
@@ -52,7 +52,9 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
                         + 5.0_dp * array(i + 1, j + 1)
             result(i,j) = result(i,j)/15.0_dp
 #else
-# if   KERNEL_MODE == X_KERNEL
+# if   KERNEL_MODE == DEFAULT_KERNEL
+#  include "kernels/kernel_2D_default.h"
+# elif KERNEL_MODE == X_KERNEL
 #  include "kernels/kernel_2D_x.h"
 # elif KERNEL_MODE == Y_KERNEL
 #  include "kernels/kernel_2D_y.h"
@@ -73,10 +75,10 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),&
-                                    modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),&
-                                    modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ni),&
+                                    modulo(42,nj)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
+                                    modulo(42,nj)))
 
 end SUBROUTINE COMPUTATION_2D_MODULE
 
@@ -94,14 +96,14 @@ SUBROUTINE COMPUTATION_2D_MODULE_FIXED(bench_id,bench_str,array_len)
     integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,&
-                    ny))
-    allocate(result(nx,&
-                    ny) , source=-1.0_dp)
+    allocate(array(ni,&
+                    nj))
+    allocate(result(ni,&
+                    nj) , source=-1.0_dp)
 
-    do j = 1, ny
-        do i = 1, nx
-            array(i,j) = (i-1)*ny + j
+    do j = 1, nj
+        do i = 1, ni
+            array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
     end do
@@ -111,9 +113,9 @@ SUBROUTINE COMPUTATION_2D_MODULE_FIXED(bench_id,bench_str,array_len)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 1 + sten_len/2, ny - sten_len/2
-        do i = 1 + sten_len/2, nx - sten_len/2
-#ifdef NO_INCLUDE
+    do j = 1 + 2, nj - 2
+        do i = 1 + 2, ni - 2
+#if KERNEL_MODE == NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
                         + 3.0_dp * array(i    , j    ) &
@@ -121,7 +123,9 @@ SUBROUTINE COMPUTATION_2D_MODULE_FIXED(bench_id,bench_str,array_len)
                         + 5.0_dp * array(i + 1, j + 1)
             result(i,j) = result(i,j)/15.0_dp
 #else
-# if   KERNEL_MODE == X_KERNEL
+# if   KERNEL_MODE == DEFAULT_KERNEL
+#  include "kernels/kernel_2D_default.h"
+# elif KERNEL_MODE == X_KERNEL
 #  include "kernels/kernel_2D_x.h"
 # elif KERNEL_MODE == Y_KERNEL
 #  include "kernels/kernel_2D_y.h"
@@ -142,10 +146,10 @@ SUBROUTINE COMPUTATION_2D_MODULE_FIXED(bench_id,bench_str,array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),&
-                                    modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),&
-                                    modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ni),&
+                                    modulo(42,nj)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
+                                    modulo(42,nj)))
 
 end SUBROUTINE COMPUTATION_2D_MODULE_FIXED
 

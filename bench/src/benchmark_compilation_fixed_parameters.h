@@ -14,6 +14,7 @@
 #define X_KERNEL 1
 #define Y_KERNEL 2
 #define SIZE_5_KERNEL 5
+#define NO_INCLUDE -1
 
 #ifndef SIZE_MODE
 # define SIZE_MODE 16 /* default SIZE_MODE in Mb */
@@ -41,9 +42,9 @@
 #endif
 #if SIZE_AT_COMPILATION==1
 ! SIZE_AT_COMPILATION is 1
-! use NX and NY from -D flag
-# define nx (NX)
-# define ny (NY)
+! use NI and NJ from -D flag
+# define ni (NI)
+# define nj (NJ)
 #endif /*SIZE_AT_COMPILATION*/
 
 ! included benchmark_compilation_fixed_parameters.h file

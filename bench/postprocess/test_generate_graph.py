@@ -56,7 +56,7 @@ def import_data(normalise: bool):
                     if normalise:
                         # print(param_dict[benchname]["iters"])
                         # print(param_dict[benchname]["size_option"])
-                        imported_data /= param_dict[row[0]]["iters"] * param_dict[row[0]]["nx"] * param_dict[row[0]]["ny"]
+                        imported_data /= param_dict[row[0]]["iters"] * param_dict[row[0]]["ni"] * param_dict[row[0]]["nj"]
                     data[j].append(imported_data)
                             
 

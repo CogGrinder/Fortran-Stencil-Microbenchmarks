@@ -1,5 +1,4 @@
-#include "benchmark_compilation_fixed_parameters.h"
-#ifdef NO_INCLUDE
+#if KERNEL_MODE == NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
                         + 3.0_dp * array(i    , j    ) &
@@ -8,14 +7,14 @@
             result(i,j) = result(i,j)/15.0_dp
 #else
 # if   KERNEL_MODE == DEFAULT_KERNEL
-#  include "kernel_2D_default.h"
+#  include "kernels/kernel_2D_default.h"
 # elif KERNEL_MODE == X_KERNEL
-#  include "kernel_2D_x.h"
+#  include "kernels/kernel_2D_x.h"
 # elif KERNEL_MODE == Y_KERNEL
-#  include "kernel_2D_y.h"
+#  include "kernels/kernel_2D_y.h"
 # elif KERNEL_MODE == SIZE_5_KERNEL
-#  include "kernel_2D_size_5.h"
+#  include "kernels/kernel_2D_size_5.h"
 # else
-#  include "kernel_2D_default.h"
+#  include "kernels/kernel_2D_default.h"
 # endif /*KERNEL_MODE*/
 #endif /*NO_INCLUDE*/
