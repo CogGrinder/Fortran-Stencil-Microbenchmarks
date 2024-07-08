@@ -9,6 +9,8 @@ FFLAGS = -cpp -O3 #-Wall -Wextra
 # for details on alternatives:
 # see https://www.gnu.org/software/make/manual/html_node/Setting.html
 
+####################### defaults ########################
+
 ifndef ALLOC_MODE
 export ALLOC_MODE=NONE
 endif
@@ -25,6 +27,8 @@ ifndef KERNEL_MODE
 export KERNEL_MODE=DEFAULT_KERNEL
 endif
 
+# used in codegen for scaling number of iterations
+SPEED?=1
 
 all: main
 run: run_main
@@ -32,11 +36,11 @@ run: run_main
 pre:preprocess
 preprocessing:preprocess
 preprocess:
-	cd preprocess;python3 test_codegen.py all ACCURACY_SCORE=${ACCURACY_SCORE} --v;./run_bench_tree.sh
+	cd preprocess;python3 test_codegen.py all --speed=${SPEED} --v;./run_bench_tree.sh
 
 pre_old:preprocess_old
 preprocess_old:
-	cd preprocess;python3 test_codegen.py all_old ACCURACY_SCORE=${ACCURACY_SCORE};./run_bench_tree.sh
+	cd preprocess;python3 test_codegen.py all_old --speed=${SPEED};./run_bench_tree.sh
 
 post:postprocess
 postprocessing:postprocess
@@ -45,7 +49,7 @@ postprocess:
 clean_pre:
 	cd preprocess;python3 test_codegen.py clean
 
-# Here is the selector for which main to compile
+####################### mainfile selector ########################
 SUFFIX.:=
 SUFFIX.NONE := _defaultalloc
 SUFFIX.ALLOC := _alloc
@@ -142,60 +146,25 @@ clean:
 	rm -f lib/*
 endif
 
-# MODULE LIBRARY COMPILATION - # TODO : fixing make dependencies checking by using no ../
+####################### dependency rules #######################
+
+# MODULE LIBRARY COMPILATION
 MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
 MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))
+# see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 # using .SECONDARY
 .SECONDARY : $(MODULE_O) 
 # .LOW_RESOLUTION_TIME : $(MODULE_f90)
-# see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
+
 $(LIB_DIR)/library.a : $(MODULE_O)
 	make -C src library
 	@touch $(LIB_DIR)/library.a
+
 $(MODULE_O) : #$(MODULE_f90)
 # @echo .f90 files newer than .o files :
 # @echo $?
 	make -C src library --silent
 #$(patsubst $(BUILD_DIR)/%.o, ../$(BUILD_DIR)/%.o, $@)
-
-# library: $(LIB_DIR)/library.a
-
-# # default rule
-# $(BUILD_DIR)/%.o $(BUILD_DIR)/%.mod : $(SRC_DIR)/%.f90 | $(BUILD_DIR)
-# 	$(FC) $(FFLAGS) -c $< -o $(basename $@).o -J$(BUILD_DIR)
-# 	@touch $@
-
-# $(BUILD_DIR)/benchmark_implementations.o $(BUILD_DIR)/benchmark_implementations.mod : $(SRC_DIR)/benchmark_implementations.f90 | $(BUILD_DIR)
-# # ./perf_regions_instrumentation.py cleanup
-# 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_implementations.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
-# 	@touch $@
-
-# $(BUILD_DIR)/benchmark_2D_CPU.o $(BUILD_DIR)/benchmark_2D_CPU.mod : $(SRC_DIR)/benchmark_2D_CPU.f90 | $(BUILD_DIR)
-# # ./perf_regions_instrumentation.py cleanup
-# 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_CPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
-# 	@touch $@
-
-
-# $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : $(SRC_DIR)/benchmark_2D_GPU.f90 | $(BUILD_DIR)
-# # ./perf_regions_instrumentation.py cleanup
-# 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_GPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
-# 	@touch $@
-
-# # Additional rules :
-# $(BUILD_DIR)/benchmark_2D_CPU.o : $(BUILD_DIR)/tools.mod
-# $(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/tools.mod
-
-
-# # $(BUILD_DIR)/benchmark_implementations.o $(BUILD_DIR)/benchmark_implementations.mod : benchmark_implementations.f90
-# # 	make -C .. build/benchmark_implementations.o
-# # $(BUILD_DIR)/benchmark_2D_CPU.o $(BUILD_DIR)/benchmark_2D_CPU.mod : benchmark_2D_CPU.f90
-# # 	make -C .. build/benchmark_2D_CPU.o
-# # $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : benchmark_2D_GPU.f90
-# # 	make -C .. build/benchmark_2D_GPU.o
-
-# $(LIB_DIR)/library.a : $(MODULE_O) | $(LIB_DIR)
-# 	ar cr $(LIB_DIR)/library.a $(MODULE_O)
-# 	@touch $(LIB_DIR)/library.a
 
 
 # DIRECTORIES

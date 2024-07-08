@@ -13,6 +13,7 @@ bench/output.txt
 bench/src/*.mod
 perf_regions/src/perf_regions_fortran.mod
 bench/*.csv
+bench/preprocess/__pycache__
 bench/preprocess/bench_tree
 bench/preprocess/test_codegen_run.sh
 bench/preprocess/all_benchmark_parameters.json

@@ -47,7 +47,7 @@ postprocess:
 make_tuto:
 	$(MAKE) -C $(TUTO)
 run_tuto:
-	cd $(TUTO) && $(MAKE) run
+	$(MAKE) -C $(TUTO) run
 
 clean_all: clean clean_perf_regions clean_tuto
 clean:

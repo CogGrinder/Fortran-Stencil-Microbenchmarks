@@ -50,9 +50,29 @@ if DEBUG:
 makefile = pathlib.Path("../Makefile")
 
 
-def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str], iters=42, is_compilation_time_size=False, kernel_mode=""):
-    """ TODO: Comment function
-    """
+def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],iters=42, is_compilation_time_size=False, kernel_mode=""):
+    """Function for generating script that compiles and execute benchmark
+
+    Codegen generates a branch in a folder tree of root 'bench_tree'
+    based on all parameters passed, making folders where needed
+    using naming conventions defined from suffix dictionaries
+
+    Args:
+        alloc_option (str): String that represents the type of allocation used in bench
+        size_option (Union[int, str]): Integer or string that represents the size of the arrays
+            if non-zero int, corresponds to size in Mb;
+            if zero, falls back to default;
+            if str, is related to L3 size. TODO : autodetect L3 size
+        iters (int, optional): Number of iterations - higher is more precise
+            can be left void for adaptive relative to array size. Defaults to 42.
+        is_compilation_time_size (bool, optional): Decides wether array size is baked in
+            by passing it to compiler directly.
+            Size is calculated either in python script and passed
+            through preprocessing or calculated in a module at the
+            setup step in the execution. Defaults to False.
+        kernel_mode (str, optional): String that represents which stencil computation
+            kernel is used. Defaults to "".
+    """    
     nx=0
     ny=0
     iters=42
@@ -172,12 +192,11 @@ echo
         raise ValueError("Parameter wrong - read script for more information")
 
 
-def file_test():
-    f = open("test_codegen_run.sh", "r")
-    print(f.read())
-    return
-
 def main():
+    """Main function of code generation - interprets input from argparse
+
+    Use --help for details.
+    """
     global ACCURACY
     global VERBOSE
     # courtesy of https://stackoverflow.com/questions/20063/whats-the-best-way-to-parse-command-line-arguments

@@ -14,6 +14,12 @@ DEBUG = False
 # global benchnames
 
 def import_data(normalise: bool):
+    """Function that imports csv data as numpy array and label lists
+
+    Args:
+        normalise (bool): Normalize all benchmark data
+            relative to size and iterations
+    """
     global labels
     global data
     global data_masked
