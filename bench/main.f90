@@ -41,7 +41,7 @@ PROGRAM main
     implicit none
 
     ! integer :: iters
-    integer :: k,i,iters,array_len
+    integer :: k,i,iters,niinput,njinput,n1dinput
 ! #if SIZE_AT_COMPILATION == 0
     integer :: benchmark_size_mode
 ! #endif
@@ -86,18 +86,15 @@ PROGRAM main
 
     ! default values
     iters = ITERS
-    array_len = ARRAY_LEN
-#if SIZE_AT_COMPILATION == 0
-    benchmark_size_mode = BENCHMARK_SIZE_MODE
-#endif
+    n1dinput = ARRAY_LEN
 
-    CALL set_ni_nj(benchmark_size_mode,iters)
-    CALL set_1D_size(benchmark_size_mode,array_len,iters)
+    CALL set_2D_size(niinput,njinput)
+    CALL set_1D_size(n1dinput)
 
     !!!!!!!! initialize timing here
 CALL perf_regions_init()
     
-    CALL WARMUP_COMPUTATION(3,array_len)
+    CALL WARMUP_COMPUTATION(3,n1dinput)
 
     i = 1
     do
@@ -105,17 +102,27 @@ CALL perf_regions_init()
         ! condition to leave do loop
         if (len_trim(arg) == 0) then
             exit
-        else if (index(arg, 'sizemode=') == 1) then
+        else if (index(arg, 'ni=') == 1) then
             write(*,*) arg
-            CALL get_key_value(arg,benchmark_size_mode) 
-            CALL set_ni_nj(benchmark_size_mode,iters)
-            CALL set_1D_size(benchmark_size_mode,array_len,iters)
+            CALL get_key_value(arg,niinput)
+        else if (index(arg, 'nj=') == 1) then
+            write(*,*) arg
+            CALL get_key_value(arg,njinput)
+        else if (index(arg, 'n1d=') == 1) then
+            write(*,*) arg
+            CALL get_key_value(arg,n1dinput)
+        ! else if (index(arg, 'sizemode=') == 1) then
+        !     write(*,*) arg
+        !     CALL get_key_value(arg,benchmark_size_mode) 
         else if (index(arg, 'iters=') == 1) then
             write(*,*) arg
             CALL get_key_value(arg,iters)
         endif
         i = i + 1
     end do
+
+    CALL set_2D_size(niinput,njinput)
+    CALL set_1D_size(n1dinput)
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!! BENCH CALL !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -163,7 +170,7 @@ CALL perf_regions_init()
             write (*,*) 'Error: no such benchmark'
     end select
     if ( .not. bench_str .eq. 'ERROR') then
-        CALL BENCH_SKELETON(iters, bench_str, array_len)
+        CALL BENCH_SKELETON(iters, bench_str, n1dinput)
     end if
 
     !!!!!!!! finalize timing here

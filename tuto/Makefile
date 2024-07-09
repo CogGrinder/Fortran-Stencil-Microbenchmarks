@@ -5,12 +5,17 @@ run: run_tuto
 clean: clean_tuto
 
 # testing regex support in make
-string1 := a20
-bool1 :=$(shell echo "$(string1)" | grep -Eq '^[0-9]*$$' && echo "matched" || echo "did not match")
-string2 := 4269
-bool2 :=$(shell echo "$(string2)" | grep -Eq '^[0-9]*$$' && echo "matched" || echo "did not match")
-reg1 :=$(shell echo $(string1) | grep -Eo '[0-9]*' | xargs echo)
-reg2 :=$(shell echo $(string2) | grep -Eo '[0-9]*' | xargs echo)
+# string1 := a20
+string1 := a20.0a
+# bool1 :=$(shell echo "$(string1)" | grep -Eq '^[0-9]*$$' && echo "matched" || echo "did not match")
+bool1 :=$(shell echo "$(string1)" | grep -Eq '^[0-9]*([.][0-9]*)?$$' && echo "matched" || echo "did not match")
+# string2 := 4269
+string2 := 4269.2312
+# bool2 :=$(shell echo "$(string2)" | grep -Eq '^[0-9]*$$' && echo "matched" || echo "did not match")
+bool2 :=$(shell echo "$(string2)" | grep -Eq '^[0-9]*([.][0-9]*)?$$' && echo "matched" || echo "did not match")
+reg1 :=$(shell echo $(string1) | grep -Eo '[0-9]*([.][0-9]*)?' | xargs echo)
+reg2 :=$(shell echo $(string2) | grep -Eo '[0-9]*([.][0-9]*)?' | xargs echo)
+string3 := 4269a
 
 VAR.0 := HELLO
 
@@ -32,17 +37,22 @@ endif
 
 # testing regex support in make
 test:
-	echo $(string1) | grep -Eo '[0-9]*' | xargs echo
-	echo $(string2) | grep -Eo '[0-9]*' | xargs echo
+	echo $(string1) | grep -Eo '[0-9]*([.][0-9]*)?' | xargs echo
+	echo $(string2) | grep -Eo '[0-9]*([.][0-9]*)?' | xargs echo
+	echo $(string3) | grep -Eo '[0-9]*([.][0-9]*)?' | xargs echo
 
-	@echo $(string1)
+	@echo string1: $(string1)
 	@echo [[ $(string1) =~ ^[0-9.]+$ ]]
-	@echo $(value1)
-	@echo $(reg1)
+	@echo value1: $(value1)
+	@echo reg1: $(reg1)
 	@echo [[ $(string2) =~ ^[0-9.]+$ ]]
-	@echo $(value2)
-	@echo $(reg2)
-	@echo $(VAR.0)
+	@echo value2: $(value2)
+	@echo reg2: $(reg2)
+	
+	@echo VAR.0: $(VAR.0)
+	printf "%05.2f" 2.119 | xargs echo
+	printf "%-3.2f" 2.119 | xargs echo
+
 
 # testing scope of variables in make
 # ALLOC_MODE?=0

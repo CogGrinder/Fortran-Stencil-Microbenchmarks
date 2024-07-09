@@ -62,9 +62,10 @@ SUFFIX.${ALLOC_MODE}.SLIGHTLY_SMALLER_THAN_L3 :=${SUFFIX.${ALLOC_MODE}}_ssmaller
 SUFFIX.${ALLOC_MODE}.SLIGHTLY_BIGGER_THAN_L3 :=	${SUFFIX.${ALLOC_MODE}}_sbiggerl3
 SUFFIX.${ALLOC_MODE}.BIGGER_THAN_L3 :=			${SUFFIX.${ALLOC_MODE}}_biggerl3
 
-SIZE_MODE_IS_NUMBER :=$(shell echo "$(SIZE_MODE)" | grep -Eq '^[0-9]*$$' && echo "1" || echo "0")
+
+SIZE_MODE_IS_NUMBER :=$(shell echo "$(SIZE_MODE)" | grep -Eq '^[0-9]*([.][0-9]*)?$$' && echo "1" || echo "0")
 ifeq ($(SIZE_MODE_IS_NUMBER),1)
-	SUFFIX.${ALLOC_MODE}.${SIZE_MODE} := ${SUFFIX.${ALLOC_MODE}}_${shell printf "%02d" $(SIZE_MODE)}Mb
+	SUFFIX.${ALLOC_MODE}.${SIZE_MODE} := ${SUFFIX.${ALLOC_MODE}}_${shell printf "%05.2f" $(SIZE_MODE)}Mb
 endif
 
 SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.  := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}

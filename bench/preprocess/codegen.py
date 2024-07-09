@@ -107,7 +107,7 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
         #     if (size_option!="" and int(size_option) in range(0,100))\
         #     else size_suffixes[size_option]
         size_suffix = size_suffixes[size_option] if (size_option in size_suffixes.keys())\
-              else "_"+str(size_option).zfill(2)+"Mb"
+              else "_"+"%05.2f"%size_option+"Mb"
             
         directory += f"/{size_suffix}"
         if not pathlib.Path(directory).is_dir() :
@@ -148,7 +148,7 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
         
         ####### pre-compilation bench parameters #######
         # here compute the bench parameters for using at compile time if is_compilation_time_size
-        if type(size_option)==int:
+        if type(size_option)==int or type(size_option)==float:
             ni, nj = generate_2d_array_size(size_option)
         else:
             percentage_of_l3 = 100
@@ -207,7 +207,7 @@ while IFS= read -r line; do
         echo "$line" >> $filename.csv
     fi
     # grep -o 'action'
-done < <( ./$BENCH_EXECUTABLE iters={iters} )
+done < <( ./$BENCH_EXECUTABLE iters={iters} {"" if is_compilation_time_size else f"ni={ni} nj={nj}"} )
 # |  grep -A100 Section | paste >> $filename.csv
 echo
 # cat $filename.csv
@@ -235,21 +235,27 @@ def main():
     alloc_option = ""
     size_option = ""
     is_compilation_time_size = ""
+    iterator_of_selected_sizes = range(1,16+1)
+
     all_alloc_options = list(allocation_suffixes.keys())
     all_alloc_options.remove("")
     all_kernel_modes = list(kernel_mode_suffixes.keys())
     all_kernel_modes.remove("")
     all_parameters = {}
-    parser.add_argument('cmd', nargs='?', default='one_bench',
+    
+    parser.add_argument('--cmd', nargs='?', default='one_bench',
                     help=f'Can be clean, all, all_old, all_l3, or one_bench')
-    parser.add_argument('alloc_option', nargs='?',
+    parser.add_argument('--alloc', nargs='?',
                     help=f'An alloc_option in {", ".join(list(allocation_suffixes.keys())).rstrip(", ")}')
-    parser.add_argument('size_option', nargs='?',
+    parser.add_argument('--size', nargs='?',
                     help=f'A size_option in {", ".join(list(size_suffixes.keys()))} or between 0 and 99')
-    parser.add_argument('is_compilation_time_size', nargs='?', type=bool,
+    parser.add_argument('--compile-size', nargs='?', type=bool,
                 help=f'A compilation time size option within {" ".join(list(map(str,is_compilation_time_size_suffixes.keys())))}')
     
     # Optional arguments
+    parser.add_argument('--range', nargs='+',
+                        help='Represents the scope of sizes in Mb to study. If length is 2, acts as lower and upper bound. If length is\
+                             1, acts as upper bound with lower bound 1, if is number only selects that number, else it is the list of sizes in Mb')
     parser.add_argument('--speed', metavar="inverse_multiplier", type=float,
                         help='An optional parameter that accelerates the bench if above 1 and makes it more accurate if below 1')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -266,16 +272,38 @@ def main():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    if args.speed is not None and args.speed <= 0:
-        parser.error("speed cannot be lower than 0")
-    if args.alloc_option is not None:
-        alloc_option = args.alloc_option
-    if args.size_option is not None:
-        size_option = args.size_option
-    if args.is_compilation_time_size is not None:
-        is_compilation_time_size = args.is_compilation_time_size
+    print(args)
+
+    # setting command
+    if args.cmd is not None:
+        cmd = args.cmd
+    # setting options
+    if args.alloc is not None:
+        alloc_option = args.alloc
+    if args.size is not None:
+        size_option = args.size
+    if args.compile_size is not None:
+        is_compilation_time_size = args.compile_size
+
+    if args.range is not None:
+        if DEBUG:
+            print("range: " + str(args.range))
+            print("range type: " + str(type(args.range)))
+        if type(args.range) in [float, int]:
+            iterator_of_selected_sizes = [args.range]
+        elif len(args.range)==1:
+            iterator_of_selected_sizes = range(1,math.ceil(float(args.range[0])))
+        elif len(args.range)==2:
+            iterator_of_selected_sizes = range(math.floor(float(args.range[0])),math.ceil(float(args.range[1])))
+        else:
+            iterator_of_selected_sizes = list(map(float,args.range))
+    if VERBOSE:
+        print("range: " + str(iterator_of_selected_sizes))
     if args.speed is not None:
-        ACCURACY = 1/args.speed
+        if args.speed <= 0:
+            parser.error("speed cannot be lower than 0")
+        else:
+            ACCURACY = 1/args.speed
     if args.verbose:
         VERBOSE=True
     if VERBOSE:
@@ -310,7 +338,7 @@ def main():
         codegen_bench_tree_branch("","")
         
         for alloc_option in all_alloc_options :
-            for size_option in range(1,17) :
+            for size_option in iterator_of_selected_sizes :
                 filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option)
                 all_parameters[filename] = {"size_option": size_option,
                                             "alloc_option": alloc_option,
@@ -321,7 +349,7 @@ def main():
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
         for alloc_option in all_alloc_options :
-            for size_option in range(1,17) :
+            for size_option in iterator_of_selected_sizes :
                 for is_compilation_time_size in [False,True] :
                     for kernel_mode in all_kernel_modes:
                         filename, iters, ni, nj  = codegen_bench_tree_branch(alloc_option,size_option,\
@@ -351,10 +379,12 @@ def main():
                                                 "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size}
     elif cmd == "one_bench" :
-        print(f"Creating {phrase} benchmark script...")
+        description = 'default' if (alloc_option=='' and size_option=='' and is_compilation_time_size=='')\
+            else str(alloc_option) + str(size_option) + "is_compilation_time_size: " + str(is_compilation_time_size)
+        print(f"Creating {description} benchmark script...")
         filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option,is_compilation_time_size)
-        all_parameters[filename] = {"size_option": alloc_option,
-                                                "alloc_option": size_option,
+        all_parameters[filename] = {"size_option": size_option,
+                                                "alloc_option": alloc_option,
                                                 "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size}
     else :
