@@ -61,4 +61,4 @@ clean_tuto:
 
 clean_pre:clean_preprocess
 clean_preprocess:
-	cd bench/preprocess;python3 ./codegen.py clean
+	-$(MAKE) -C $(BENCH) clean_pre

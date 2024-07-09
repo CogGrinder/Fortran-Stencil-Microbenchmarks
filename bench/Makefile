@@ -36,18 +36,18 @@ run: run_main
 pre:preprocess
 preprocessing:preprocess
 preprocess:
-	cd preprocess;python3 codegen.py all --speed=${SPEED} --v;./run_bench_tree.sh
+	cd preprocess;python3 codegen.py --cmd all --speed=${SPEED} --v;./run_bench_tree.sh
 
 pre_old:preprocess_old
 preprocess_old:
-	cd preprocess;python3 codegen.py all_old --speed=${SPEED};./run_bench_tree.sh
+	cd preprocess;python3 codegen.py --cmd all_old --speed=${SPEED};./run_bench_tree.sh
 
 post:postprocess
 postprocessing:postprocess
 postprocess:
 	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py
 clean_pre:
-	cd preprocess;python3 codegen.py clean
+	cd preprocess;python3 codegen.py --cmd clean
 
 ####################### mainfile selector ########################
 SUFFIX.:=
@@ -126,12 +126,14 @@ $(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
 	@export |grep SIZE_AT_COMPILATION
+# @export |grep NI
+# @export |grep NJ
 	@export |grep KERNEL_MODE
 	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)
-	./run_benches.sh
+	./run_default.sh
 
 
 # clean depending on OS
@@ -141,7 +143,6 @@ clean:
 	rm -f *.o
 else
 clean:
-	python3 perf_regions_instrumentation.py cleanup
 	rm -f main main.o output.txt
 	rm -f perf_region_list.txt
 	rm -f build/*
@@ -156,17 +157,18 @@ MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
 MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))
 # see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 # using .SECONDARY
-.SECONDARY : $(MODULE_O) 
+# .SECONDARY : $(MODULE_O) 
 # .LOW_RESOLUTION_TIME : $(MODULE_f90)
 
 $(LIB_DIR)/library.a : $(MODULE_O)
-	make -C src library
+# make -C src library
+	make -C src ../$(LIB_DIR)/library.a
 	@touch $(LIB_DIR)/library.a
 
-$(MODULE_O) : #$(MODULE_f90)
-# @echo .f90 files newer than .o files :
-# @echo $?
-	make -C src library --silent
+$(BUILD_DIR)/%.o : $(SRC_DIR)/*.f90
+	@echo .f90 files newer than .o files :
+	@echo $?
+	make -C src
 #$(patsubst $(BUILD_DIR)/%.o, ../$(BUILD_DIR)/%.o, $@)
 
 

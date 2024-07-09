@@ -48,6 +48,7 @@ PROGRAM main
     character(len=32) :: arg
     character(len=7) :: bench_str
     character(len=32) :: kernel_name
+    character(len=128) :: binary_name
     
     
     INTERFACE
@@ -111,9 +112,6 @@ CALL perf_regions_init()
         else if (index(arg, 'n1d=') == 1) then
             write(*,*) arg
             CALL get_key_value(arg,n1dinput)
-        ! else if (index(arg, 'sizemode=') == 1) then
-        !     write(*,*) arg
-        !     CALL get_key_value(arg,benchmark_size_mode) 
         else if (index(arg, 'iters=') == 1) then
             write(*,*) arg
             CALL get_key_value(arg,iters)
@@ -125,11 +123,12 @@ CALL perf_regions_init()
     CALL set_1D_size(n1dinput)
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!! BENCH CALL !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    
+    CALL get_command_argument(0,binary_name)
     WRITE(*,*) "**************************************"
     WRITE(*,*) "**************************************"
-
-    write (*,*) 'Calling benchmark of id ', BENCH_ID
+    write (*,*) 'Calling benchmark of id :'
+    write (*,*) binary_name
     select case (KERNEL_MODE)
         case (DEFAULT_KERNEL)
             kernel_name = 'default_kernel'

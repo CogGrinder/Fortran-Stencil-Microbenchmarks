@@ -76,17 +76,17 @@ $(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_
 $(BUILD_DIR)/benchmark_implementations.o $(BUILD_DIR)/benchmark_implementations.mod : $(SRC_DIR)/benchmark_implementations.f90 | $(BUILD_DIR)
 # ./perf_regions_instrumentation.py cleanup
 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_implementations.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
-	@touch $@
+# @touch $@
 
 $(BUILD_DIR)/benchmark_2D_CPU.o $(BUILD_DIR)/benchmark_2D_CPU.mod : $(SRC_DIR)/benchmark_2D_CPU.f90 | $(BUILD_DIR)
 # ./perf_regions_instrumentation.py cleanup
 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_CPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
-	@touch $@
+# @touch $@
 
 $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : $(SRC_DIR)/benchmark_2D_GPU.f90 | $(BUILD_DIR)
 # ./perf_regions_instrumentation.py cleanup
 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_GPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
-	@touch $@
+# @touch $@
 
 
 
@@ -104,7 +104,8 @@ $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : $(SRC_DIR)/b
 # https://www.gnu.org/software/make/manual/html_node/Special-Targets.html
 $(LIB_DIR)/library.a : $(MODULE_O) | $(LIB_DIR)
 	ar crUuv $(LIB_DIR)/library.a $^
-# @touch $(LIB_DIR)/library.a
+# touch $^
+# touch $(LIB_DIR)/library.a
 
 
 

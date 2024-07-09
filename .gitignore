@@ -9,7 +9,7 @@ bench/bin
 bench/lib
 bench/benchmark_implementations.o
 bench/file.csv
-bench/output.txt
+bench/tmp.txt
 bench/src/*.mod
 perf_regions/src/perf_regions_fortran.mod
 bench/*.csv

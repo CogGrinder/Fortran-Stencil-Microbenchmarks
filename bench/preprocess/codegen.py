@@ -186,8 +186,8 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 export ALLOC_MODE="{alloc_option}"
 export SIZE_MODE="{size_option}"
 export SIZE_AT_COMPILATION="{int(is_compilation_time_size)}"
-export NI="{ni}"
-export NJ="{nj}"
+export NI="{ni if is_compilation_time_size else ""}"
+export NJ="{nj if is_compilation_time_size else ""}"
 export KERNEL_MODE="{kernel_mode}"
 
 make -C $BENCH_MAKE_DIR print_main {"_PERF_REGIONS_FOLDER=../"+ "../"*(TREE_DEPTH+2)+"perf_regions" if is_copy_bench_files else ""}
@@ -202,6 +202,7 @@ ls
 # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
     echo "$line"
+    # MULE lines are those without a " " space prefix
     if [ "${{line:0:1}}" != " " ]
     then
         echo "$line" >> $filename.csv
@@ -271,8 +272,8 @@ def main():
         print("No arguments provided.",file=sys.stderr)
         parser.print_help(sys.stderr)
         sys.exit(1)
-
-    print(args)
+    if DEBUG:
+        print(args)
 
     # setting command
     if args.cmd is not None:
