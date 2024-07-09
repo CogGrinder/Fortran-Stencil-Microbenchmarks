@@ -18,7 +18,7 @@
 #elif   ALLOC_MODE == STATIC
 # define BENCH_ID 5
 #elif   ALLOC_MODE == NONE
-# define BENCH_ID 0
+# define BENCH_ID 6
 #else
 # define BENCH_ID 0
 #endif
