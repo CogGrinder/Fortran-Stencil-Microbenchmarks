@@ -17,3 +17,5 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
 echo "Running valgrind checher..."    
 valgrind --trace-children=yes --show-error-list=yes ./$BENCH_EXECUTABLE iters=16
+read
+valgrind --show-error-list=yes --leak-check=full --show-leak-kinds=all ./$BENCH_EXECUTABLE iters=16
