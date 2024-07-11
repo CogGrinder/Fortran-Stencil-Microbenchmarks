@@ -49,6 +49,7 @@ def import_data(normalise=True):
 
         wallclocktime_data = []
         #initialise cache miss data array - we assume wallclocktime to be a label of the data in the "-1"
+        # see line 126
         cache_miss_data = [[] for i in range(len(labels_no_superfluous) - 1) ]
         print(cache_miss_data)
         benchpaths = []
@@ -103,7 +104,7 @@ def import_data(normalise=True):
         f = open(filename, "w")
         json.dump(cache_miss_data.tolist(),f, indent=4)
         
-def show_graph_2D(is_wallclocktime_graph=False) :
+def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
         global labels
         global labels_no_superfluous
         global cache_miss_data
@@ -120,36 +121,60 @@ def show_graph_2D(is_wallclocktime_graph=False) :
             ]
         print("\n\nMask for first data label")
         print(benchnames_mask[0])
-        
-        benchnames_mask =  np.array([
-            [ benchnames_mask[0].copy() for i in range(len(labels_no_superfluous)-1)],
-            [ benchnames_mask[1].copy() for i in range(len(labels_no_superfluous)-1)]
-            ])
-
-        print(benchnames_mask[0])
-        # print(cache_miss_data[0])
-
-        if DEBUG:
-            print("\nData:")
-            print(cache_miss_data)
-
-        # data_alloc =    ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[0],label_mask) )
-        data_alloc =    ma.masked_array(cache_miss_data, mask= benchnames_mask[0] )
-        # data_static =   ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[1],label_mask) )
-        data_static =   ma.masked_array(cache_miss_data, mask= benchnames_mask[1] )
-        print(data_alloc[0])
-
-        print(benchnames_mask[0].sum())
-
+        benchnames_mask = np.array(benchnames_mask)
         # courtesy of https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
         # tickleft = np.arange(1,len(benchnames)+1)
         # tickleft_alloc =    np.arange(1,len(benchnames)-benchnames_mask[0][0].sum()+1)
-        tickleft_alloc =    (1-benchnames_mask[0][0]).cumsum()
+        tickleft_alloc =    (1-benchnames_mask[0]).cumsum()
         # tickleft_static =   np.arange(1,len(benchnames)-benchnames_mask[1][0].sum()+1)
-        tickleft_static =   (1-benchnames_mask[1][0]).cumsum()
+        tickleft_static =   (1-benchnames_mask[1]).cumsum()
+
+        if is_wallclocktime_graph:
+            if DEBUG:
+                print("\nData:")
+                print(wallclocktime_data)
+
+            # data_alloc =    ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[0],label_mask) )
+            data_alloc =    ma.masked_array(wallclocktime_data, mask= benchnames_mask[0] )
+            # data_static =   ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[1],label_mask) )
+            data_static =   ma.masked_array(wallclocktime_data, mask= benchnames_mask[1] )
+            print(data_alloc[0])
+        else:
+            benchnames_mask =  np.array([
+                [ benchnames_mask[0].copy() for i in range(len(labels_no_superfluous)-1)],
+                [ benchnames_mask[1].copy() for i in range(len(labels_no_superfluous)-1)]
+                ])
+
+            print(benchnames_mask[0])
+            # print(cache_miss_data[0])
+
+            if DEBUG:
+                print("\nData:")
+                print(cache_miss_data)
+
+            # data_alloc =    ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[0],label_mask) )
+            data_alloc =    ma.masked_array(cache_miss_data, mask= benchnames_mask[0] )
+            # data_static =   ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[1],label_mask) )
+            data_static =   ma.masked_array(cache_miss_data, mask= benchnames_mask[1] )
+            print(data_alloc[0])
+
+            print(benchnames_mask[0].sum())
+
+            # courtesy of https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
+            # tickleft = np.arange(1,len(benchnames)+1)
+            # tickleft_alloc =    np.arange(1,len(benchnames)-benchnames_mask[0][0].sum()+1)
+            tickleft_alloc =    (1-benchnames_mask[0][0]).cumsum()
+            # tickleft_static =   np.arange(1,len(benchnames)-benchnames_mask[1][0].sum()+1)
+            tickleft_static =   (1-benchnames_mask[1][0]).cumsum()
         sub_width = 1.0/(len(labels)-1)
-        index = 0
-        if not is_wallclocktime_graph:
+        if is_wallclocktime_graph:
+            offset = 0
+            print(data_alloc.shape)
+            print(tickleft_alloc.shape)
+            plt.bar(tickleft_alloc + offset,wallclocktime_data,width=sub_width, label="WALLCLOCKTIME", alpha=1)
+            plt.bar(tickleft_static + offset,wallclocktime_data,width=sub_width/3, label="static variant", alpha=1, color='black')
+        else:
+            index = 0
             for label in labels_no_superfluous:
                 if label != 'WALLCLOCKTIME':
                     offset = index * sub_width
@@ -166,7 +191,7 @@ def show_graph_2D(is_wallclocktime_graph=False) :
         plt.tight_layout()
 
         now = datetime.date.today()
-        plt.savefig("fig" + str(now) + ".pdf")
+        plt.savefig(fileprefix+"fig" + str(now) + ".pdf")
         plt.show() if str(input("Open figure in new window? (Y/n)\n"))=='Y' else None
 
 def show_graph_3D_1() :
@@ -242,7 +267,8 @@ def main():
     if len(sys.argv) >= 2:
         normalise = sys.argv[1]
     import_data(normalise)
-    show_graph_2D()
+    show_graph_2D(fileprefix="cache_misses")
+    show_graph_2D(fileprefix="wallclocktime",is_wallclocktime_graph=True)
     # show_graph_3D_2()
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html
