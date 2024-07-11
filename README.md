@@ -3,6 +3,13 @@ The goal is to develop microbenchmarks in Fortran to assess the performance of d
 ## Documentation
 See [documentation markdown file](doc/main.md) for further details.
 
+### [0 - Introduction to Fortran Microbenchmarks](doc/00_introduction.md)
+### [1 - Installation](doc/01_installation.md)
+### [2 - Notes for users](doc/02_user.md)
+#### [1.1 - ``allocatable`` allocated vs constant arrays](01_array_alloc.md#allocatable-benchmark--allocatable-allocated-vs-constant-arrays)
+### [3 - Notes for devs](doc/03_dev.md)
+
+
 ## File structure
 ``bench/`` subdirectory :
 - contains benchmark files
