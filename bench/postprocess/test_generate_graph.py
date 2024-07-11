@@ -13,7 +13,11 @@ DEBUG = False
 # global data
 # global benchnames
 
-def import_data(normalise: bool):
+ignored_counters = ['SPOILED', 'COUNTER']
+#used for ignoring folder with default benchmarks
+default_foldername = 'defaultalloc'
+
+def import_data(normalise=True):
     """Function that imports csv data as numpy array and label lists
 
     Args:
@@ -21,88 +25,118 @@ def import_data(normalise: bool):
             relative to size and iterations
     """
     global labels
-    global data
-    global data_masked
+    global labels_no_superfluous
+    global cache_miss_data
+    global wallclocktime_data
+    global cache_miss_data
+    global benchpaths
     global benchnames
+    global label_mask 
     f = open("../preprocess/all_benchmark_parameters.json", "r")
     param_dict = json.load(f)
 
     with open('data.csv', newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter='\t', quotechar='|')
-        
-        labels = reader.__next__()[1:]
-        data = [[] for i in range(len(labels)) ]
+        csvfile_reader = csv.reader(csvfile, delimiter='\t', quotechar='|')
+        # import the first line of the csv as the data labels
+        labels = csvfile_reader.__next__()[1:]
+        # make a list of the labels we keep for graphing
+        # TODO: see if it is better to make a mask ?? I don't think so
+        labels_no_superfluous = labels.copy()
+        for label in ignored_counters:
+            labels_no_superfluous.remove(label)
+        print(f"CSV LABELS: {labels}")
+        print(f"KEPT LABELS: {labels_no_superfluous}")
+
+        wallclocktime_data = []
+        #initialise cache miss data array - we assume wallclocktime to be a label of the data in the "-1"
+        cache_miss_data = [[] for i in range(len(labels_no_superfluous) - 1) ]
+        print(cache_miss_data)
+        benchpaths = []
         benchnames = []
-        for row in reader:
-            benchname = row[0]
-            benchname = benchname.lstrip("bench_tree/bench_")
-            benchname = benchname.rstrip("/run.sh")
-            benchname = benchname.replace("/","")
-            if DEBUG:
-                print(benchname)
-            if not 'defaultalloc' in benchname:
+        for row in csvfile_reader:
+            benchpath = row[0]
+            benchname = benchpath
+            benchname = benchname.lstrip("bench_tree/bench_").rstrip("/run.sh").replace("/","")
+            # if DEBUG:
+            #     print(benchname)
+            if default_foldername not in benchname:
+                benchpaths.append(benchpath)
                 benchnames.append(benchname)
-                for j, number in enumerate(row[1:]):
-                    imported_data = float(number)
-                    if labels[j]=="WALLCLOCKTIME":
-                        if (DEBUG):
-                            print(imported_data,end="flo ")
+                j_included_label=0
+                for j_row, number in enumerate(row[1:]):
+                    if labels[j_row] not in ignored_counters:
+                        imported_data = float(number)
+                        if labels[j_row]=="WALLCLOCKTIME":
+                            if (DEBUG):
+                                print(imported_data,end="flo ")
+                            # if normalise:
+                            #     imported_data *= float("5e+8")
+                        else :
+                            imported_data = int(imported_data)
+                            if (DEBUG):
+                                print(imported_data,end="int ")
                         if normalise:
-                            imported_data *= float("5e+8")
-                    else :
-                        imported_data = int(imported_data)
-                        if (DEBUG):
-                            print(imported_data,end="int ")
-                    if normalise:
-                        # print(param_dict[benchname]["iters"])
-                        # print(param_dict[benchname]["size_option"])
-                        imported_data /= param_dict[row[0]]["iters"] * param_dict[row[0]]["ni"] * param_dict[row[0]]["nj"]
-                    data[j].append(imported_data)
+                            imported_data /= param_dict[row[0]]["iters"] * param_dict[row[0]]["ni"] * param_dict[row[0]]["nj"]
+                        # save data in appropriate data
+                        if labels[j_row]=="WALLCLOCKTIME":
+                            wallclocktime_data.append(imported_data)
+                        else:
+                            if DEBUG:
+                                print(f"cache_miss_data[j_included_label] - j_included_label={j_included_label}")
+                            cache_miss_data[j_included_label].append(imported_data)
+                            j_included_label+=1
+                        
                             
 
-        data = np.array(data)
-        global label_mask 
+        cache_miss_data = np.array(cache_miss_data)
         label_mask = np.array([ len(benchnames) *[label in ['SPOILED', 'COUNTER']] for label in labels])
         # print(label_mask)
-        data_masked = ma.masked_array(data, mask=label_mask)
+        # cache_miss_data = ma.masked_array(cache_miss_data, mask=label_mask)
 
 
         # labels.remove('SPOILED')
         # labels.remove('COUNTER')
 
-        if (DEBUG):
-            print(benchnames)
         
         # JSON export
         filename = "data.json"
         f = open(filename, "w")
-        json.dump(data.tolist(),f, indent=4)
+        json.dump(cache_miss_data.tolist(),f, indent=4)
         
-def show_graph_2D() :
+def show_graph_2D(is_wallclocktime_graph=False) :
         global labels
-        global data
-        global data_masked
+        global labels_no_superfluous
+        global cache_miss_data
+        global wallclocktime_data
         global benchnames
         global label_mask
 
         plt.figure(figsize=(40,20))
 
+        # TODO: replace with access to JSON bench parameters
         benchnames_mask =  [
             [ "alloc"  in benchmark_name for benchmark_name in benchnames],
             [ "static" in benchmark_name for benchmark_name in benchnames]
             ]
-        # print(benchnames_mask[0])
+        print("\n\nMask for first data label")
+        print(benchnames_mask[0])
         
         benchnames_mask =  np.array([
-            [ benchnames_mask[0].copy() for i in range(len(labels))],
-            [ benchnames_mask[1].copy() for i in range(len(labels))]
+            [ benchnames_mask[0].copy() for i in range(len(labels_no_superfluous)-1)],
+            [ benchnames_mask[1].copy() for i in range(len(labels_no_superfluous)-1)]
             ])
 
-        # print(benchnames_mask[0])
-        print(data_masked[0])
+        print(benchnames_mask[0])
+        # print(cache_miss_data[0])
 
-        data_alloc =    ma.masked_array(data, mask= np.bitwise_or(benchnames_mask[0],label_mask) )
-        data_static =   ma.masked_array(data, mask= np.bitwise_or(benchnames_mask[1],label_mask) )
+        if DEBUG:
+            print("\nData:")
+            print(cache_miss_data)
+
+        # data_alloc =    ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[0],label_mask) )
+        data_alloc =    ma.masked_array(cache_miss_data, mask= benchnames_mask[0] )
+        # data_static =   ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[1],label_mask) )
+        data_static =   ma.masked_array(cache_miss_data, mask= benchnames_mask[1] )
         print(data_alloc[0])
 
         print(benchnames_mask[0].sum())
@@ -115,14 +149,15 @@ def show_graph_2D() :
         tickleft_static =   (1-benchnames_mask[1][0]).cumsum()
         sub_width = 1.0/(len(labels)-1)
         index = 0
-        for i, label in enumerate(labels):
-            offset = index * sub_width
-            if not label in ['SPOILED','COUNTER'] :
-                print(data_alloc[i].shape)
-                print(tickleft_alloc.shape)
-                plt.bar(tickleft_alloc + offset,data_alloc[i],width=sub_width, label=label, alpha=1)
-                plt.bar(tickleft_static + offset,data_static[i],width=sub_width/3, label="static variants", alpha=1, color='black')
-                index += 1
+        if not is_wallclocktime_graph:
+            for label in labels_no_superfluous:
+                if label != 'WALLCLOCKTIME':
+                    offset = index * sub_width
+                    print(data_alloc[index].shape)
+                    print(tickleft_alloc.shape)
+                    plt.bar(tickleft_alloc + offset,data_alloc[index],width=sub_width, label=label, alpha=1)
+                    plt.bar(tickleft_static + offset,data_static[index],width=sub_width/3, label="static variants", alpha=1, color='black')
+                    index += 1
         # plt.yscale('log')
         # plt.xticks(rotation=90)
         plt.xticks(ticks=tickleft_static +sub_width*(len(labels)-2 -1)/2.0,labels=benchnames, rotation=60, ha='right')
@@ -132,12 +167,11 @@ def show_graph_2D() :
 
         now = datetime.date.today()
         plt.savefig("fig" + str(now) + ".pdf")
-
-        plt.show()
+        plt.show() if str(input("Open figure in new window? (Y/n)\n"))=='Y' else None
 
 def show_graph_3D_1() :
         global labels
-        global data
+        global cache_miss_data
         global benchnames
         fig = plt.figure(figsize=(8, 3))
         ax1 = fig.add_subplot(projection='3d')
@@ -151,7 +185,7 @@ def show_graph_3D_1() :
         bottom = np.zeros_like(x)
         width = 1
         depth = 1
-        flattened_data = np.array([x for line in data for x in line])
+        flattened_data = np.array([x for line in cache_miss_data for x in line])
         print(flattened_data.shape)
         ax1.bar3d(x, y, bottom, width, depth, flattened_data, shade=True)
         ax1.set_title('Shaded')
@@ -178,7 +212,7 @@ def polygon_under_graph(x, y):
 
 def show_graph_3D_2() :
         global labels
-        global data
+        global cache_miss_data
         global benchnames
 
         # 3D accumulation courtesy of https://matplotlib.org/stable/gallery/mplot3d/polys3d.html
@@ -194,7 +228,7 @@ def show_graph_3D_2() :
             for i, label in enumerate(labels):
                 offset = index * sub_width
                 if not label in ['SPOILED','COUNTER'] :
-                    ax.bar(tickleft + offset,data[i],width=sub_width, label=label, alpha=1, zs=j+1, zdir='y')
+                    ax.bar(tickleft + offset,cache_miss_data[i],width=sub_width, label=label, alpha=1, zs=j+1, zdir='y')
                     index += 1
         # plt.yscale('log')
         # plt.xticks(rotation=90)
