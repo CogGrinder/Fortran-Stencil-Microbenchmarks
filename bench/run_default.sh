@@ -3,7 +3,7 @@
 # set BENCH_EXECUTABLE and PERF_REGIONS
 export PERF_REGIONS="../perf_regions"
 export BENCH_MAKE_DIR="."
-export BENCH_EXECUTABLE="bin/bench_defaultalloc_defaultsize_sizenotcompiled_defaultkernel"
+export BENCH_EXECUTABLE="bin/bench_default"
 
 # set perf_regions variables here
 export PERF_REGIONS_VERBOSITY=0
@@ -24,7 +24,7 @@ export KERNEL_MODE=""
 
 make -C $BENCH_MAKE_DIR clean 
 make -C $BENCH_MAKE_DIR print_main 
-make -C $BENCH_MAKE_DIR bin/bench_defaultalloc_defaultsize_sizenotcompiled_defaultkernel
+make -C $BENCH_MAKE_DIR main
 
 filename=out
 

@@ -183,6 +183,7 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 # Uncomment for non-PAPI:
 # export PERF_REGIONS_COUNTERS="WALLCLOCKTIME"
 
+export MAIN="{benchname}"
 export ALLOC_MODE="{alloc_option}"
 export SIZE_MODE="{size_option}"
 export SIZE_AT_COMPILATION="{int(is_compilation_time_size)}"
@@ -190,13 +191,11 @@ export NI="{ni if is_compilation_time_size else ""}"
 export NJ="{nj if is_compilation_time_size else ""}"
 export KERNEL_MODE="{kernel_mode}"
 
-make -C $BENCH_MAKE_DIR print_main {"_PERF_REGIONS_FOLDER=../"+ "../"*(TREE_DEPTH+2)+"perf_regions" if is_copy_bench_files else ""}
-echo from script: bin/{benchname}
-make -C $BENCH_MAKE_DIR bin/{benchname} {"_PERF_REGIONS_FOLDER=../"+ "../"*(TREE_DEPTH+2)+"perf_regions" if is_copy_bench_files else ""}
+make -C $BENCH_MAKE_DIR main {"_PERF_REGIONS_FOLDER=../"+ "../"*(TREE_DEPTH+2)+"perf_regions" if is_copy_bench_files else ""}
 
 filename=out
 
-echo "Running mode {size_suffix}..."    
+echo "Running mode {benchname}..."    
 ls
 # ./$BENCH_EXECUTABLE
 # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output

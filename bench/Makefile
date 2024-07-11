@@ -30,6 +30,8 @@ endif
 # used in codegen for scaling number of iterations
 SPEED?=1
 
+####################### .PHONY targets ########################
+
 all: main
 run: run_main
 .PHONY: preprocess postprocess
@@ -50,44 +52,15 @@ clean_pre:
 	cd preprocess;python3 codegen.py --cmd clean
 
 ####################### mainfile selector ########################
-SUFFIX.:=
-SUFFIX.NONE := _defaultalloc
-SUFFIX.ALLOC := _alloc
-SUFFIX.STATIC := _static
 
-SUFFIX.${ALLOC_MODE}. :=						${SUFFIX.${ALLOC_MODE}}
-SUFFIX.${ALLOC_MODE}.NONE :=					${SUFFIX.${ALLOC_MODE}}_defaultsize
-SUFFIX.${ALLOC_MODE}.SMALLER_THAN_L3 :=			${SUFFIX.${ALLOC_MODE}}_smallerl3
-SUFFIX.${ALLOC_MODE}.SLIGHTLY_SMALLER_THAN_L3 :=${SUFFIX.${ALLOC_MODE}}_ssmallerl3
-SUFFIX.${ALLOC_MODE}.SLIGHTLY_BIGGER_THAN_L3 :=	${SUFFIX.${ALLOC_MODE}}_sbiggerl3
-SUFFIX.${ALLOC_MODE}.BIGGER_THAN_L3 :=			${SUFFIX.${ALLOC_MODE}}_biggerl3
-
-
-SIZE_MODE_IS_NUMBER :=$(shell echo "$(SIZE_MODE)" | grep -Eq '^[0-9]*([.][0-9]*)?$$' && echo "1" || echo "0")
-ifeq ($(SIZE_MODE_IS_NUMBER),1)
-	SUFFIX.${ALLOC_MODE}.${SIZE_MODE} := ${SUFFIX.${ALLOC_MODE}}_${shell printf "%05.2f" $(SIZE_MODE)}Mb
+# use MAIN variable from export as filename
+ifndef MAIN
+MAIN:=bench_default
 endif
-
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.  := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.1 := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}_sizecompiled
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.0 := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}_sizenotcompiled
-
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}. 				:= ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_defaultkernel
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.X_KERNEL 		:= ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_xkernel
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.Y_KERNEL 		:= ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_ykernel
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.SIZE_5_KERNEL 	:= ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_size5kernel
-SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.DEFAULT_KERNEL := ${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}}_defaultkernel
-
-
-# MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}}
-MAIN:= bench${SUFFIX.${ALLOC_MODE}.${SIZE_MODE}.${SIZE_AT_COMPILATION}.${KERNEL_MODE}}
-
 # add .exe to executable name if Windows
 ifeq ($(OS),Windows_NT)
 MAIN:= $(MAIN).exe
 endif
-
-
 
 ####################### compilation flags ########################
 BIN_DIR := bin
@@ -165,7 +138,7 @@ $(LIB_DIR)/library.a : $(MODULE_O)
 	make -C src ../$(LIB_DIR)/library.a
 	@touch $(LIB_DIR)/library.a
 
-$(BUILD_DIR)/%.o : $(SRC_DIR)/*.f90
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.f90
 	@echo .f90 files newer than .o files :
 	@echo $?
 	make -C src

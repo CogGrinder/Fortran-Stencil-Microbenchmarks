@@ -1,3 +1,12 @@
+# Accuracy of results
+To obtain more accurate results, the code generation has a speed parameter which scales the number of iterations.
+
+In order to get more accurate results, you may set this speed to be lower than 1.0. In can be set in multiple ways:
+- if using make, set SPEED=<float> as a suffix for ``make pre``
+- if directly using scripts, look at the help for [``codegen.py``](../bench/preprocess/codegen.py) with ``python3 codegen.py --help``
+    hint: use --speed flag
+
+
 11/07/24 Out of date
 # ``allocatable`` benchmark : ``allocatable`` allocated vs constant arrays
 To use, set your CPU L3 cache size in [``benchmark_parameters.f90``](../bench/src/benchmark_parameters.f90)
@@ -11,6 +20,3 @@ Set the desired type of array size by passing ``sizemode=<value>`` at execution 
 | 3                     | 290.6%                 |
 
 Numbers of iterations are normalized to work on the same total amount of stencil operations, minus the ignored edges.
-
-## More accurate results
-To obtain more accurate results for comparison, use a smaller factor ``#define BENCHMARK_ACCELERATION`` in [``benchmark_parameters.f90``](../bench/src/benchmark_parameters.f90) - value is a power of 2 between 1 and $32 = 2^5$.

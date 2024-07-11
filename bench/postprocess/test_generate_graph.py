@@ -51,7 +51,6 @@ def import_data(normalise=True):
         #initialise cache miss data array - we assume wallclocktime to be a label of the data in the "-1"
         # see line 126
         cache_miss_data = [[] for i in range(len(labels_no_superfluous) - 1) ]
-        print(cache_miss_data)
         benchpaths = []
         benchnames = []
         for row in csvfile_reader:
@@ -119,8 +118,9 @@ def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
             [ "alloc"  in benchmark_name for benchmark_name in benchnames],
             [ "static" in benchmark_name for benchmark_name in benchnames]
             ]
-        print("\n\nMask for first data label")
-        print(benchnames_mask[0])
+        if DEBUG:
+            print("\n\nMask for first data label")
+            print(benchnames_mask[0])
         benchnames_mask = np.array(benchnames_mask)
         # courtesy of https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
         # tickleft = np.arange(1,len(benchnames)+1)
@@ -138,15 +138,16 @@ def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
             data_alloc =    ma.masked_array(wallclocktime_data, mask= benchnames_mask[0] )
             # data_static =   ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[1],label_mask) )
             data_static =   ma.masked_array(wallclocktime_data, mask= benchnames_mask[1] )
-            print(data_alloc[0])
+            if DEBUG:
+                print(data_alloc[0])
         else:
             benchnames_mask =  np.array([
                 [ benchnames_mask[0].copy() for i in range(len(labels_no_superfluous)-1)],
                 [ benchnames_mask[1].copy() for i in range(len(labels_no_superfluous)-1)]
                 ])
 
-            print(benchnames_mask[0])
-            # print(cache_miss_data[0])
+            if DEBUG:
+                print(benchnames_mask[0])
 
             if DEBUG:
                 print("\nData:")
@@ -156,9 +157,10 @@ def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
             data_alloc =    ma.masked_array(cache_miss_data, mask= benchnames_mask[0] )
             # data_static =   ma.masked_array(cache_miss_data, mask= np.bitwise_or(benchnames_mask[1],label_mask) )
             data_static =   ma.masked_array(cache_miss_data, mask= benchnames_mask[1] )
-            print(data_alloc[0])
-
-            print(benchnames_mask[0].sum())
+            
+            if DEBUG:
+                print(data_alloc[0])
+                print(benchnames_mask[0].sum())
 
             # courtesy of https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
             # tickleft = np.arange(1,len(benchnames)+1)
@@ -169,8 +171,9 @@ def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
         sub_width = 1.0/(len(labels)-1)
         if is_wallclocktime_graph:
             offset = 0
-            print(data_alloc.shape)
-            print(tickleft_alloc.shape)
+            if DEBUG:
+                print(data_alloc.shape)
+                print(tickleft_alloc.shape)
             plt.bar(tickleft_alloc + offset,wallclocktime_data,width=sub_width, label="WALLCLOCKTIME", alpha=1)
             plt.bar(tickleft_static + offset,wallclocktime_data,width=sub_width/3, label="static variant", alpha=1, color='black')
         else:
@@ -178,8 +181,9 @@ def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
             for label in labels_no_superfluous:
                 if label != 'WALLCLOCKTIME':
                     offset = index * sub_width
-                    print(data_alloc[index].shape)
-                    print(tickleft_alloc.shape)
+                    if DEBUG:
+                        print(data_alloc[index].shape)
+                        print(tickleft_alloc.shape)
                     plt.bar(tickleft_alloc + offset,data_alloc[index],width=sub_width, label=label, alpha=1)
                     plt.bar(tickleft_static + offset,data_static[index],width=sub_width/3, label="static variants", alpha=1, color='black')
                     index += 1

@@ -1,15 +1,9 @@
-! #define MAX_SIZE 1024*1024*128
-
 ! default value macros
 #define ARRAY_LEN 1024 * 16
-#define ITERS 1024
+#define ITERS 128
 
-! see benchmark_parameters.f90 for options
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! BEWARE : benchmark_size_mode isn't compile time fixed, it only has a default option, unlike bench_id
-! TODO : make an option to fix at compile time / keep flexible for different compiler optimisations
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+! see following file for macro definitions
 #include "src/benchmark_compilation_fixed_parameters.h"
 
 ! TODO : change from BENCH_ID paradigm
@@ -81,9 +75,6 @@ PROGRAM main
         end SUBROUTINE COMPUTATION_2D_IJ
     end INTERFACE
     
-    ! getting the variant of the benchmark from the command line
-    ! see https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html
-
 
     ! default values
     iters = ITERS
@@ -98,6 +89,7 @@ CALL perf_regions_init()
     CALL WARMUP_COMPUTATION(3,n1dinput)
 
     i = 1
+    ! see https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html
     do
         call get_command_argument(i,arg)
         ! condition to leave do loop
@@ -200,12 +192,8 @@ USE benchmark_parameters
         .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY_MODULE) then
         WRITE(*,*) "Mem size: ", array_len*0.001 ," KByte"
     else
-        nii = ni
-        njj = nj
-        ! write(*,*) "ni", nii
-        ! write(*,*) "nj", njj
-        WRITE(*,*) "Mem size: ", nii* &
-                                njj*0.001 ," KByte"
+        WRITE(*,*) "Mem size: ", ni* &
+                                nj*0.001 ," KByte"
     end if
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
