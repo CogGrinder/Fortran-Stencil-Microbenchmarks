@@ -128,13 +128,8 @@ endif
 # MODULE LIBRARY COMPILATION
 MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
 MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))
-# see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
-# using .SECONDARY
-# .SECONDARY : $(MODULE_O) 
-# .LOW_RESOLUTION_TIME : $(MODULE_f90)
 
 $(LIB_DIR)/library.a : $(MODULE_O)
-# make -C src library
 	make -C src ../$(LIB_DIR)/library.a
 	@touch $(LIB_DIR)/library.a
 
@@ -142,8 +137,6 @@ $(BUILD_DIR)/%.o : $(SRC_DIR)/%.f90
 	@echo .f90 files newer than .o files :
 	@echo $?
 	make -C src
-#$(patsubst $(BUILD_DIR)/%.o, ../$(BUILD_DIR)/%.o, $@)
-
 
 # DIRECTORIES
 $(BUILD_DIR) $(LIB_DIR) $(BIN_DIR) :

@@ -17,10 +17,6 @@
 # define BENCH_ID 0
 #endif
 
-#ifdef ARRAY_LEN_OVERRIDE
-    #define ARRAY_LEN ARRAY_LEN_OVERRIDE
-#endif
-
 PROGRAM main
     ! thank you to https://www.tutorialspoint.com/fortran/fortran_arrays.htm
     USE perf_regions_fortran

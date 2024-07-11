@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
@@ -89,14 +90,8 @@ def import_data(normalise=True):
                             
 
         cache_miss_data = np.array(cache_miss_data)
-        label_mask = np.array([ len(benchnames) *[label in ['SPOILED', 'COUNTER']] for label in labels])
-        # print(label_mask)
+        # label_mask = np.array([ len(benchnames) *[label in ['SPOILED', 'COUNTER']] for label in labels])
         # cache_miss_data = ma.masked_array(cache_miss_data, mask=label_mask)
-
-
-        # labels.remove('SPOILED')
-        # labels.remove('COUNTER')
-
         
         # JSON export
         filename = "data.json"
@@ -267,13 +262,25 @@ def show_graph_3D_2() :
         plt.show()
 
 def main():
+    """Main function of graph generation - interprets input from argparse
+
+    Use --help for details.
+    """
+    parser = argparse.ArgumentParser(description="Graph generator for benchmark results with options to choose data to compare with different groupings")
+    args = parser.parse_args()
+    if len(sys.argv)==1:
+        print("No arguments provided.",file=sys.stderr)
+        parser.print_help(sys.stderr)
+        print("\nDefault execution:\n")
+
     normalise = True
     if len(sys.argv) >= 2:
         normalise = sys.argv[1]
     import_data(normalise)
     show_graph_2D(fileprefix="cache_misses")
     show_graph_2D(fileprefix="wallclocktime",is_wallclocktime_graph=True)
-    # show_graph_3D_2()
+    print("\nDone.")
+
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html
 if __name__ == '__main__':

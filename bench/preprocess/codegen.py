@@ -1,4 +1,4 @@
-import argparse
+import argparse # see https://docs.python.org/3/library/argparse.html
 import sys
 import os
 import shutil
@@ -15,6 +15,7 @@ ACCURACY = 1
 
 global VERBOSE
 VERBOSE = False
+global DEBUG
 DEBUG = False
 L3_SIZE = 16
 
@@ -46,8 +47,8 @@ size_mode_number = {k: v+100 for v, k in enumerate(size_suffixes.keys())}
 
 src = pathlib.Path("../src/")
 mainfile = pathlib.Path("../main.f90")
-if DEBUG:
-    mainfile = pathlib.Path("../main.test.f90")
+# if DEBUG:
+#     mainfile = pathlib.Path("../main.test.f90")
 makefile = pathlib.Path("../Makefile")
 
 
@@ -136,7 +137,8 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
         is_copy_bench_files = is_compilation_time_size or kernel_mode!=""
         if  is_copy_bench_files:
             fulldirectory_absolute = pathlib.Path(fulldirectory).resolve()
-            # print(fulldirectory_absolute)
+            if DEBUG and VERBOSE:
+                print(fulldirectory_absolute)
             shutil.copytree(src.resolve(),str(fulldirectory_absolute)+"/src",dirs_exist_ok=True)
             shutil.copy2(mainfile.resolve(),fulldirectory_absolute)
             shutil.copy2(makefile.resolve(),fulldirectory_absolute)
@@ -225,13 +227,14 @@ def main():
     """
     global ACCURACY
     global VERBOSE
+    global DEBUG
     # courtesy of https://stackoverflow.com/questions/20063/whats-the-best-way-to-parse-command-line-arguments
     parser = argparse.ArgumentParser(description="Code generator for benchmarking with various options in a tree structure")
 
     phrase = shlex.join(sys.argv[1:])
     # file_test()
     # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
-    cmd = 'one_bench'
+    mode = 'single'
     alloc_option = ""
     size_option = ""
     is_compilation_time_size = ""
@@ -243,27 +246,35 @@ def main():
     all_kernel_modes.remove("")
     all_parameters = {}
     
-    parser.add_argument('--cmd', nargs='?', default='one_bench',
-                    help=f'Can be clean, all, all_old, all_l3, or one_bench')
-    parser.add_argument('--alloc', nargs='?',
-                    help=f'An alloc_option in {", ".join(list(allocation_suffixes.keys())).rstrip(", ")}')
-    parser.add_argument('--size', nargs='?',
-                    help=f'A size_option in {", ".join(list(size_suffixes.keys()))} or between 0 and 99')
-    parser.add_argument('--compile-size', nargs='?', type=bool,
-                help=f'A compilation time size option within {" ".join(list(map(str,is_compilation_time_size_suffixes.keys())))}')
+    parser.add_argument('-M','--MODE', nargs='?', default='all',
+                    help='Can be all, all_l3, single or clean. "all" generates all possible combinations with set range of sizes.')
+    parser.add_argument('-A', '--ACCURACY', metavar='multiplier', type=float,
+                        help='An optional parameter that makes the benchmark more accurate if above 1 and accelerates it if below 1')
+
+    # thank you to https://stackoverflow.com/questions/27411268/arguments-that-are-dependent-on-other-arguments-with-argparse
+    parser_mode_specific = parser.add_argument_group(title='mode specific options',
+                                   description='Flags for modes "single" and "all".',)
     
+    # Arguments for single mode
+    parser_mode_specific.add_argument('--alloc', nargs='?',
+                    help=f'An alloc_option in {", ".join(list(allocation_suffixes.keys())).rstrip(", ")}')
+    parser_mode_specific.add_argument('--size', nargs='?',
+                    help=f'A size_option in {", ".join(list(size_suffixes.keys()))} or between 0 and 99')
+    parser_mode_specific.add_argument('--compile-size', nargs='?', type=bool,
+                help=f'A compilation time size option within {" ".join(list(map(str,is_compilation_time_size_suffixes.keys())))}')
+    parser_mode_specific.add_argument('--range', metavar="size", nargs='+', default=[1,17],
+                        help='Used in mode "all". Represents the scope of sizes in Mb to study. If length is 2, acts as lower and upper bound. If length is\
+                             1, acts as upper bound with lower bound 1, if is number only selects that number, else it is the list of sizes in Mb.')
     # Optional arguments
-    parser.add_argument('--range', nargs='+',
-                        help='Represents the scope of sizes in Mb to study. If length is 2, acts as lower and upper bound. If length is\
-                             1, acts as upper bound with lower bound 1, if is number only selects that number, else it is the list of sizes in Mb')
-    parser.add_argument('--speed', metavar="inverse_multiplier", type=float,
-                        help='An optional parameter that accelerates the bench if above 1 and makes it more accurate if below 1')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Displays more output')
     parser.add_argument('-c', '--clean-before', action='store_true',
                         help='Cleans existing directory before creating')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Displays more output')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Displays debug output')
     
     args = parser.parse_args()
+    
 
     ### checking parameter values ###
     # courtesy of https://stackoverflow.com/questions/4042452/display-help-message-with-python-argparse-when-script-is-called-without-any-argu
@@ -271,12 +282,14 @@ def main():
         print("No arguments provided.",file=sys.stderr)
         parser.print_help(sys.stderr)
         sys.exit(1)
+    if args.debug:
+        DEBUG=True
     if DEBUG:
         print(args)
 
     # setting command
-    if args.cmd is not None:
-        cmd = args.cmd
+    if args.MODE is not None:
+        mode = args.MODE
     # setting options
     if args.alloc is not None:
         alloc_option = args.alloc
@@ -284,7 +297,6 @@ def main():
         size_option = args.size
     if args.compile_size is not None:
         is_compilation_time_size = args.compile_size
-
     if args.range is not None:
         if DEBUG:
             print("range: " + str(args.range))
@@ -297,24 +309,24 @@ def main():
             iterator_of_selected_sizes = range(math.floor(float(args.range[0])),math.ceil(float(args.range[1])))
         else:
             iterator_of_selected_sizes = list(map(float,args.range))
-    if VERBOSE:
-        print("range: " + str(iterator_of_selected_sizes))
-    if args.speed is not None:
-        if args.speed <= 0:
-            parser.error("speed cannot be lower than 0")
+    if args.ACCURACY is not None:
+        if args.ACCURACY <= 0:
+            parser.error(f"Accuracy flag set to {args.ACCURACY}: cannot be non-positive")
         else:
-            ACCURACY = 1/args.speed
+            ACCURACY = args.ACCURACY
+    
     if args.verbose:
         VERBOSE=True
     if VERBOSE:
         print("verbose output on")
         print(alloc_option)
         print(size_option)
+        print("range: " + str(iterator_of_selected_sizes))
         print(is_compilation_time_size)
         print("ACCURACY="+str(ACCURACY))
 
     ### executing command ###
-    if cmd != "clean":
+    if mode != "clean":
         if pathlib.Path("bench_tree").is_dir() :
             if args.clean_before:
                 shutil.rmtree("bench_tree")
@@ -326,14 +338,14 @@ def main():
         else:
             os.mkdir("bench_tree")
     
-    if cmd == "clean":
+    if mode == "clean":
         print("Cleaning benchmark script tree... Y/n ?")
         if (str(input()) == "Y") :
             shutil.rmtree("bench_tree")
             print("Cleaned")
         else :
             print("Aborted")
-    elif cmd in ["all_old","all_no_compilation_time"]:
+    elif mode in ["all_old","all_no_compilation_time"]:
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
         
@@ -344,7 +356,7 @@ def main():
                                             "alloc_option": alloc_option,
                                             "iters": iters,
                                             "is_compilation_time_size": False}
-    elif cmd in ["all","all_compilation_time"]:
+    elif mode in ["all","all_compilation_time"]:
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
@@ -361,7 +373,7 @@ def main():
                                                     "alloc_option": alloc_option,
                                                     "iters": iters,
                                                     "is_compilation_time_size": is_compilation_time_size}
-    elif cmd == "all_l3":
+    elif mode == "all_l3":
         # shutil.rmtree("bench_tree")
         all_l3_relative_size_options = list(size_suffixes.keys())
         all_l3_relative_size_options.remove("")
@@ -378,7 +390,7 @@ def main():
                                                 "alloc_option": alloc_option,
                                                 "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size}
-    elif cmd == "one_bench" :
+    elif mode == "single" :
         description = 'default' if (alloc_option=='' and size_option=='' and is_compilation_time_size=='')\
             else str(alloc_option) + str(size_option) + "is_compilation_time_size: " + str(is_compilation_time_size)
         print(f"Creating {description} benchmark script...")

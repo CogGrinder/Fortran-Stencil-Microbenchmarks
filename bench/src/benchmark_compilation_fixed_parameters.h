@@ -16,6 +16,9 @@
 #define SIZE_5_KERNEL 5
 #define NO_INCLUDE -1
 
+#ifndef KERNEL_MODE
+! no KERNEL_MODE, preprocessing incomplete
+#endif
 
 #ifndef SIZE_AT_COMPILATION /* SIZE_AT_COMPILATION only supports SIZE_MODE from 1 to 99 ! TODO: support 3D and 1D */
 # define SIZE_AT_COMPILATION 0 /* default is to not determine size at compilation */

@@ -1,4 +1,13 @@
-# Accuracy of results
+# Executing a benchmark
+
+Once everything is installed, you may use one of two modes.
+The default mode is when you use the commands:
+```bash
+$ make pre
+$ make post
+```
+
+## Accuracy of results
 To obtain more accurate results, the code generation has a speed parameter which scales the number of iterations.
 
 In order to get more accurate results, you may set this speed to be lower than 1.0. In can be set in multiple ways:

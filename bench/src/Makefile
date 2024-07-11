@@ -1,5 +1,6 @@
-#to debug preprocessor, use cpp -E benchmark_2D_CPU.f90 -DSIZE_AT_COMPILATION=1 -DNI=1024 -DNJ=1024 -I../../perf_regions/src
-#thank you https://aoterodelaroza.github.io/devnotes/modern-fortran-makefiles/
+# thank you to https://aoterodelaroza.github.io/devnotes/modern-fortran-makefiles/
+# to debug preprocessor, use cpp -E benchmark_2D_CPU.f90 -DSIZE_AT_COMPILATION=1 -DNI=1024 -DNJ=1024 -I../../perf_regions/src
+# see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html for special targets
 .SUFFIXES: #disable automatic rules to override default modula2 compiling
 # (avoid .mod being interpreted as modula-2 source files)
 FC = gfortran
@@ -82,10 +83,7 @@ $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : $(SRC_DIR)/b
 # documentation of make's .LOW_RESOLUTION_TIME at
 # https://www.gnu.org/software/make/manual/html_node/Special-Targets.html
 $(LIB_DIR)/library.a : $(MODULE_O) | $(LIB_DIR)
-	ar crUu $(LIB_DIR)/library.a $^
-# touch $^
-# touch $(LIB_DIR)/library.a
-
+	ar crUu $(LIB_DIR)/library.a $?
 
 
 # DIRECTORIES
