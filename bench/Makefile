@@ -89,6 +89,16 @@ PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 CFLAGS:= -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
+### nvfortran exports
+NVARCH=Linux_x86_64#`Linux_x86_64 -s`_`Linux_x86_64 -m`
+export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk
+export NVCOMPILERS
+export MANPATH:=$(MANPATH):$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/man
+export PATH:=$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/bin:$(PATH)
+export PATH:=/usr/local/cuda-12:/usr/local/cuda-12/bin:$(PATH)
+export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_PATH)
+
 ####################### main compilation #######################
 print_main:
 	echo from make:___$(BIN_DIR)/$(MAIN)
@@ -143,5 +153,6 @@ $(BUILD_DIR) $(LIB_DIR) $(BIN_DIR) :
 	-@mkdir $@
 
 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so :
+# add MODE=debug as a trailing option for debugging
+# -$(MAKE) -C $(PERF_REGIONS_FOLDER) MODE=debug
 	make -C $(PERFREGION_SRC)
-#--silent

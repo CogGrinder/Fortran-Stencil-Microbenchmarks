@@ -21,6 +21,7 @@ bench/preprocess/array_alloc.csv
 bench/postprocess/data.*
 bench/postprocess/*.pdf
 tuto/echo
+tuto/omp
 venv
 bench/testing/postprocess_testing/postprocess/data.csv
 bench/testing/out.csv

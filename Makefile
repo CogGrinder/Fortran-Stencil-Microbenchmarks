@@ -22,11 +22,10 @@ ifeq ($(OS),Windows_NT)
 MAKE = make
 endif
 
+.PHONY : tuto 
+
 all:
 	@echo make: $(MAKE)
-# add MODE=debug as a trailing option for debugging
-# -$(MAKE) -C $(PERF_REGIONS_FOLDER) MODE=debug
-	-$(MAKE) -C $(PERF_REGIONS_FOLDER) --silent
 	-$(MAKE) -C $(BENCH)
 
 run: run_bench
@@ -44,7 +43,7 @@ postprocess:
 	$(MAKE) -C $(BENCH) postprocess
 
 
-make_tuto:
+tuto:
 	$(MAKE) -C $(TUTO)
 run_tuto:
 	$(MAKE) -C $(TUTO) run

@@ -3,7 +3,10 @@
 # see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html for special targets
 .SUFFIXES: #disable automatic rules to override default modula2 compiling
 # (avoid .mod being interpreted as modula-2 source files)
+ifndef FC
 FC = gfortran
+endif
+NV = nvfortran
 FFLAGS = -cpp -O3 #-Wall -Wextra
 
 
@@ -12,6 +15,7 @@ BUILD_DIR := ../build
 LIB_DIR   := ../lib
 SRC_DIR   := .
 VPATH = $(BUILD_DIR)
+
 
 MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
 # see https://www.gnu.org/software/make/manual/html_node/Text-Functions.html
@@ -42,7 +46,8 @@ library: $(LIB_DIR)/library.a
 
 # default rule
 $(BUILD_DIR)/%.o $(BUILD_DIR)/%.mod : $(SRC_DIR)/%.f90 | $(BUILD_DIR)
-	$(FC) $(FFLAGS) -c $< -o $(BUILD_DIR)/$(basename $<).o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} -J$(BUILD_DIR)
+	$(FC) $(FFLAGS) -c $< -o $(BUILD_DIR)/$(basename $<).o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ}
+	mv -f $(<:.f90=.mod) "${BUILD_DIR}"
 
 ####################### compilation flags ########################
 BENCH_LIB := -L$(LIB_DIR) -l:library.a
@@ -71,13 +76,19 @@ $(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_
 ####################### compilation with special flags #######################
 
 $(BUILD_DIR)/benchmark_1D.o $(BUILD_DIR)/benchmark_1D.mod : $(SRC_DIR)/benchmark_1D.f90 | $(BUILD_DIR)
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_1D.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_1D.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	mv -f $(<:.f90=.mod) "${BUILD_DIR}"
 
 $(BUILD_DIR)/benchmark_2D_CPU.o $(BUILD_DIR)/benchmark_2D_CPU.mod : $(SRC_DIR)/benchmark_2D_CPU.f90 | $(BUILD_DIR)
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_CPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_CPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	mv -f $(<:.f90=.mod) "${BUILD_DIR}"
 
+# GPU compilation commented when FC is not nvfortran:
+ifeq ( $(FC) , nvfortran )
 $(BUILD_DIR)/benchmark_2D_GPU.o $(BUILD_DIR)/benchmark_2D_GPU.mod : $(SRC_DIR)/benchmark_2D_GPU.f90 | $(BUILD_DIR)
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_GPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+	${NV} -cpp -Minfo=mp -mp=gpu -gpu=sm_75 $< -o $(BUILD_DIR)/benchmark_2D_GPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	mv -f $(<:.f90=.mod) "${BUILD_DIR}"
+endif
 
 # please note: timestamp resolution in archives is lower according to
 # documentation of make's .LOW_RESOLUTION_TIME at

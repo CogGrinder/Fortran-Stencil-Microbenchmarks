@@ -2,8 +2,11 @@
 PAPI_INC:=
 PAPI_LIB:=
 
+ifndef FC
 F90=gfortran
-
+else
+F90=${FC}
+endif
 
 MPICC:=gcc
 BUILD_DIR:=../build/
@@ -41,6 +44,7 @@ ${BUILD_DIR}/%.o: %.c %.h
 
 # Generate Fortran ugly interfaces
 ${BUILD_DIR}/perf_regions_fortran.o: perf_regions_fortran.F90
+	export | grep PATH
 	mkdir -p ${BUILD_DIR}
 	${F90} -cpp -c perf_regions_fortran.F90 -o ${BUILD_DIR}/perf_regions_fortran.o
 	mv -f perf_regions_fortran.mod "${BUILD_DIR}"
