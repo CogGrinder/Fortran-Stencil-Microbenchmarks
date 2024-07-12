@@ -64,14 +64,14 @@ PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 ####################### extra dependency rules #######################
 
 $(BUILD_DIR)/benchmark_parameters.o : $(BUILD_DIR)/benchmark_names.mod
-$(BUILD_DIR)/benchmark_implementations.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_names.mod
+$(BUILD_DIR)/benchmark_1D.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_names.mod
 $(BUILD_DIR)/benchmark_2D_CPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 $(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 
 ####################### compilation with special flags #######################
 
-$(BUILD_DIR)/benchmark_implementations.o $(BUILD_DIR)/benchmark_implementations.mod : $(SRC_DIR)/benchmark_implementations.f90 | $(BUILD_DIR)
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_implementations.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
+$(BUILD_DIR)/benchmark_1D.o $(BUILD_DIR)/benchmark_1D.mod : $(SRC_DIR)/benchmark_1D.f90 | $(BUILD_DIR)
+	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_1D.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)
 
 $(BUILD_DIR)/benchmark_2D_CPU.o $(BUILD_DIR)/benchmark_2D_CPU.mod : $(SRC_DIR)/benchmark_2D_CPU.f90 | $(BUILD_DIR)
 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2D_CPU.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR) -J$(BUILD_DIR)

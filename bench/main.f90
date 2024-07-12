@@ -22,7 +22,7 @@ PROGRAM main
     USE perf_regions_fortran
     use tools
     USE benchmark_names
-    USE benchmark_implementations
+    USE benchmark_1D
     USE benchmark_2D_CPU
     USE benchmark_2D_GPU
     USE benchmark_parameters
@@ -172,7 +172,7 @@ USE perf_regions_fortran
 USE benchmark_names
 USE benchmark_parameters
 #include "perf_regions_defines.h"
-    use benchmark_implementations
+    use benchmark_1D
     use benchmark_2D_GPU
     use benchmark_2D_CPU
     

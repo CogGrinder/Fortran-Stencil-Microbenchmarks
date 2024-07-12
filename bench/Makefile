@@ -38,18 +38,18 @@ run: run_main
 pre:preprocess
 preprocessing:preprocess
 preprocess:
-	cd preprocess;python3 codegen.py --cmd all --speed=${SPEED} --v;./run_bench_tree.sh
+	cd preprocess;python3 codegen.py -M all -A=${SPEED} --v;./run_bench_tree.sh
 
 pre_old:preprocess_old
 preprocess_old:
-	cd preprocess;python3 codegen.py --cmd all_old --speed=${SPEED};./run_bench_tree.sh
+	cd preprocess;python3 codegen.py -M all_old -A=${SPEED};./run_bench_tree.sh
 
 post:postprocess
 postprocessing:postprocess
 postprocess:
 	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py
 clean_pre:
-	cd preprocess;python3 codegen.py --cmd clean
+	cd preprocess;python3 codegen.py -M clean
 
 ####################### mainfile selector ########################
 

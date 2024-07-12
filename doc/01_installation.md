@@ -1,23 +1,25 @@
+This library is designed to work on Linux with PAPI, and does not currently support Windows. WSL may be functional but is not supported.
 # Installation steps
-- python requirements
-    - process ``requirements.txt``
-    ```bash
-    $ pip install -r requirements.txt
-    ```
-    warning: will install numpy and matplotlib in your current python environment
+## Python requirements
+- process ``requirements.txt``
+```bash
+$ pip install -r requirements.txt
+```
+warning: will install numpy and matplotlib in your current python environment
 
-- for performance counters ``perf_regions`` dependency
-    - Check for availability of events:
-    ```bash
-    $ papi_avail
-    ```
-    if not, change ``codegen_bench_tree_branch`` of [``codegen.py``](../bench/preprocess/codegen.py) to generate bench that only tracks ``WALLCLOCKTIME`` - TODO: currently does not support use of systems which have no access to PAPI eg, Windows
-    - In case that performance events are not available, contact your administrator add the line:
-    ```json
-    kernel.perf_event_paranoid = -1
-    ```
-    in ```/etc/sysctl.conf```
-    or temporarily set this with the command
-    ```bash
-    $ sudo bash -c 'echo \"-1\" > /proc/sys/kernel/perf_event_paranoid'
-    ```
+## For performance counters ``perf_regions`` dependency
+- [sudo] For quick activation of papi, temporarily add access to performance events with this line:  
+```bash
+$ sudo bash -c 'echo \"-1\" > /proc/sys/kernel/perf_event_paranoid'
+```
+- [sudo] If you need to activate performance events access permanently, contact your administrator add the line:
+```json
+kernel.perf_event_paranoid = -1
+```
+in ```/etc/sysctl.conf```. It gives this access to all users of the machine.
+
+- To detail which events are available, run this line:
+```bash
+$ papi_avail
+```
+depending on your available events, you may have to change the line ``export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"`` of [``codegen.py``](../bench/preprocess/codegen.py) to generate benchmarks that only track ``WALLCLOCKTIME`` for instance. In most HPC systems you may ignore this step.

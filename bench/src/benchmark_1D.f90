@@ -2,7 +2,7 @@
 ! #define DEBUG
 ! #define DEBUG_PERF
 
-MODULE benchmark_implementations
+MODULE benchmark_1D
     use benchmark_names
     use perf_regions_fortran
     use tools

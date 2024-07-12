@@ -13,7 +13,7 @@ To obtain more accurate results, the code generation has a speed parameter which
 In order to get more accurate results, you may set this speed to be lower than 1.0. In can be set in multiple ways:
 - if using make, set SPEED=<float> as a suffix for ``make pre``
 - if directly using scripts, look at the help for [``codegen.py``](../bench/preprocess/codegen.py) with ``python3 codegen.py --help``
-    hint: use --speed flag
+    hint: use -A flag
 
 
 11/07/24 Out of date
