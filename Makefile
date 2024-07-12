@@ -5,10 +5,11 @@
 # ls -t -l --time-style=full-iso
 
 # set PerfRegions folder (https://github.com/schreiberx/perf_regions) - relative to main folder
-PERF_REGIONS_FOLDER:=perf_regions
 ## make option PERF_REGIONS ##
-ifdef PERF_REGIONS
-	PERF_REGIONS_FOLDER = $(PERF_REGIONS)
+ifdef _PERF_REGIONS_FOLDER
+	PERF_REGIONS_FOLDER = bench/$(_PERF_REGIONS_FOLDER)
+else
+PERF_REGIONS_FOLDER:=bench/src/perf_regions
 endif
 
 # set bench folder
@@ -22,7 +23,7 @@ ifeq ($(OS),Windows_NT)
 MAKE = make
 endif
 
-.PHONY : tuto 
+.PHONY : tuto perf_regions
 
 all:
 	@echo make: $(MAKE)
@@ -48,10 +49,9 @@ tuto:
 run_tuto:
 	$(MAKE) -C $(TUTO) run
 
-clean_all: clean clean_perf_regions clean_tuto
+clean_all: clean clean_perf_regions clean_pre
 clean:
 	-$(MAKE) -C $(BENCH) clean
-
 clean_perf_regions:
 	-$(MAKE) -C $(PERF_REGIONS_FOLDER) clean
 
@@ -61,3 +61,17 @@ clean_tuto:
 clean_pre:clean_preprocess
 clean_preprocess:
 	-$(MAKE) -C $(BENCH) clean_pre
+
+### nvfortran exports
+NVARCH=Linux_x86_64#`Linux_x86_64 -s`_`Linux_x86_64 -m`
+export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk
+export NVCOMPILERS
+export MANPATH:=$(MANPATH):$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/man
+export PATH:=$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/bin:$(PATH)
+export PATH:=/usr/local/cuda-12:/usr/local/cuda-12/bin:$(PATH)
+export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_PATH)
+
+perf_regions:
+### nvfortran exports
+	-$(MAKE) -C $(PERF_REGIONS_FOLDER)/src

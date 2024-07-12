@@ -1,10 +1,12 @@
 # thank you to https://aoterodelaroza.github.io/devnotes/modern-fortran-makefiles/
-# to debug preprocessor, use cpp -E benchmark_2d_cpu.F90 -DSIZE_AT_COMPILATION=1 -DNI=1024 -DNJ=1024 -I../../perf_regions/src
+# to debug preprocessor, use cpp -E benchmark_2d_cpu.F90 -DSIZE_AT_COMPILATION=1 -DNI=1024 -DNJ=1024 -Iperf_regions/src
 # see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html for special targets
 .SUFFIXES: #disable automatic rules to override default modula2 compiling
 # (avoid .mod being interpreted as modula-2 source files)
-ifndef FC
+ifndef F90
 FC = gfortran
+else
+FC = $(F90)
 endif
 NV = nvfortran
 FFLAGS = -cpp -O3 #-Wall -Wextra
@@ -48,22 +50,22 @@ endif
 ####################### targets #######################
 
 all: $(MODULE_O)
-library: $(LIB_DIR)/library.a
+library: $(LIB_DIR)/libbench.a
 
 # default rule
 $(BUILD_DIR)/%.o $(BUILD_DIR)/%.mod : $(SRC_DIR)/%.F90 | $(BUILD_DIR)
 	$(FC) $(FFLAGS) -c $< -o $(BUILD_DIR)/$(basename $<).o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ}
-	mv -f $(<:.F90=.mod) "${BUILD_DIR}"
+	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 ####################### compilation flags ########################
-BENCH_LIB := -L$(LIB_DIR) -l:library.a
+BENCH_LIB := -L$(LIB_DIR) -lbench
 PAPI_LIB:=-L. -lpapi
 
 # set PERF_REGIONS_FOLDER, default is in the folder next to bench
 ifdef _PERF_REGIONS_FOLDER
 PERF_REGIONS_FOLDER=../$(_PERF_REGIONS_FOLDER)
 else
-PERF_REGIONS_FOLDER:=../../perf_regions
+PERF_REGIONS_FOLDER:=perf_regions
 endif
 
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
@@ -83,27 +85,27 @@ $(BUILD_DIR)/benchmark_2d_gpu.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_
 
 $(BUILD_DIR)/benchmark_1d.o $(BUILD_DIR)/benchmark_1d.mod : $(SRC_DIR)/benchmark_1d.F90 | $(BUILD_DIR)
 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_1d.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
-	mv -f $(<:.F90=.mod) "${BUILD_DIR}"
+	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 $(BUILD_DIR)/benchmark_2d_cpu.o $(BUILD_DIR)/benchmark_2d_cpu.mod : $(SRC_DIR)/benchmark_2d_cpu.F90 | $(BUILD_DIR)
 	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_cpu.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
-	mv -f $(<:.F90=.mod) "${BUILD_DIR}"
+	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 # GPU compilation commented when FC is not nvfortran:
 $(BUILD_DIR)/benchmark_2d_gpu.o $(BUILD_DIR)/benchmark_2d_gpu.mod : $(SRC_DIR)/benchmark_2d_gpu.F90 | $(BUILD_DIR)
 ifeq ( $(FC) , nvfortran )
 	${NV} -cpp -Minfo=mp -mp=gpu -gpu=sm_75 $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
-	mv -f $(<:.F90=.mod) "${BUILD_DIR}"
+	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 else
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
-	mv -f $(<:.F90=.mod) "${BUILD_DIR}"
+	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DNO_GPU -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 endif
 
 # please note: timestamp resolution in archives is lower according to
 # documentation of make's .LOW_RESOLUTION_TIME at
 # https://www.gnu.org/software/make/manual/html_node/Special-Targets.html
-$(LIB_DIR)/library.a : $(MODULE_O) | $(LIB_DIR)
-	ar crUuv $(LIB_DIR)/library.a $?
+$(LIB_DIR)/libbench.a : $(MODULE_O) | $(LIB_DIR)
+	ar crUuv $(LIB_DIR)/libbench.a $?
 
 
 # DIRECTORIES

@@ -170,8 +170,8 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
         # see https://realpython.com/python-f-strings/
         f.write(f"""#! /bin/bash
 
-# set BENCH_EXECUTABLE and PERF_REGIONS
-export PERF_REGIONS="../{"../"*(TREE_DEPTH+2)}perf_regions"
+# set BENCH_EXECUTABLE
+export PERF_REGIONS="src/perf_regions"
 export BENCH_MAKE_DIR="{"." if is_copy_bench_files else "../"*(TREE_DEPTH+2)}"
 export BENCH_EXECUTABLE="{"" if is_copy_bench_files else "../"*(TREE_DEPTH+2)}bin/{benchname}"
 
@@ -193,7 +193,7 @@ export NI="{ni if is_compilation_time_size else ""}"
 export NJ="{nj if is_compilation_time_size else ""}"
 export KERNEL_MODE="{kernel_mode}"
 
-make -C $BENCH_MAKE_DIR main {"_PERF_REGIONS_FOLDER=../"+ "../"*(TREE_DEPTH+2)+"perf_regions" if is_copy_bench_files else ""}
+make -C $BENCH_MAKE_DIR main {"" if is_copy_bench_files else "_PERF_REGIONS_FOLDER="+ "../"*(TREE_DEPTH+2)+"src/perf_regions"}
 
 filename=out
 

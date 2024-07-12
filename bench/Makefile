@@ -1,6 +1,10 @@
 ### bench makefile ###
 
+ifndef F90
 FC:=gfortran
+else
+FC:=$(F90)
+endif
 CC:=gcc
 CXX:=g++
 FFLAGS = -cpp -O3 #-Wall -Wextra 
@@ -68,7 +72,7 @@ BUILD_DIR := build
 SRC_DIR := src
 LIB_DIR   := lib
 
-BENCH_LIB := -L$(LIB_DIR) -l:library.a
+BENCH_LIB := -L$(LIB_DIR) -lbench
 # TODO : try .so library - you must also modify the Makefile in src
 # BENCH_LIB := -L$(LIB_DIR) -l:library.so
 # TODO : try not using .a or .so
@@ -76,11 +80,11 @@ BENCH_LIB := -L$(LIB_DIR) -l:library.a
 
 PAPI_LIB:=-L. -lpapi
 
-# set PERF_REGIONS_FOLDER, default is in the folder next
+# set PERF_REGIONS_FOLDER, default is in a subfolder of src
 ifdef _PERF_REGIONS_FOLDER
 PERF_REGIONS_FOLDER:=$(_PERF_REGIONS_FOLDER)
 else
-PERF_REGIONS_FOLDER:=../perf_regions
+PERF_REGIONS_FOLDER:=src/perf_regions
 endif
 
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
@@ -105,7 +109,7 @@ print_main:
 main : $(BIN_DIR)/$(MAIN)
 ## Why not mkdir -d $(BIN_DIR)?
 #https://stackoverflow.com/questions/64036620/what-is-the-use-of-or-operator-in-dependency-list
-$(BIN_DIR)/$(MAIN) : main.F90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
+$(BIN_DIR)/$(MAIN) : main.F90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/libbench.a | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
 	@export |grep SIZE_AT_COMPILATION
@@ -139,9 +143,9 @@ endif
 MODULE_F90 := $(wildcard $(SRC_DIR)/*.F90)
 MODULE_O := $(patsubst $(SRC_DIR)/%.F90,$(BUILD_DIR)/%.o, $(MODULE_F90))
 
-$(LIB_DIR)/library.a : $(MODULE_O)
-	make -C src ../$(LIB_DIR)/library.a
-	@touch $(LIB_DIR)/library.a
+$(LIB_DIR)/libbench.a : $(MODULE_O)
+	make -C src ../$(LIB_DIR)/libbench.a
+	@touch $(LIB_DIR)/libbench.a
 
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.F90
 	@echo .F90 files newer than .o files :

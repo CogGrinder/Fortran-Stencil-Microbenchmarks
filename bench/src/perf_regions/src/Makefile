@@ -2,11 +2,7 @@
 PAPI_INC:=
 PAPI_LIB:=
 
-ifndef FC
-F90=gfortran
-else
-F90=${FC}
-endif
+F90?=gfortran
 
 MPICC:=gcc
 BUILD_DIR:=../build/

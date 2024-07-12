@@ -3,7 +3,7 @@
 
 import sys
 # here needs to be the proper folder for perf_regions
-sys.path.append('../perf_regions/scripts')
+sys.path.append('src/perf_regions/scripts')
 
 import perf_regions
 

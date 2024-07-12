@@ -18,7 +18,7 @@ See [documentation markdown file](doc/main.md) for further details.
 ``doc/`` subdirectory :
 - contains documentation
 
-``perf_regions/`` subdirectory :
+``bench/src/perf_regions/`` subdirectory :
 - contains necessary files from eponymous library (see [requirements](#requirements))
 
 ``tuto/`` subdirectory :
@@ -36,8 +36,7 @@ Timing libraries
 - ``run`` to do ``make run`` in all subdirectories, executing the main files and scripts
     - ``run_bench`` and ``run_tuto`` to ``make run`` specifically the bench folder or the tuto folder
 - ``clean`` to clean all executable files and temporary files in the subdirectories from the current OS
-- set ``PERF_REGIONS=<relative directory of PerfRegions>`` if PerfRegions is not installed in the main folder
-    - TODO note : has to be changed manually in codegen code for the time being
+- set ``PERF_REGIONS=<relative directory of PerfRegions>`` if PerfRegions is moved
 Other options:
 - use preprocessing macro ``DEBUG=1`` in ``main.F90`` if you are debugging
 
@@ -134,7 +133,7 @@ est deja present dans le code)
     - [X] more clear passing of number of iterations
     - [ ] documentation
 - [ ] retry module implementation
-    - note : not useful - use ``library_base.a`` for compilation before making ``library.a``
+    - note : not useful - use ``library_base.a`` for compilation before making ``libbench.a``
     - [X] compilation and execution
     - [ ] find out why the ``perf_regions`` is not working
 

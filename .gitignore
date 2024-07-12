@@ -1,9 +1,8 @@
-perf_regions/examples
-perf_regions/doc
+bench/src/perf_regions/examples
+bench/src/perf_regions/doc
 .gitconfig
 .vscode
 bench/main
-bench/bench
 bench/build
 bench/bin
 bench/lib
@@ -11,7 +10,7 @@ bench/benchmark_1d.o
 bench/file.csv
 bench/tmp.txt
 bench/src/*.mod
-perf_regions/src/perf_regions_fortran.mod
+bench/src/perf_regions/src/perf_regions_fortran.mod
 bench/*.csv
 bench/preprocess/__pycache__
 bench/preprocess/bench_tree

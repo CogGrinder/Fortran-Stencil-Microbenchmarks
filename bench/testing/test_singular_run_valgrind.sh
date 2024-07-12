@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # set BENCH_EXECUTABLE and PERF_REGIONS
-export PERF_REGIONS="../../perf_regions"
+export PERF_REGIONS="../src/perf_regions"
 export BENCH_MAKE_DIR="../"
 export BENCH_EXECUTABLE="../bin/bench_defaultalloc_defaultsize_sizenotcompiled_defaultkernel"
 
