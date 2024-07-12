@@ -1,5 +1,8 @@
 
 # thank you to https://makefiletutorial.com/
+# debug timestamps with
+# make | ts '[%Y-%m-%d %H:%M:%.S]'
+# ls -t -l --time-style=full-iso
 
 # set PerfRegions folder (https://github.com/schreiberx/perf_regions) - relative to main folder
 PERF_REGIONS_FOLDER:=perf_regions
@@ -22,20 +25,40 @@ endif
 all:
 	@echo make: $(MAKE)
 # add MODE=debug as a trailing option for debugging
-# -cd $(PERF_REGIONS_FOLDER) && $(MAKE) MODE=debug
-	-cd $(PERF_REGIONS_FOLDER) && $(MAKE)
-	-cd $(BENCH) && $(MAKE) PERF_REGIONS=../$(PERF_REGIONS_FOLDER)
+# -$(MAKE) -C $(PERF_REGIONS_FOLDER) MODE=debug
+	-$(MAKE) -C $(PERF_REGIONS_FOLDER) --silent
+	-$(MAKE) -C $(BENCH)
 
 run: run_bench
 run_bench:
 	$(MAKE) -C $(BENCH) run
 
+pre:preprocess
+preprocessing:preprocess
+preprocess:
+	$(MAKE) -C $(BENCH) preprocess
+
+post:postprocess
+postprocessing:postprocess
+postprocess:
+	$(MAKE) -C $(BENCH) postprocess
+
+
 make_tuto:
 	$(MAKE) -C $(TUTO)
 run_tuto:
-	cd $(TUTO) && $(MAKE) run
+	$(MAKE) -C $(TUTO) run
 
+clean_all: clean clean_perf_regions clean_tuto
 clean:
-# -cd $(PERF_REGIONS_FOLDER) && $(MAKE) clean
-	-cd $(BENCH) && $(MAKE) clean
-	-cd $(TUTO) && $(MAKE) clean
+	-$(MAKE) -C $(BENCH) clean
+
+clean_perf_regions:
+	-$(MAKE) -C $(PERF_REGIONS_FOLDER) clean
+
+clean_tuto:
+	-$(MAKE) -C $(TUTO) clean
+
+clean_pre:clean_preprocess
+clean_preprocess:
+	-$(MAKE) -C $(BENCH) clean_pre

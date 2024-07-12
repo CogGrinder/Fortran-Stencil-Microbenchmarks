@@ -1,17 +1,20 @@
-! #define DEBUG
-
-
-! #define MAX_SIZE 1024*1024*128
-
-! #define ARRAY_LEN  10
+! default value macros
 #define ARRAY_LEN 1024 * 16
-! #define ARRAY_LEN 1024 * 256
-! #define ITERS 1
-#define ITERS 1024
-#define FLEXIBLE_STENCIL 0
+#define ITERS 128
 
-#ifdef array_len_OVERRIDE
-    #define array_len array_len_OVERRIDE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! see following file for macro definitions
+#include "src/benchmark_compilation_fixed_parameters.h"
+
+! TODO : change from BENCH_ID paradigm
+#if     ALLOC_MODE == ALLOC
+# define BENCH_ID 6
+#elif   ALLOC_MODE == STATIC
+# define BENCH_ID 5
+#elif   ALLOC_MODE == NONE
+# define BENCH_ID 6
+#else
+# define BENCH_ID 0
 #endif
 
 PROGRAM main
@@ -22,21 +25,25 @@ PROGRAM main
     USE benchmark_implementations
     USE benchmark_2D_CPU
     USE benchmark_2D_GPU
+    USE benchmark_parameters
 
 #include "perf_regions_defines.h"
     implicit none
 
     ! integer :: iters
-    integer(KIND=4) :: bench_id
-    integer :: k,i,iters,array_len
+    integer :: k,i,iters,niinput,njinput,n1dinput
+! #if SIZE_AT_COMPILATION == 0
+    integer :: benchmark_size_mode
+! #endif
     character(len=32) :: arg
     character(len=7) :: bench_str
+    character(len=32) :: kernel_name
+    character(len=128) :: binary_name
     
     
     INTERFACE
-        SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str, array_len)
+        SUBROUTINE BENCH_SKELETON(iters,bench_str, array_len)
             integer, intent(in) :: iters, array_len
-            integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
         end SUBROUTINE BENCH_SKELETON
         SUBROUTINE WARMUP_COMPUTATION(sten_len, array_len)
@@ -64,95 +71,94 @@ PROGRAM main
         end SUBROUTINE COMPUTATION_2D_IJ
     end INTERFACE
     
-    ! getting the variant of the benchmark from the command line
-    ! see https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html
 
-
+    ! default values
     iters = ITERS
-    array_len = ARRAY_LEN
+    n1dinput = ARRAY_LEN
+
+    CALL set_2D_size(niinput,njinput)
+    CALL set_1D_size(n1dinput)
 
     !!!!!!!! initialize timing here
 CALL perf_regions_init()
     
-    CALL WARMUP_COMPUTATION(3,array_len)
+    CALL WARMUP_COMPUTATION(3,n1dinput)
 
-    ! DEBUG VERSION : HARD CODED CALLS TO BENCHMARKS
-    
-    ! bench_str = '1D_FIXD'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL perf_region_start(99, "ITERS"//achar(0))
-    !     CALL COMPUTATION_FIXED_ARRAY(BENCH_FIXED_ARRAY, bench_str, array_len)
-    !     CALL perf_region_stop(99) !FOOA
-    ! end do
-    ! bench_str = '1D_ALOC'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_ALLOCATABLE_ARRAY(BENCH_ALLOCATABLE_ARRAY, bench_str, array_len)
-    ! end do
-    ! bench_str = 'MODULE'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(BENCH_ALLOCATABLE_ARRAY_MODULE, bench_str, array_len)
-    ! end do
-    ! bench_str = '2D_JI'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_2D_JI(BENCH_2D_JI, bench_str, array_len)
-    ! end do
-    ! bench_str = '2D_IJ'
-    ! WRITE(*,*) "Iterations: ", iters
-    ! do k = 1, iters
-    !     CALL COMPUTATION_2D_IJ(BENCH_2D_IJ, bench_str, array_len)
-    ! end do
-
-    ! PREVIOUSLY : READ FROM COMMAND LINE ARGUMENTS
     i = 1
+    ! see https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html
     do
         call get_command_argument(i,arg)
         ! condition to leave do loop
         if (len_trim(arg) == 0) then
             exit
+        else if (index(arg, 'ni=') == 1) then
+            write(*,*) arg
+            CALL get_key_value(arg,niinput)
+        else if (index(arg, 'nj=') == 1) then
+            write(*,*) arg
+            CALL get_key_value(arg,njinput)
+        else if (index(arg, 'n1d=') == 1) then
+            write(*,*) arg
+            CALL get_key_value(arg,n1dinput)
         else if (index(arg, 'iters=') == 1) then
             write(*,*) arg
-            CALL get_key_value(arg,iters)            
-        else
-            read(arg,*) bench_id
-    
-            WRITE(*,*) "**************************************"
-            WRITE(*,*) "**************************************"
-
-            write (*,*) 'Calling benchmark of id ', bench_id
-            
-            ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
-            select case (bench_id)
-                case (BENCH_FIXED_ARRAY)
-                    bench_str = '1D_FIXD'
-                case (BENCH_ALLOCATABLE_ARRAY)
-                    bench_str = '1D_ALOC'
-                case (BENCH_ALLOCATABLE_ARRAY_MODULE)
-                    bench_str = '1D_MODU'
-                    
-                case(BENCH_2D_CPU_JI)
-                    bench_str = '2D_JI'
-                case(BENCH_2D_CPU_IJ)
-                    bench_str = '2D_IJ'
-                case (BENCH_2D_CPU_MODULE)
-                    bench_str = '2D_MODU'
-
-                case (BENCH_2D_GPU_OMP_BASE)
-                    bench_str = 'GPU'
-
-                case DEFAULT
-                    bench_str = 'ERROR'
-                    write (*,*) 'Error: no such benchmark'
-            end select
-            if ( .not. bench_str .eq. 'ERROR') then
-                CALL BENCH_SKELETON(iters, bench_id, bench_str, array_len)
-            end if
+            CALL get_key_value(arg,iters)
         endif
         i = i + 1
     end do
+
+    CALL set_2D_size(niinput,njinput)
+    CALL set_1D_size(n1dinput)
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!! BENCH CALL !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    CALL get_command_argument(0,binary_name)
+    WRITE(*,*) "**************************************"
+    WRITE(*,*) "**************************************"
+    write (*,*) 'Calling benchmark of id :'
+    write (*,*) binary_name
+    select case (KERNEL_MODE)
+        case (DEFAULT_KERNEL)
+            kernel_name = 'default_kernel'
+        case (X_KERNEL)
+            kernel_name = 'x direction kernel'
+        case (Y_KERNEL)
+            kernel_name = 'y direction kernel'
+        case (SIZE_5_KERNEL)
+            kernel_name = 'size 5 kernel'
+        case DEFAULT
+            kernel_name = 'default_kernel'
+    end select
+    write (*,*) 'Using ', kernel_name
+    
+    ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
+    select case (BENCH_ID)
+        case (BENCH_FIXED_ARRAY)
+            bench_str = '1D_FIXD'
+        case (BENCH_ALLOCATABLE_ARRAY)
+            bench_str = '1D_ALOC'
+        case (BENCH_ALLOCATABLE_ARRAY_MODULE)
+            bench_str = '1D_MODU'
+            
+        case(BENCH_2D_CPU_JI)
+            bench_str = '2D_JI'
+        case(BENCH_2D_CPU_IJ)
+            bench_str = '2D_IJ'
+        case (BENCH_2D_CPU_MODULE)
+            bench_str = '2D_MODU'
+        case (BENCH_2D_CPU_MODULE_STATIC)
+            bench_str = '2D_FIXD'
+
+        case (BENCH_2D_GPU_OMP_BASE)
+            bench_str = 'GPU'
+
+        case DEFAULT
+            bench_str = 'ERROR'
+            write (*,*) 'Error: no such benchmark'
+    end select
+    if ( .not. bench_str .eq. 'ERROR') then
+        CALL BENCH_SKELETON(iters, bench_str, n1dinput)
+    end if
 
     !!!!!!!! finalize timing here
 CALL perf_regions_finalize()
@@ -161,7 +167,7 @@ END PROGRAM main
 
 
 
-SUBROUTINE BENCH_SKELETON(iters,bench_id,bench_str, array_len)
+SUBROUTINE BENCH_SKELETON(iters, bench_str, array_len)
 USE perf_regions_fortran
 USE benchmark_names
 USE benchmark_parameters
@@ -171,45 +177,51 @@ USE benchmark_parameters
     use benchmark_2D_CPU
     
     integer, intent(in) :: iters
-    integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
     integer, intent(in) :: array_len
 
 
     write (*,*) 'Running bench ', bench_str, '...'
     WRITE(*,*) "**************************************"
-    if (     bench_id == BENCH_FIXED_ARRAY              &
-    &   .or. bench_id == BENCH_ALLOCATABLE_ARRAY        &
-    &   .or. bench_id == BENCH_ALLOCATABLE_ARRAY_MODULE) then
-        WRITE(*,*) "Mem size: ", array_len*0.001*sizeof(real) ," KByte"
+    if (     BENCH_ID == BENCH_FIXED_ARRAY              &
+        .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY        &
+        .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY_MODULE) then
+        WRITE(*,*) "Mem size: ", array_len*0.001 ," KByte"
     else
-        WRITE(*,*) "Mem size: ", nx*ny*0.001*sizeof(real) ," KByte"
+        WRITE(*,*) "Mem size: ", ni* &
+                                nj*0.001 ," KByte"
     end if
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
-        CALL perf_region_start(99, "ITERS"//achar(0))
-        select case (bench_id)
+#ifdef DEBUG
+        CALL perf_region_start(99, "DEBUG"//achar(0))
+#endif
+        select case (BENCH_ID)
             case (BENCH_FIXED_ARRAY)
-                CALL COMPUTATION_FIXED_ARRAY(bench_id, bench_str, array_len)
+                CALL COMPUTATION_FIXED_ARRAY(BENCH_ID, bench_str, array_len)
             case (BENCH_ALLOCATABLE_ARRAY)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY(bench_id, bench_str, array_len)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY(BENCH_ID, bench_str, array_len)
             case (BENCH_ALLOCATABLE_ARRAY_MODULE)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id, bench_str, array_len)
+                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(BENCH_ID, bench_str, array_len)
 
             case (BENCH_2D_CPU_JI)
-                CALL COMPUTATION_2D_JI(bench_id, bench_str, array_len)
+                CALL COMPUTATION_2D_JI(BENCH_ID, bench_str, array_len)
             case (BENCH_2D_CPU_IJ)
-                CALL COMPUTATION_2D_IJ(bench_id, bench_str, array_len)
+                CALL COMPUTATION_2D_IJ(BENCH_ID, bench_str, array_len)
             case (BENCH_2D_CPU_MODULE)
-                CALL COMPUTATION_2D_MODULE(bench_id, bench_str, array_len)
+                CALL COMPUTATION_2D_MODULE(BENCH_ID, bench_str, array_len)
+            case (BENCH_2D_CPU_MODULE_STATIC)
+                CALL COMPUTATION_2D_MODULE_FIXED(BENCH_ID, bench_str, array_len)
 
             case (BENCH_2D_GPU_OMP_BASE)
-                CALL COMPUTATION_GPU_OMP_BASE(bench_id, bench_str, array_len)
+                CALL COMPUTATION_GPU_OMP_BASE(BENCH_ID, bench_str, array_len)
                 
             case DEFAULT
                 write (*,*) 'Error: no such benchmark'
         end select
-        CALL perf_region_stop(99) !FOOA
+#ifdef DEBUG
+        CALL perf_region_stop(99) !DEBUG
+#endif
     end do
   
 end SUBROUTINE BENCH_SKELETON
@@ -270,9 +282,6 @@ CALL perf_region_start(bench_id, bench_str//achar(0))
     do i = 1 + sten_len/2, array_len - sten_len/2
         result(i + sten_len/2) = 0
         do k = 1,sten_len
-#ifdef DEBUG
-        write(6, 1, advance="no") k, i-sten_len/2 -1 + k
-#endif
             result(i) = result(i) + stencil(k) * array(i-sten_len/2 -1 + k)
         end do
         ! normalize by sten_sum
@@ -315,15 +324,6 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
     do i = 1, array_len
         call RANDOM_NUMBER(array(i))
     end do
-    
-#ifdef DEBUG
-    ! example for formatting :
-    ! I5 for a 5-digit integer.
-    ! F10.4 for a floating-point number with 10 total characters, including 4 digits after the decimal point.
-    ! A for a character string.
-    ! 100 format(I5, F10.4, A)
-    1 format(I2, I2)
-#endif
 
     !!!!!!!! start timing here
     CALL perf_region_start(bench_id, bench_str//achar(0))
@@ -332,12 +332,8 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
     do i = 1 + sten_len/2, array_len - sten_len/2
         result(i + sten_len/2) = 0
         do k = -sten_len/2,sten_len/2
-#ifdef DEBUG
-        write(6, 1, advance="no") k, i + k
-#endif
             result(i) = result(i) + stencil(k) * array(i + k)
         end do
-
         ! normalize by sten_sum
         result(i) = result(i)/sten_sum
     end do
@@ -360,73 +356,52 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     use benchmark_parameters
 #include "perf_regions_defines.h"
     
-    ! stencil must be odd length
-    integer, dimension(-1:1,-1:1) :: stencil
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
     integer, intent(in) :: array_len
-    real    :: sten_sum
-    integer :: sten_len
+    integer :: i,j
+    integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,ny))
-    allocate(result(nx,ny) , source=-1.0_dp)
+    allocate(array(ni,&
+                    nj))
+    allocate(result(ni,&
+                    nj) , source=-1.0_dp)
 
-    stencil = reshape((/ 0, 1, 0, &
-&                        1, 1, 1, &
-&                        0, 1, 0/), shape(stencil))
-    ! must be written in transpose form to fit column-wise specifications
-
-    CALL stencil_characteristics_2D(stencil,sten_sum,sten_len)
-#ifdef DEBUG
-    write(*,*) stencil, sten_sum, sten_len
-#endif
-
-    do j = 1, ny
-        do i = 1, nx
-            array(i,j) = (i-1)*ny + j
+    do j = 1, nj
+        do i = 1, ni
+            array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
     end do
-    
-#ifdef DEBUG
-    ! example for formatting :
-    ! I5 for a 5-digit integer.
-    ! F10.4 for a floating-point number with 10 total characters, including 4 digits after the decimal point.
-    ! A for a character string.
-    ! 100 format(I5, F10.4, A)
-    2 format(I4, I2, I2, I2)
-#endif
+
         !!!!!!!! start timing here
     CALL perf_region_start(bench_id, bench_str//achar(0))
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 1 + sten_len/2, ny - sten_len/2
-        do i = 1 + sten_len/2, nx - sten_len/2
-#if FLEXIBLE_STENCIL
-            do k_2 = -sten_len/2 ,sten_len/2
-                do k_1 = -sten_len/2 ,sten_len/2
-# ifdef DEBUG
-                    write(6, 2, advance="no") k_1, i + k_1, k_2, i + k_2
-# endif
-                    result(i,j) = result(i,j) + stencil(k_1,k_2) * array(i + k_1, j + k_2)
-                    ! note : (k_1 - 1 - sten_len/2,k_2 - 1 - sten_len/2) is the centered index of the stencil
-                end do
-            end do
-# ifdef DEBUG        
-            write(*,*) " at index " , i,j
-# endif
-            ! normalize by sten_sum
-            result(i,j) = result(i,j)/sten_sum
+    do j = 1 + 2, nj - 2
+        do i = 1 + 2, ni - 2
+#if KERNEL_MODE == NO_INCLUDE
+            result(i,j) = 1.0_dp * array(i - 1, j - 1) &
+                        + 2.0_dp * array(i - 1, j + 1) &
+                        + 3.0_dp * array(i    , j    ) &
+                        + 4.0_dp * array(i + 1, j - 1) &
+                        + 5.0_dp * array(i + 1, j + 1)
+            result(i,j) = result(i,j)/15.0_dp
 #else
-            result(i,j) = array(i - 1, j - 1) &
-            &           + array(i - 1, j + 1) &
-            &           + array(i    , j    ) &
-            &           + array(i + 1, j - 1) &
-            &           + array(i + 1, j + 1)
-            result(i,j) = result(i,j)/sten_sum
-#endif
+# if   KERNEL_MODE == DEFAULT_KERNEL
+#  include "kernels/kernel_2D_default.h"
+# elif KERNEL_MODE == X_KERNEL
+#  include "kernels/kernel_2D_x.h"
+# elif KERNEL_MODE == Y_KERNEL
+#  include "kernels/kernel_2D_y.h"
+# elif KERNEL_MODE == SIZE_5_KERNEL
+#  include "kernels/kernel_2D_size_5.h"
+# else
+#  include "kernels/kernel_2D_default.h"
+# endif /*KERNEL_MODE*/
+#endif /*NO_INCLUDE*/
         end do
     end do
     ! we ignore edges in the computation which explains the shift in indexes
@@ -438,8 +413,10 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ni),&
+                                    modulo(42,nj)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
+                                    modulo(42,nj)))
 
 end SUBROUTINE COMPUTATION_2D_JI
 
@@ -449,31 +426,21 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
     use benchmark_parameters
 #include "perf_regions_defines.h"
     
-    ! stencil must be odd length
-    integer, dimension(-1:1,-1:1) :: stencil
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
     integer, intent(in) :: array_len
-    real    :: sten_sum
-    integer :: sten_len
+    integer :: i,j
+    integer :: sten_len = 3
     ! 2D arrays
     real(dp), allocatable :: array(:,:), result(:,:)
-    allocate(array(nx,ny))
-    allocate(result(nx,ny) , source=-1.0_dp)
+    allocate(array(ni,&
+                    nj))
+    allocate(result(ni,&
+                    nj) , source=-1.0_dp)
 
-    stencil = reshape((/ 0, 1, 0, &
-&                        1, 1, 1, &
-&                        0, 1, 0/), shape(stencil))
-    ! must be written in transpose form to fit column-wise specifications
-
-    CALL stencil_characteristics_2D(stencil,sten_sum,sten_len)
-#ifdef DEBUG
-    write(*,*) stencil, sten_sum, sten_len
-#endif
-
-    do i = 1, nx
-        do j = 1, ny
-            array(i,j) = (i-1)*ny + j
+    do i = 1, ni
+        do j = 1, nj
+            array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
     end do
@@ -482,25 +449,28 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + sten_len/2, nx - sten_len/2
-        do j = 1 + sten_len/2, ny - sten_len/2
-#if FLEXIBLE_STENCIL
-            do k_2 = -sten_len/2 ,sten_len/2
-                do k_1 = -sten_len/2 ,sten_len/2
-                    result(i,j) = result(i,j) + stencil(k_1,k_2) * array(i + k_1, j + k_2)
-                    ! note : (k_1 - 1 - sten_len/2,k_2 - 1 - sten_len/2) is the centered index of the stencil
-                end do
-            end do
-            ! normalize by sten_sum
-            result(i,j) = result(i,j)/sten_sum
+    do i = 1 + 2, ni - 2
+        do j = 1 + 2, nj - 2
+#if KERNEL_MODE == NO_INCLUDE
+            result(i,j) = 1.0_dp * array(i - 1, j - 1) &
+                        + 2.0_dp * array(i - 1, j + 1) &
+                        + 3.0_dp * array(i    , j    ) &
+                        + 4.0_dp * array(i + 1, j - 1) &
+                        + 5.0_dp * array(i + 1, j + 1)
+            result(i,j) = result(i,j)/15.0_dp
 #else
-            result(i,j) = array(i - 1, j - 1) &
-            &           + array(i - 1, j + 1) &
-            &           + array(i    , j    ) &
-            &           + array(i + 1, j - 1) &
-            &           + array(i + 1, j + 1)
-            result(i,j) = result(i,j)/sten_sum
-#endif
+# if   KERNEL_MODE == DEFAULT_KERNEL
+#  include "kernels/kernel_2D_default.h"
+# elif KERNEL_MODE == X_KERNEL
+#  include "kernels/kernel_2D_x.h"
+# elif KERNEL_MODE == Y_KERNEL
+#  include "kernels/kernel_2D_y.h"
+# elif KERNEL_MODE == SIZE_5_KERNEL
+#  include "kernels/kernel_2D_size_5.h"
+# else
+#  include "kernels/kernel_2D_default.h"
+# endif /*KERNEL_MODE*/
+#endif /*NO_INCLUDE*/
         end do
     end do
     ! we ignore edges in the computation which explains the shift in indexes
@@ -512,7 +482,9 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,nx),modulo(42,ny)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,nx),modulo(42,ny)))
+    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ni),&
+                                    modulo(42,nj)))
+    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
+                                    modulo(42,nj)))
 
 end SUBROUTINE COMPUTATION_2D_IJ

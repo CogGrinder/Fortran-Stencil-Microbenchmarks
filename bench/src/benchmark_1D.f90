@@ -1,3 +1,4 @@
+#include "benchmark_compilation_fixed_parameters.h"
 ! #define DEBUG
 ! #define DEBUG_PERF
 

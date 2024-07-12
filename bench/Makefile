@@ -3,98 +3,145 @@
 FC:=gfortran
 CC:=gcc
 CXX:=g++
-FFLAGS = -cpp -Wall -Wextra -O3
+FFLAGS = -cpp -O3 #-Wall -Wextra 
 
-all:
-	make -C $(PERFREGION_SRC) --silent
-	make bench_library
-	make $(MAIN)
+# default value variables - managed with export to avoid explicit passing to recursive make
+# for details on alternatives:
+# see https://www.gnu.org/software/make/manual/html_node/Setting.html
 
+####################### defaults ########################
+
+ifndef ALLOC_MODE
+export ALLOC_MODE=NONE
+endif
+
+ifndef SIZE_MODE
+export SIZE_MODE=NONE
+endif
+
+ifndef SIZE_AT_COMPILATION
+export SIZE_AT_COMPILATION=0
+endif
+
+ifndef KERNEL_MODE
+export KERNEL_MODE=DEFAULT_KERNEL
+endif
+
+# used in codegen for scaling number of iterations
+SPEED?=1
+
+####################### .PHONY targets ########################
+
+all: main
 run: run_main
+.PHONY: preprocess postprocess
+pre:preprocess
+preprocessing:preprocess
+preprocess:
+	cd preprocess;python3 codegen.py --cmd all --speed=${SPEED} --v;./run_bench_tree.sh
 
-MAIN:= main
+pre_old:preprocess_old
+preprocess_old:
+	cd preprocess;python3 codegen.py --cmd all_old --speed=${SPEED};./run_bench_tree.sh
 
+post:postprocess
+postprocessing:postprocess
+postprocess:
+	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py
+clean_pre:
+	cd preprocess;python3 codegen.py --cmd clean
+
+####################### mainfile selector ########################
+
+# use MAIN variable from export as filename
+ifndef MAIN
+MAIN:=bench_default
+endif
 # add .exe to executable name if Windows
 ifeq ($(OS),Windows_NT)
 MAIN:= $(MAIN).exe
 endif
 
-
-### compilation flags ###
+####################### compilation flags ########################
+BIN_DIR := bin
 BUILD_DIR := build
-BENCH_LIB_DIR   := lib
+SRC_DIR := src
+LIB_DIR   := lib
 
-BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.a
+BENCH_LIB := -L$(LIB_DIR) -l:library.a
 # TODO : try .so library - you must also modify the Makefile in src
-# BENCH_LIB := -L$(BENCH_LIB_DIR) -l:library.so
+# BENCH_LIB := -L$(LIB_DIR) -l:library.so
 # TODO : try not using .a or .so
-# BENCH_LIB := -L$(BENCH_LIB_DIR)
+# BENCH_LIB := -L$(LIB_DIR)
 
 PAPI_LIB:=-L. -lpapi
 
-# set PERF_REGIONS_FOLDER, default is in the folder next to 
+# set PERF_REGIONS_FOLDER, default is in the folder next
+ifdef _PERF_REGIONS_FOLDER
+PERF_REGIONS_FOLDER:=$(_PERF_REGIONS_FOLDER)
+else
 PERF_REGIONS_FOLDER:=../perf_regions
-ifdef PERF_REGIONS
-	PERF_REGIONS_FOLDER = $(PERF_REGIONS)
 endif
 
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
-CFLAGS:= -I$(BUILD_DIR) -I$(PERFREGION_SRC)
+CFLAGS:= -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
+####################### main compilation #######################
+print_main:
+	echo from make:___$(BIN_DIR)/$(MAIN)
+main : $(BIN_DIR)/$(MAIN)
+## Why not mkdir -d $(BIN_DIR)?
+#https://stackoverflow.com/questions/64036620/what-is-the-use-of-or-operator-in-dependency-list
+$(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
+	@export |grep ALLOC_MODE
+	@export |grep SIZE_MODE
+	@export |grep SIZE_AT_COMPILATION
+# @export |grep NI
+# @export |grep NJ
+	@export |grep KERNEL_MODE
+	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	@touch $(BIN_DIR)/$(MAIN)
 
-bench_library : 
-	make -C src
-	make $(BUILD_DIR)/benchmark_implementations.o
-	make -C src library
-	@touch $(BENCH_LIB_DIR)/library.a
-$(BUILD_DIR)/benchmark_implementations.o : $(BUILD_DIR)/benchmark_implementations.mod
-	@echo
-$(BUILD_DIR)/benchmark_implementations.mod : src/benchmark_implementations.f90
-	./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -c src/benchmark_implementations.f90 -o $(BUILD_DIR)/benchmark_implementations.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
-
-$(BUILD_DIR)/benchmark_2D_CPU.o : $(BUILD_DIR)/benchmark_2D_CPU.mod
-	@echo
-$(BUILD_DIR)/benchmark_2D_CPU.mod : src/benchmark_2D_CPU.f90
-	./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -c src/benchmark_2D_CPU.f90 -o $(BUILD_DIR)/benchmark_2D_CPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
-
-
-$(BUILD_DIR)/benchmark_2D_GPU.o : $(BUILD_DIR)/benchmark_2D_GPU.mod
-	@echo
-$(BUILD_DIR)/benchmark_2D_GPU.mod : src/benchmark_2D_GPU.f90
-	./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -c src/benchmark_2D_GPU.f90 -o $(BUILD_DIR)/benchmark_2D_GPU.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(BENCH_LIB_DIR) -J$(BUILD_DIR)
-
-$(MAIN) : main.f90
-	./perf_regions_instrumentation.py cleanup
-	${FC} ${FFLAGS} -g -o $(MAIN) main.f90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
-# -cpp option does preprocessing
-
-run_main : all
-# TODO : fix environment variable passing to script
-# export BENCH_EXECUTABLE='$(MAIN)'
-# export PERF_REGIONS='$(PERF_REGIONS_FOLDER)'
-	./run_benches.sh
-
-#main.o:
-#	${FC} -c main.F90 ${CFLAGS} ${PERFREGION_LINKFLAGS}
+run_main : $(BIN_DIR)/$(MAIN)
+	./run_default.sh
 
 
 # clean depending on OS
 ifeq ($(OS),Windows_NT)
 clean:
-	rm *.exe
-	rm *.o
+	rm -f *.exe
+	rm -f *.o
 else
 clean:
-	./perf_regions_instrumentation.py cleanup
-	-rm -f main main.o output.txt
-	-rm -f perf_region_list.txt
-	-rm build/*
-	-rm src/*.o src/*.mod
-	-rm lib/library.a
+	rm -f main main.o output.txt
+	rm -f perf_region_list.txt
+	rm -f build/*
+	rm -f bin/*
+	rm -f lib/*
 endif
+
+####################### dependency rules #######################
+
+# MODULE LIBRARY COMPILATION
+MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
+MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))
+
+$(LIB_DIR)/library.a : $(MODULE_O)
+	make -C src ../$(LIB_DIR)/library.a
+	@touch $(LIB_DIR)/library.a
+
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.f90
+	@echo .f90 files newer than .o files :
+	@echo $?
+	make -C src
+
+# DIRECTORIES
+$(BUILD_DIR) $(LIB_DIR) $(BIN_DIR) :
+	-@mkdir $@
+
+$(PERF_REGIONS_FOLDER)/build/libperf_regions.so :
+	make -C $(PERFREGION_SRC)
+#--silent

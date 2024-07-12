@@ -1,12 +1,29 @@
 # Fortran microbenchmarks internship at LJK
 The goal is to develop microbenchmarks in Fortran to assess the performance of different finite difference kernels within Fortran
+## Documentation
+See [documentation markdown file](doc/main.md) for further details.
+
+### [0 - Introduction to Fortran Microbenchmarks](doc/00_introduction.md)
+### [1 - Installation](doc/01_installation.md)
+### [2 - Notes for users](doc/02_user.md)
+#### [1.1 - ``allocatable`` allocated vs constant arrays](01_array_alloc.md#allocatable-benchmark--allocatable-allocated-vs-constant-arrays)
+### [3 - Notes for devs](doc/03_dev.md)
+
 
 ## File structure
 ``bench/`` subdirectory :
 - contains benchmark files
+    - ``preprocess/`` contains a codegen Python script and a Bash script to generate the benchmark variation tree and its output data
+
+``doc/`` subdirectory :
+- contains documentation
+
+``perf_regions/`` subdirectory :
+- contains necessary files from eponymous library (see [requirements](#requirements))
 
 ``tuto/`` subdirectory :
 - contains hello world and tutorial files used to learn Fortran
+
 ## Requirements
 Timing libraries
 - PAPI
@@ -15,10 +32,12 @@ Timing libraries
 ### Compilation
 
 ``Makefile`` compiles all subdirectories, and has options:
+- ``preprocessing`` or ``pre`` to run preprocessing scripts that execute all relevant benchmark variations in the generated benchmark variation tree
 - ``run`` to do ``make run`` in all subdirectories, executing the main files and scripts
     - ``run_bench`` and ``run_tuto`` to ``make run`` specifically the bench folder or the tuto folder
 - ``clean`` to clean all executable files and temporary files in the subdirectories from the current OS
-- set ``PERF_REGIONS=<relative directory of PerfRegions>`` if PerfRegions is not installed in the main folder 
+- set ``PERF_REGIONS=<relative directory of PerfRegions>`` if PerfRegions is not installed in the main folder
+    - TODO note : has to be changed manually in codegen code for the time being
 Other options:
 - use preprocessing macro ``DEBUG=1`` in ``main.f90`` if you are debugging
 
@@ -119,11 +138,11 @@ est deja present dans le code)
     - [X] compilation and execution
     - [ ] find out why the ``perf_regions`` is not working
 
-Done on 07/05 :
+Done on 06/07 :
 - [ ] investigate GPU computation
     - could not get anything to compile, did alot of research on gfortran offloading
 
-Done on 11/05 :
+Done on 06/11 :
 - [X] investigate GPU computation
     - [X] compiled using nvfortran
     - [X] tried out tutorials
@@ -135,13 +154,72 @@ Done on 11/05 :
 
 
 
-To do on 12/05 :
+Done on 06/12 :
 - [X] retry module implementation & bugfixes
     - [X] find out why the ``perf_regions`` is not working
         - was skipping non-defined ``perf_regions`` names - reported back to Martin and found a fix
     - [X] find out why the module is not working
         - module has to have implementation directly in ``contains`` statement
 - [ ] implement offload GPU benchmark
+
+Done on 06/19 :
+- [ ] document the proposed benchmarks and their results
+    - [X] started with [main doc file](doc/main.md) and [Part 1 - Array allocation benchmarks](01_array_alloc.md)
+    - [X] adjust source code to add support for size passing and different size scenarios based on L3 cache
+    - [X] made benchmark script that generates ``.csv`` file with all relevant measurements
+
+Done on 06/20 :
+- [ ] repair make redoing unnecessary compilations and being verbose
+    - [ ] try putting the compilation in ``bench/src`` only
+- [X] discussed goals with Martin and Hugo
+
+Done on 06/21 :
+- [X] Made initial V0 -> V2 of codegen in test_codegen.py and corresponding modifications for compiling separately every variation of the bench binaries
+    - This process took alot of testing to execute with satisfactory readability and UX
+
+Done on 06/25 :
+- [X] repair make redoing unnecessary compilations and being verbose to improve speed of test runs - each bench uses a separate executable now
+    - [X] try putting the compilation in ``bench/src`` only
+
+Done on 06/28 :
+- [x] renamed and made codegen with 1Mb, 2Mb etc bruteforce
+
+Done on 07/02 :
+- [x] improved postprocessing and parsing of benchmarks to get readable graphing
+    - [x] tried multiple versions of bar plotting multidimensional data
+    - settled for 2D plot with "subplot" grouping
+    - [ ] need to separate into subgraphs to enable non logarithmic comparison
+
+To do on 07/03 :
+- [ ] Write kernel with 2 versions (preprocessed) 
+    - [ ] include file with kernel code
+    - [ ] subroutine call with kernel code (should be inlined by compiler)
+    - [ ] Test execution time
+    - [ ] Look at assembly code: should look the same: `gfortran -S`
+
+To do soon (TM) :
+- [ ] Change the number of iterations to make sense
+    - first idea is using factorial
+    - second idea is make total number of calculations constant equal to factorial, and divide by approximations of 1Mb, 2Mb etc
+- [ ] Stencils and their documentation
+    - Implement about 4 different stencils
+    - Existing one
+    - Only in x direction
+    - Only in y direction
+    - Larger one (5 x 5)
+- [ ] How are the iteration bounds given
+    - As variable
+    - As constant
+    - VM: should not matter because it is not counted in the performance metrics (but maybe it matters if it changes cache preloading?)
+- [ ] Different variants (some of them already implemented):
+    - [ ] How is memory allocated? (almost DONE: missing Static one for 2D stencils)
+        - Allocatable
+        - Module
+        - Static
+        - VM: do we need a module version for every variant ? in which case there might need to be more preprocessing and less individual functions to limit coding errors
+            - VM note on 07/03 : I think we should do more 
+- [x] investigate recompilation cascade at https://fortran-lang.discourse.group/t/the-recompilation-cascade-issue-and-its-solutions/4641/2
+    - found out the cause for recompilation was invalid dates
 
 
 ### Objectives from discussion on the 06/04

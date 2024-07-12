@@ -1,19 +1,8 @@
 MODULE tools
     integer, parameter :: dp=kind(0.d0)
     contains
-            ! warning : hard coded type, shape and allocation
-        SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
-            implicit none
-            real(kind=dp), intent(in) :: written
-            integer :: id = 42
-            character(len=42) :: filename
-            
-            filename = 'output.txt'
+        ! TODO : warning : hard coded type, shape and allocation
         
-            open(unit=id, file=filename, status='unknown')
-            write(id,*) written
-            close(id)
-        end SUBROUTINE ANTI_OPTIMISATION_WRITE
         SUBROUTINE get_key_value(arg, value)
             character(len=*), intent(in) :: arg
             integer, intent(out) :: value
@@ -25,6 +14,18 @@ MODULE tools
                 read(arg(pos+1:),*) value
             end if
         end SUBROUTINE get_key_value
+        SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
+            implicit none
+            real(kind=dp), intent(in) :: written
+            integer :: id = 42
+            character(len=42) :: filename
+            
+            filename = 'tmp.txt'
+        
+            open(unit=id, file=filename, status='unknown')
+            write(id,*) written
+            close(id)
+        end SUBROUTINE ANTI_OPTIMISATION_WRITE
         SUBROUTINE stencil_characteristics(stencil, sum, length)
             integer, dimension(:), intent(in) :: stencil
             real, intent(out)    :: sum
