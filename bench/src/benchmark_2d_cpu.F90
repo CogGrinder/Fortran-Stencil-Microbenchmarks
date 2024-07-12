@@ -2,10 +2,10 @@
 ! #define DEBUG
 ! #define DEBUG_PERF
 
-MODULE benchmark_2D_CPU
-    use benchmark_names
+MODULE BENCHMARK_2D_CPU
+    USE BENCHMARK_NAMES
     use perf_regions_fortran
-    use tools
+    USE TOOLS
     implicit none
     
     contains
@@ -13,9 +13,9 @@ MODULE benchmark_2D_CPU
     
     ! to test 2D stencils with allocatable
 SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
-    use tools
+    USE TOOLS
     use perf_regions_fortran
-    use benchmark_parameters
+    USE BENCHMARK_PARAMETERS
 #include "perf_regions_defines.h"
     
     integer(KIND=4), intent(in) :: bench_id
@@ -84,9 +84,9 @@ end SUBROUTINE COMPUTATION_2D_MODULE
 
     ! to test 2D stencils on an OpenMP offloaded GPU
 SUBROUTINE COMPUTATION_2D_MODULE_FIXED(bench_id,bench_str,array_len)
-    use tools
+    USE TOOLS
     use perf_regions_fortran
-    use benchmark_parameters
+    USE BENCHMARK_PARAMETERS
 #include "perf_regions_defines.h"
     
     integer(KIND=4), intent(in) :: bench_id
@@ -153,4 +153,4 @@ SUBROUTINE COMPUTATION_2D_MODULE_FIXED(bench_id,bench_str,array_len)
 
 end SUBROUTINE COMPUTATION_2D_MODULE_FIXED
 
-end MODULE benchmark_2D_CPU
+end MODULE BENCHMARK_2D_CPU

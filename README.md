@@ -39,11 +39,11 @@ Timing libraries
 - set ``PERF_REGIONS=<relative directory of PerfRegions>`` if PerfRegions is not installed in the main folder
     - TODO note : has to be changed manually in codegen code for the time being
 Other options:
-- use preprocessing macro ``DEBUG=1`` in ``main.f90`` if you are debugging
+- use preprocessing macro ``DEBUG=1`` in ``main.F90`` if you are debugging
 
 ### Notes on CUDA compilation with OpenMP
 According to IDRIS at page http://www.idris.fr/media/formations/openacc/openmp_gpu_idris_c.pdf , the right way to compile is with nvidia's HPC SDK :
-``nvfortran -mp=gpu -gpu=sm_75 -o test test.f90``
+``nvfortran -mp=gpu -gpu=sm_75 -o test test.F90``
 
 Replace ``sm_75`` in ``-gpu=sm_75`` by your gpu's name (see https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/)
 
@@ -104,7 +104,7 @@ Done on 06/04 :
 - [ ] implement an actual second benchmark, array type to be determined
     - [X] implement a library version of 2 dummy benchmarks
         - [X] decide : do we make different versions of the computation in a module and insert it into the SUBROUTINE TEST_BENCH - renamed BENCHMARK ?
-        - answer : module does not work, going back to main.f90
+        - answer : module does not work, going back to main.F90
 - [ ] fix bench
     - [X] fix stencil
     - [ ] fix "preheating" cache and check constant results

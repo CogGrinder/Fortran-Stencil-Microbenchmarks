@@ -46,9 +46,9 @@ kernel_mode_suffixes ={ "X_KERNEL"              : "_xkernel",
 size_mode_number = {k: v+100 for v, k in enumerate(size_suffixes.keys())}
 
 src = pathlib.Path("../src/")
-mainfile = pathlib.Path("../main.f90")
+mainfile = pathlib.Path("../main.F90")
 # if DEBUG:
-#     mainfile = pathlib.Path("../main.test.f90")
+#     mainfile = pathlib.Path("../main.test.F90")
 makefile = pathlib.Path("../Makefile")
 
 

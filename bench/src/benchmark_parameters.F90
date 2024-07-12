@@ -2,7 +2,7 @@
 #define BENCHMARK_ACCELERATION 32
 #include "benchmark_compilation_fixed_parameters.h"
 
-MODULE benchmark_parameters
+MODULE BENCHMARK_PARAMETERS
 
     ! here set your processor's L3 cache size in Mib - useful for modes 100 to 103
     integer, parameter :: l3_size_in_mib = 6
@@ -35,4 +35,4 @@ MODULE benchmark_parameters
         n1d = n1dinput
     END SUBROUTINE
 #endif /* end of SIZE_AT_COMPILATION*/
-END MODULE benchmark_parameters
+END MODULE BENCHMARK_PARAMETERS

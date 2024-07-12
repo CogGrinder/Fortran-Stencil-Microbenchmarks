@@ -2,10 +2,10 @@
 ! #define DEBUG
 ! #define DEBUG_PERF
 
-MODULE benchmark_2D_GPU
-    use benchmark_names
+MODULE BENCHMARK_2D_GPU
+    USE BENCHMARK_NAMES
     use perf_regions_fortran
-    use tools
+    USE TOOLS
     implicit none
     
     contains
@@ -13,14 +13,17 @@ MODULE benchmark_2D_GPU
     
 ! to test 2D stencils on an OpenMP offloaded GPU
 SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
-    use tools
+    USE TOOLS
     use perf_regions_fortran
-    use benchmark_parameters
+    USE BENCHMARK_PARAMETERS
 #include "perf_regions_defines.h"
     
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
     integer, intent(in) :: array_len
+
+#ifndef NO_GPU /*used for ignoring this module when compiling without nvfortran*/
+
     integer :: i,j
     integer :: sten_len = 3
     ! 2D arrays
@@ -80,6 +83,10 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
                                     modulo(42,nj)))
 
+#else
+    write(*,*) "GPU BENCHMARK NOT COMPILED"
+#endif /*NO_GPU*/
+
 end SUBROUTINE COMPUTATION_GPU_OMP_BASE
 
-end MODULE benchmark_2D_GPU
+end MODULE BENCHMARK_2D_GPU

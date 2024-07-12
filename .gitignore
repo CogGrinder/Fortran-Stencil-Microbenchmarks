@@ -7,7 +7,7 @@ bench/bench
 bench/build
 bench/bin
 bench/lib
-bench/benchmark_1D.o
+bench/benchmark_1d.o
 bench/file.csv
 bench/tmp.txt
 bench/src/*.mod

@@ -20,12 +20,12 @@
 PROGRAM main
     ! thank you to https://www.tutorialspoint.com/fortran/fortran_arrays.htm
     USE perf_regions_fortran
-    use tools
-    USE benchmark_names
-    USE benchmark_1D
-    USE benchmark_2D_CPU
-    USE benchmark_2D_GPU
-    USE benchmark_parameters
+    USE TOOLS
+    USE BENCHMARK_NAMES
+    USE BENCHMARK_1D
+    USE BENCHMARK_2D_CPU
+    USE BENCHMARK_2D_GPU
+    USE BENCHMARK_PARAMETERS
 
 #include "perf_regions_defines.h"
     implicit none
@@ -169,12 +169,12 @@ END PROGRAM main
 
 SUBROUTINE BENCH_SKELETON(iters, bench_str, array_len)
 USE perf_regions_fortran
-USE benchmark_names
-USE benchmark_parameters
+USE BENCHMARK_NAMES
+USE BENCHMARK_PARAMETERS
 #include "perf_regions_defines.h"
-    use benchmark_1D
-    use benchmark_2D_GPU
-    use benchmark_2D_CPU
+    USE BENCHMARK_1D
+    USE BENCHMARK_2D_CPU
+    USE BENCHMARK_2D_GPU
     
     integer, intent(in) :: iters
     character(len=7), intent(in) :: bench_str
@@ -254,7 +254,7 @@ end SUBROUTINE WARMUP_COMPUTATION
 
 SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str, array_len)
 use perf_regions_fortran
-use tools
+USE TOOLS
 #include "perf_regions_defines.h"
     
     ! stencil must be odd length
@@ -302,7 +302,7 @@ CALL perf_region_stop(bench_id)
 end SUBROUTINE COMPUTATION_FIXED_ARRAY
 
 SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
-    use tools
+    USE TOOLS
     use perf_regions_fortran
 #include "perf_regions_defines.h"
     
@@ -351,9 +351,9 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
 end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
 
 SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
-    use tools
+    USE TOOLS
     use perf_regions_fortran
-    use benchmark_parameters
+    USE BENCHMARK_PARAMETERS
 #include "perf_regions_defines.h"
     
     integer(KIND=4), intent(in) :: bench_id
@@ -421,9 +421,9 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
 end SUBROUTINE COMPUTATION_2D_JI
 
 SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
-    use tools
+    USE TOOLS
     use perf_regions_fortran
-    use benchmark_parameters
+    USE BENCHMARK_PARAMETERS
 #include "perf_regions_defines.h"
     
     integer(KIND=4), intent(in) :: bench_id

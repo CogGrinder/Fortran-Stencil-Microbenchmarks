@@ -105,14 +105,14 @@ print_main:
 main : $(BIN_DIR)/$(MAIN)
 ## Why not mkdir -d $(BIN_DIR)?
 #https://stackoverflow.com/questions/64036620/what-is-the-use-of-or-operator-in-dependency-list
-$(BIN_DIR)/$(MAIN) : main.f90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
+$(BIN_DIR)/$(MAIN) : main.F90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/library.a | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
 	@export |grep SIZE_AT_COMPILATION
 # @export |grep NI
 # @export |grep NJ
 	@export |grep KERNEL_MODE
-	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.f90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.F90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)
@@ -136,15 +136,15 @@ endif
 ####################### dependency rules #######################
 
 # MODULE LIBRARY COMPILATION
-MODULE_f90 := $(wildcard $(SRC_DIR)/*.f90)
-MODULE_O := $(patsubst $(SRC_DIR)/%.f90,$(BUILD_DIR)/%.o, $(MODULE_f90))
+MODULE_F90 := $(wildcard $(SRC_DIR)/*.F90)
+MODULE_O := $(patsubst $(SRC_DIR)/%.F90,$(BUILD_DIR)/%.o, $(MODULE_F90))
 
 $(LIB_DIR)/library.a : $(MODULE_O)
 	make -C src ../$(LIB_DIR)/library.a
 	@touch $(LIB_DIR)/library.a
 
-$(BUILD_DIR)/%.o : $(SRC_DIR)/%.f90
-	@echo .f90 files newer than .o files :
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.F90
+	@echo .F90 files newer than .o files :
 	@echo $?
 	make -C src
 

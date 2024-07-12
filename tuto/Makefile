@@ -78,10 +78,10 @@ TUTO_EXEC := $(ECHO) $(OMP)
 
 tuto: $(TUTO_EXEC)
 
-$(ECHO) : hello_world_echo.f90
-	gfortran hello_world_echo.f90 -o $(ECHO)
+$(ECHO) : hello_world_echo.F90
+	gfortran hello_world_echo.F90 -o $(ECHO)
 
-# cannot group compilations because hello_world_omp.f90 uses openmp
+# cannot group compilations because hello_world_omp.F90 uses openmp
 # old path change :
 # export PATH:=/usr/local/cuda:/usr/local/cuda/bin:$(PATH)
 # new path change :
@@ -99,15 +99,15 @@ export PATH:=$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/bin:$(PATH)
 export PATH:=/usr/local/cuda-12:/usr/local/cuda-12/bin:$(PATH)
 # export LD_LIBRARY_PATH:=/usr/local/cuda-11:/usr/local/cuda-11/lib:$(LD_LIBRARY_PATH)
 export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_PATH)
-$(OMP) : hello_world_omp.f90
+$(OMP) : hello_world_omp.F90
 	@echo $(PATH)
 # nvc/nvfortran compilation :
-	nvfortran -cpp -Minfo=mp -mp=gpu -gpu=sm_75 -o $(OMP) hello_world_omp.f90
-# fails with error NVFORTRAN-S-0021-Label field of continuation line is not blank (hello_world_omp.f90: 4)
+	nvfortran -cpp -Minfo=mp -mp=gpu -gpu=sm_75 -o $(OMP) hello_world_omp.F90
+# fails with error NVFORTRAN-S-0021-Label field of continuation line is not blank (hello_world_omp.F90: 4)
 # suggestion is to use -Mfree flag
 
 # gfortran compilation : fails with ptxas fatal   : Value 'sm_35' is not defined for option 'gpu-name'
-#	gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector hello_world_omp.f90 -o $(OMP)
+#	gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector hello_world_omp.F90 -o $(OMP)
 
 # attempts :
 # gcc-offload-nvptx
@@ -115,7 +115,7 @@ $(OMP) : hello_world_omp.f90
 # dont use nvidia-cuda-toolkit seems to be too old
 # find /usr -type d -name cuda
 # note : can use -foffload=-lgfortran
-# gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector -lgcc -L/usr/local/cuda/lib64/ -lcuda -lcudart hello_world_omp.f90 -o $(OMP)
+# gfortran -cpp -fopenmp -foffload=nvptx-none -fno-stack-protector -lgcc -L/usr/local/cuda/lib64/ -lcuda -lcudart hello_world_omp.F90 -o $(OMP)
 # --ptxas-options -gpu-name=sm_75
 
 run_tuto: run_omp

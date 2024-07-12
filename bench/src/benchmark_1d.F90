@@ -2,10 +2,10 @@
 ! #define DEBUG
 ! #define DEBUG_PERF
 
-MODULE benchmark_1D
-    use benchmark_names
+MODULE BENCHMARK_1D
+    USE BENCHMARK_NAMES
     use perf_regions_fortran
-    use tools
+    USE TOOLS
     implicit none
     
     contains
@@ -13,7 +13,7 @@ MODULE benchmark_1D
     
 ! to test 1D stencils in a module
 SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str,array_len)
-    use tools
+    USE TOOLS
     use perf_regions_fortran
 #include "perf_regions_defines.h"
     

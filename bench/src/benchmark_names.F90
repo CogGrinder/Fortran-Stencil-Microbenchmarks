@@ -1,4 +1,4 @@
-MODULE benchmark_names
+MODULE BENCHMARK_NAMES
     implicit none
     ! Determines the order of the output
     ! All benchmark identifiers need to be unique
@@ -20,6 +20,6 @@ MODULE benchmark_names
     integer, parameter :: slightly_smaller_than_l3  = 101
     integer, parameter :: slightly_bigger_than_l3   = 102
     integer, parameter :: bigger_than_l3            = 103
-    ! see benchmark_parameters.f90 for usage in practice
+    ! see benchmark_parameters.F90 for usage in practice
 
-END MODULE benchmark_names
+END MODULE BENCHMARK_NAMES
