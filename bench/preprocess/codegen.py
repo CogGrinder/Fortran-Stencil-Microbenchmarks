@@ -206,7 +206,7 @@ export NI="{ni if is_compilation_time_size else ""}"
 export NJ="{nj if is_compilation_time_size else ""}"
 export KERNEL_MODE="{kernel_mode}"
 
-make -C $BENCH_MAKE_DIR main {"" if is_copy_bench_files else "_PERF_REGIONS_FOLDER="+ "../"*(TREE_DEPTH+2)+"src/perf_regions"} {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""}
+make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""}
 
 filename=out
 
