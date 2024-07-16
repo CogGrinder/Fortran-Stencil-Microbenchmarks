@@ -9,6 +9,9 @@ import shutil
 import json
 from typing import Union
 import math
+# for debugging
+import time
+import subprocess
 
 global ACCURACY
 ACCURACY = 1
@@ -18,6 +21,8 @@ VERBOSE = False
 global DEBUG
 DEBUG = False
 L3_SIZE = 16
+global IS_NVFORTRAN_COMPILER
+IS_NVFORTRAN_COMPILER = False
 
 # this parameter is used for readable implementation of relative directories, with "../" prefixes
 TREE_DEPTH = 4
@@ -47,8 +52,8 @@ size_mode_number = {k: v+100 for v, k in enumerate(size_suffixes.keys())}
 
 src = pathlib.Path("../src/")
 mainfile = pathlib.Path("../main.F90")
-# if DEBUG:
-#     mainfile = pathlib.Path("../main.test.F90")
+if DEBUG and VERBOSE:
+    mainfile = pathlib.Path("../main.test.F90")
 makefile = pathlib.Path("../Makefile")
 
 
@@ -139,7 +144,15 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
             fulldirectory_absolute = pathlib.Path(fulldirectory).resolve()
             if DEBUG and VERBOSE:
                 print(fulldirectory_absolute)
-            shutil.copytree(src.resolve(),str(fulldirectory_absolute)+"/src",dirs_exist_ok=True)
+            tic = 0
+            if DEBUG:
+                tic = time.perf_counter()
+            args = shlex.split(f"cp -r {src.resolve()} {str(fulldirectory_absolute)+'/src'}")
+            subprocess.run(args=args,executable="cp")
+            # shutil.copytree(src.resolve(),str(fulldirectory_absolute)+"/src",dirs_exist_ok=True)
+            if DEBUG:
+                toc = time.perf_counter()
+                print(f"Copied source in {toc-tic:0.4f}s")
             shutil.copy2(mainfile.resolve(),fulldirectory_absolute)
             shutil.copy2(makefile.resolve(),fulldirectory_absolute)
 
@@ -193,7 +206,7 @@ export NI="{ni if is_compilation_time_size else ""}"
 export NJ="{nj if is_compilation_time_size else ""}"
 export KERNEL_MODE="{kernel_mode}"
 
-make -C $BENCH_MAKE_DIR main {"" if is_copy_bench_files else "_PERF_REGIONS_FOLDER="+ "../"*(TREE_DEPTH+2)+"src/perf_regions"}
+make -C $BENCH_MAKE_DIR main {"" if is_copy_bench_files else "_PERF_REGIONS_FOLDER="+ "../"*(TREE_DEPTH+2)+"src/perf_regions"} {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""}
 
 filename=out
 
@@ -228,6 +241,7 @@ def main():
     global ACCURACY
     global VERBOSE
     global DEBUG
+    global IS_NVFORTRAN_COMPILER
     # courtesy of https://stackoverflow.com/questions/20063/whats-the-best-way-to-parse-command-line-arguments
     parser = argparse.ArgumentParser(description="Code generator for benchmarking with various options in a tree structure")
 
@@ -266,6 +280,8 @@ def main():
                         help='Used in mode "all". Represents the scope of sizes in Mb to study. If length is 2, acts as lower and upper bound. If length is\
                              1, acts as upper bound with lower bound 1, if is number only selects that number, else it is the list of sizes in Mb.')
     # Optional arguments
+    parser.add_argument('-nvf', '--nvfortran', action='store_true',
+                        help='Uses nvfortran compiler and enables GPU benchmarking.')
     parser.add_argument('-c', '--clean-before', action='store_true',
                         help='Cleans existing directory before creating')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -292,7 +308,10 @@ def main():
         mode = args.MODE
     # setting options
     if args.alloc is not None:
-        alloc_option = args.alloc
+        if args.alloc in all_alloc_options:
+            alloc_option = args.alloc
+        else:
+            parser.error(f"{args.alloc} invalid value for alloc_option")
     if args.size is not None:
         size_option = args.size
     if args.compile_size is not None:
@@ -315,6 +334,8 @@ def main():
         else:
             ACCURACY = args.ACCURACY
     
+    if args.nvfortran:
+        IS_NVFORTRAN_COMPILER=True
     if args.verbose:
         VERBOSE=True
     if VERBOSE:
