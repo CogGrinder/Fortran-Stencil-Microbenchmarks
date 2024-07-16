@@ -207,16 +207,27 @@ export NI="{ni if is_compilation_time_size else ""}"
 export NJ="{nj if is_compilation_time_size else ""}"
 export KERNEL_MODE="{kernel_mode}"
 
-make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""}
+# normal make
+# make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""}
+
+# pretty output for progress bar
+while IFS= read -r line; do
+    echo -ne "                                \r"
+    echo "$line"
+    echo -ne "compilation               ($progressbar%)\r"
+    # grep -o 'action'
+done < <( make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} )
 
 filename=out
 
-echo "Running mode {benchname}..."    
-ls
-# ./$BENCH_EXECUTABLE
-# thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
+echo -ne "                                \r"
+echo "Running mode {benchname}...     "
+echo -ne "execution                 ($progressbar%)\r"
+# thank you to glenn jackman"s answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
+    echo -ne "                                \r"
     echo "$line"
+    echo -ne "execution                 ($progressbar%)\r"
     # MULE lines are those without a " " space prefix
     if [ "${{line:0:1}}" != " " ]
     then
@@ -225,7 +236,6 @@ while IFS= read -r line; do
     # grep -o 'action'
 done < <( ./$BENCH_EXECUTABLE iters={iters} {"" if is_compilation_time_size else f"ni={ni} nj={nj}"} )
 # |  grep -A100 Section | paste >> $filename.csv
-echo
 # cat $filename.csv
 """)
         f.close()
@@ -444,11 +454,12 @@ def main():
     
     ### clean mode ###
     if mode == "clean":
-        print("Cleaning benchmark script tree... Y/n ?")
+        print("Cleaning benchmark script tree and .JSON metadata...\nY/n ?")
         if (str(input()) == "Y") :
-            shutil.rmtree("bench_tree")
             os.remove(json_filename)
-            print("Cleaned")
+            print(f"Cleaned {json_filename}")
+            shutil.rmtree("bench_tree")
+            print("Cleaned bench_tree")
         else :
             print("Aborted")
 

@@ -24,7 +24,15 @@ export KERNEL_MODE=""
 
 make -C $BENCH_MAKE_DIR clean 
 make -C $BENCH_MAKE_DIR print_main 
-make -C $BENCH_MAKE_DIR main
+# make -C $BENCH_MAKE_DIR main F90=nvfortran
+
+while IFS= read -r line; do
+    echo -ne '                               \r'
+    echo "$line"
+    echo -ne '######compilation######   (--%)\r'
+    # grep -o 'action'
+done < <( make -C $BENCH_MAKE_DIR main F90=nvfortran )
+echo '                               '
 
 filename=out
 
@@ -33,13 +41,15 @@ ls
 # ./$BENCH_EXECUTABLE
 # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
+    echo -ne '                               \r'
     echo "$line"
+    echo -ne '######execution######     (--%)\r'
     if [ "${line:0:1}" != " " ]
     then
         echo "$line" >> $filename.csv
     fi
     # grep -o 'action'
-done < <( ./$BENCH_EXECUTABLE iters=16 ni=4096 nj=4096 )
+done < <( ./$BENCH_EXECUTABLE iters=64 ni=4096 nj=4096 )
 # |  grep -A100 Section | paste >> $filename.csv
-echo
+echo '######execution######     (--%)'
 # cat $filename.csv
