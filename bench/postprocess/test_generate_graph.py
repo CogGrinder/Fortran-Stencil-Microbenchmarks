@@ -44,7 +44,8 @@ def import_data(normalise=True):
         # TODO: see if it is better to make a mask ?? I don't think so
         labels_no_superfluous = labels.copy()
         for label in ignored_counters:
-            labels_no_superfluous.remove(label)
+            if label in labels_no_superfluous:
+                labels_no_superfluous.remove(label)
         print(f"CSV LABELS: {labels}")
         print(f"KEPT LABELS: {labels_no_superfluous}")
 
