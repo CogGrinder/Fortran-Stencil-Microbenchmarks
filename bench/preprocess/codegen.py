@@ -152,7 +152,8 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
             # shutil.copytree(src.resolve(),str(fulldirectory_absolute)+"/src",dirs_exist_ok=True)
             if DEBUG:
                 toc = time.perf_counter()
-                print(f"Copied source in {toc-tic:0.4f}s")
+                if (toc-tic)>0.5:
+                    print(f"Copied source in {toc-tic:0.4f}s")
             shutil.copy2(mainfile.resolve(),fulldirectory_absolute)
             shutil.copy2(makefile.resolve(),fulldirectory_absolute)
 
@@ -248,18 +249,28 @@ def main():
     phrase = shlex.join(sys.argv[1:])
     # file_test()
     # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
+    
+    ### defaults ###
     mode = 'single'
     alloc_option = ""
     size_option = ""
     is_compilation_time_size = ""
     iterator_of_selected_sizes = range(1,16+1)
 
+    ### program data ###
     all_alloc_options = list(allocation_suffixes.keys())
     all_alloc_options.remove("")
     all_kernel_modes = list(kernel_mode_suffixes.keys())
     all_kernel_modes.remove("")
-    all_parameters = {}
+    json_filename = "all_benchmark_parameters.json"
+
+    # dictionary used for exporting bench parameters as .JSON file
+    # if -c cleaning option is not used it is imported
+    # because existing benchmarks have their parameters stored
+    json_dict_all_parameters = {}
     
+    ### option parser ###
+
     parser.add_argument('-M','--MODE', nargs='?', default='all',
                     help='Can be all, all_l3, single or clean. "all" generates all possible combinations with set range of sizes.')
     parser.add_argument('-A', '--ACCURACY', metavar='multiplier', type=float,
@@ -346,8 +357,14 @@ def main():
         print(is_compilation_time_size)
         print("ACCURACY="+str(ACCURACY))
 
-    ### executing command ###
+    ###### executing command ######
+    ### preparing folders and parameters dictionary ###
     if mode != "clean":
+        if pathlib.Path(json_filename).is_file() :
+            f = open("../preprocess/all_benchmark_parameters.json", "r")
+            print("Importing existing .JSON dictionary of benchmark parameters.")
+            json_dict_all_parameters = json.load(f)
+            f.close()
         if pathlib.Path("bench_tree").is_dir() :
             if args.clean_before:
                 shutil.rmtree("bench_tree")
@@ -359,21 +376,14 @@ def main():
         else:
             os.mkdir("bench_tree")
     
-    if mode == "clean":
-        print("Cleaning benchmark script tree... Y/n ?")
-        if (str(input()) == "Y") :
-            shutil.rmtree("bench_tree")
-            print("Cleaned")
-        else :
-            print("Aborted")
-    elif mode in ["all_old","all_no_compilation_time"]:
+    if mode in ["all_old","all_no_compilation_time"]:
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
         
         for alloc_option in all_alloc_options :
             for size_option in iterator_of_selected_sizes :
                 filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option)
-                all_parameters[filename] = {"size_option": size_option,
+                json_dict_all_parameters[filename] = {"size_option": size_option,
                                             "alloc_option": alloc_option,
                                             "iters": iters,
                                             "is_compilation_time_size": False}
@@ -387,7 +397,7 @@ def main():
                     for kernel_mode in all_kernel_modes:
                         filename, iters, ni, nj  = codegen_bench_tree_branch(alloc_option,size_option,\
                                                     is_compilation_time_size=is_compilation_time_size,kernel_mode=kernel_mode)
-                        all_parameters[filename] = {"kernel_mode": kernel_mode,
+                        json_dict_all_parameters[filename] = {"kernel_mode": kernel_mode,
                                                     "size_option": size_option,
                                                     "ni": ni,
                                                     "nj": nj,
@@ -405,7 +415,7 @@ def main():
                 for is_compilation_time_size in [False,True] :
                     filename, iters, ni, nj = codegen_bench_tree_branch(alloc_option,size_option,\
                                                 is_compilation_time_size=is_compilation_time_size)
-                    all_parameters[filename] = {"size_option": size_option,
+                    json_dict_all_parameters[filename] = {"size_option": size_option,
                                                 "ni": ni,
                                                 "nj": nj,
                                                 "alloc_option": alloc_option,
@@ -416,20 +426,32 @@ def main():
             else str(alloc_option) + str(size_option) + "is_compilation_time_size: " + str(is_compilation_time_size)
         print(f"Creating {description} benchmark script...")
         filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option,is_compilation_time_size)
-        all_parameters[filename] = {"size_option": size_option,
+        json_dict_all_parameters[filename] = {"size_option": size_option,
                                                 "alloc_option": alloc_option,
                                                 "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size}
-    else :
+    elif mode != "clean" :
         print("Invalid command.",file=sys.stderr)
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    # JSON dump of all parameters used
-    filename = "all_benchmark_parameters.json"
-    f = open(filename, "w")
-    json.dump(all_parameters,f,sort_keys=True, indent=4)
-    print("done.")
+    ### JSON dump of all parameters used ###
+    if mode != "clean":
+        f = open(json_filename, "w")
+        json.dump(json_dict_all_parameters,f,sort_keys=True, indent=4)
+        f.close()
+        print("done.")
+    
+    ### clean mode ###
+    if mode == "clean":
+        print("Cleaning benchmark script tree... Y/n ?")
+        if (str(input()) == "Y") :
+            shutil.rmtree("bench_tree")
+            os.remove(json_filename)
+            print("Cleaned")
+        else :
+            print("Aborted")
+
     return 0
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html
