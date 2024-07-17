@@ -2,12 +2,33 @@
 # if struggling to execute on windows subsystem for linux
 # see https://askubuntu.com/questions/304999/not-able-to-execute-a-sh-file-bin-bashm-bad-interpreter
 #!usr/bin/bash
+
+# function used for printing bench <number>
+writeprogressbar() {
+    printf "$(printf "%-8s" "$1")[$progressbar]($progresspercent%%)\r"
+}
+
+progress() {
+    progresspercent=$(printf "%3d" $((100 * ibench/nbench)))
+    n=$(( 16 * ibench / nbench ))
+    progressbar=$(printf -- '-%.0s' $(seq 0 $n))$(printf ' %.0s' $(seq $n 16))
+    progressbar=${progressbar:1:16}
+    export progresspercent
+    export progressbar
+    echo -ne "                                \r"
+    writeprogressbar "bench $ibench"
+    writeprogressbar "bench $ibench"
+    printf "\n"
+}
+
 cd bench_tree
 directories_1=$(ls -d -1q */)
-echo $directories_1
 
 nbench=$(find -mindepth 4 -maxdepth 4 -type d | wc -w)
-echo @?
+echo Total amount of benchmarks: $nbench
+echo
+echo $directories_1
+echo
 ibench=0
 # sleep 1
 for directory_1 in $directories_1
@@ -37,11 +58,7 @@ do
                 cd $(basename $directory_4)
                 # remove previous data
                 rm -f out.csv
-                progressbar=$(printf "%3d" $((100 * ibench/nbench)))
-                echo -ne "                                \r"
-                echo "benchmark $(printf "%3d" $ibench)             ($progressbar%)"
-                echo -ne "benchmark $(printf "%3d" $ibench)             ($progressbar%)\r"
-                export progressbar
+                progress
                 ./run.sh
                 # remove the anti-optimisation file
                 # used for output of elements of the array being computed

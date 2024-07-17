@@ -183,6 +183,9 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
 
         # see https://realpython.com/python-f-strings/
         f.write(f"""#! /bin/bash
+writeprogressbar() {{
+    printf "%-8s[$progressbar]($progresspercent%%)\r" $1
+}}
 
 # set BENCH_EXECUTABLE
 export PERF_REGIONS="{"" if is_copy_bench_files else "../"*(TREE_DEPTH+2)}src/perf_regions"
@@ -214,7 +217,8 @@ export KERNEL_MODE="{kernel_mode}"
 while IFS= read -r line; do
     echo -ne "                                \r"
     echo "$line"
-    echo -ne "compilation               ($progressbar%)\r"
+    writeprogressbar compile
+    # echo -ne "compile [$progressbar]($progresspercent%)\r"
     # grep -o 'action'
 done < <( make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} )
 
@@ -222,12 +226,14 @@ filename=out
 
 echo -ne "                                \r"
 echo "Running mode {benchname}...     "
-echo -ne "execution                 ($progressbar%)\r"
+writeprogressbar execute
+# echo -ne "execute [$progressbar]($progresspercent%)\r"
 # thank you to glenn jackman"s answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
     echo -ne "                                \r"
     echo "$line"
-    echo -ne "execution                 ($progressbar%)\r"
+    writeprogressbar execute
+    # echo -ne "execute [$progressbar]($progresspercent%)\r"
     # MULE lines are those without a " " space prefix
     if [ "${{line:0:1}}" != " " ]
     then
