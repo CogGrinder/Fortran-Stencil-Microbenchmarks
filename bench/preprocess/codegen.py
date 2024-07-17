@@ -44,7 +44,7 @@ kernel_mode_suffixes ={ "X_KERNEL"              : "_xkernel",
                         "Y_KERNEL"              : "_ykernel",
                         "SIZE_5_KERNEL"         : "_size5kernel",
                         "DEFAULT_KERNEL"        : "_defaultkernel",
-                        ""                      : "_defaultkernel"}
+                        ""                      : "_default"}
 
 # dictionary containing number related to size identifier
 # thank you Abhijit at https://stackoverflow.com/questions/36459969/how-to-convert-a-list-to-a-dictionary-with-indexes-as-values
@@ -103,8 +103,13 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
         # directory is represented as an str
         directory = "bench_tree"
 
-        # first depth is allocation_type TODO : make it kernel_mode and then CPU/GPU once that is functional
-        directory += f"/bench{allocation_suffixes[alloc_option]}"
+        # first depth is kernel_mode_suffix
+        directory += f"/bench{kernel_mode_suffixes[kernel_mode]}"
+        if not pathlib.Path(directory).is_dir() :
+            os.mkdir(directory)
+
+        # adding allocation_type TODO : make the second depth CPU/GPU once that is functional
+        directory += f"/{allocation_suffixes[alloc_option]}"
         if not pathlib.Path(directory).is_dir() :
             os.mkdir(directory)
         
@@ -124,10 +129,6 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
         if not pathlib.Path(directory).is_dir() :
             os.mkdir(directory)
 
-        # adding kernel_mode_suffix
-        directory += f"/{kernel_mode_suffixes[kernel_mode]}"
-        if not pathlib.Path(directory).is_dir() :
-            os.mkdir(directory)
 
         # the last depth joined directory is the full directory
         fulldirectory = directory
@@ -249,44 +250,7 @@ done < <( ./$BENCH_EXECUTABLE iters={iters} {"" if is_compilation_time_size else
     else:
         raise ValueError("Parameter wrong - read script for more information")
 
-
-def main():
-    """Main function of code generation - interprets input from argparse
-
-    Use --help for details.
-    """
-    global ACCURACY
-    global VERBOSE
-    global DEBUG
-    global IS_NVFORTRAN_COMPILER
-    # courtesy of https://stackoverflow.com/questions/20063/whats-the-best-way-to-parse-command-line-arguments
-    parser = argparse.ArgumentParser(description="Code generator for benchmarking with various options in a tree structure")
-
-    phrase = shlex.join(sys.argv[1:])
-    # file_test()
-    # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
-    
-    ### defaults ###
-    mode = 'single'
-    alloc_option = ""
-    size_option = ""
-    is_compilation_time_size = ""
-    iterator_of_selected_sizes = range(1,16+1)
-
-    ### program data ###
-    all_alloc_options = list(allocation_suffixes.keys())
-    all_alloc_options.remove("")
-    all_kernel_modes = list(kernel_mode_suffixes.keys())
-    all_kernel_modes.remove("")
-    json_filename = "all_benchmark_parameters.json"
-
-    # dictionary used for exporting bench parameters as .JSON file
-    # if -c cleaning option is not used it is imported
-    # because existing benchmarks have their parameters stored
-    json_dict_all_parameters = {}
-    
-    ### option parser ###
-
+def argument_parsing(parser: argparse.ArgumentParser):
     parser.add_argument('-M','--MODE', nargs='?', default='all',
                     help='Can be all, all_l3, single or clean. "all" generates all possible combinations with set range of sizes.')
     parser.add_argument('-A', '--ACCURACY', metavar='multiplier', type=float,
@@ -294,9 +258,12 @@ def main():
 
     # thank you to https://stackoverflow.com/questions/27411268/arguments-that-are-dependent-on-other-arguments-with-argparse
     parser_mode_specific = parser.add_argument_group(title='mode specific options',
-                                   description='Flags for modes "single" and "all".',)
+                                   description='Flags for modes "single" and "all".\n\
+                                   Setting an option here will fix its value in the enumeration of combinations of "all".',)
     
     # Arguments for single mode
+    parser_mode_specific.add_argument('--kernel-mode', nargs='?',
+                    help=f'A kernel_mode_option in {", ".join(list(kernel_mode_suffixes.keys())).rstrip(", ")}')
     parser_mode_specific.add_argument('--alloc', nargs='?',
                     help=f'An alloc_option in {", ".join(list(allocation_suffixes.keys())).rstrip(", ")}')
     parser_mode_specific.add_argument('--size', nargs='?',
@@ -307,7 +274,7 @@ def main():
                         help='Used in mode "all". Represents the scope of sizes in Mb to study. If length is 2, acts as lower and upper bound. If length is\
                              1, acts as upper bound with lower bound 1, if is number only selects that number, else it is the list of sizes in Mb.')
     # Optional arguments
-    parser.add_argument('-nvf', '--nvfortran', action='store_true',
+    parser.add_argument('-nv', '--nvfortran', action='store_true',
                         help='Uses nvfortran compiler and enables GPU benchmarking.')
     parser.add_argument('-c', '--clean-before', action='store_true',
                         help='Cleans existing directory before creating')
@@ -315,9 +282,46 @@ def main():
                         help='Displays more output')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Displays debug output')
+    return parser.parse_args()
+
+def main():
+    """Main function of code generation - interprets input from argparse
+
+    Use --help for details.
+    """
+    global ACCURACY
+    global VERBOSE
+    global DEBUG
+    global IS_NVFORTRAN_COMPILER
     
-    args = parser.parse_args()
+    # courtesy of https://stackoverflow.com/questions/20063/whats-the-best-way-to-parse-command-line-arguments
+    ### argument parser ###
+    parser = argparse.ArgumentParser(description="Code generator for benchmarking with various options in a tree structure")
+    args = argument_parsing(parser)
+
+    # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
+    phrase = shlex.join(sys.argv[1:])
     
+    ### defaults ###
+    mode = 'single'
+    alloc_option = ""
+    size_option = ""
+    is_compilation_time_size = ""
+    kernel_mode_option = ""
+    iterator_of_selected_sizes = range(1,16+1)
+
+    ### program data ###
+    all_alloc_options = list(allocation_suffixes.keys())
+    all_alloc_options.remove("")
+    all_kernel_mode_options = list(kernel_mode_suffixes.keys())
+    all_kernel_mode_options.remove("")
+    all_compilation_time_size = [False, True]
+
+    # dictionary used for exporting bench parameters as .JSON file
+    # if -c cleaning option is not used it is imported
+    # because existing benchmarks have their parameters stored
+    json_filename = "all_benchmark_parameters.json"
+    json_dict_all_parameters = {}
 
     ### checking parameter values ###
     # courtesy of https://stackoverflow.com/questions/4042452/display-help-message-with-python-argparse-when-script-is-called-without-any-argu
@@ -333,16 +337,31 @@ def main():
     # setting command
     if args.MODE is not None:
         mode = args.MODE
+    
     # setting options
+    if args.kernel_mode is not None:
+        if args.kernel_mode in all_kernel_mode_options:
+            kernel_mode_option = args.kernel_mode
+            if mode!="single":
+                all_kernel_mode_options = [args.kernel_mode]
+        else:
+            parser.error(f"{args.alloc} invalid value for alloc_option")
     if args.alloc is not None:
         if args.alloc in all_alloc_options:
             alloc_option = args.alloc
+            if mode!="single":
+                all_alloc_options = [args.alloc]
         else:
             parser.error(f"{args.alloc} invalid value for alloc_option")
     if args.size is not None:
         size_option = args.size
+        if mode!="single":
+            iterator_of_selected_sizes = [args.size]
     if args.compile_size is not None:
         is_compilation_time_size = args.compile_size
+        if mode!="single":
+            all_compilation_time_size = [args.compile_size]
+    
     if args.range is not None:
         if DEBUG:
             print("range: " + str(args.range))
@@ -360,7 +379,6 @@ def main():
             parser.error(f"Accuracy flag set to {args.ACCURACY}: cannot be non-positive")
         else:
             ACCURACY = args.ACCURACY
-    
     if args.nvfortran:
         IS_NVFORTRAN_COMPILER=True
     if args.verbose:
@@ -383,8 +401,10 @@ def main():
             f.close()
         if pathlib.Path("bench_tree").is_dir() :
             if args.clean_before:
+                os.remove(json_filename)
+                print(f"Cleaned {json_filename}")
                 shutil.rmtree("bench_tree")
-                print("Cleaned tree")
+                print("Cleaned bench_tree")
                 os.mkdir("bench_tree")
             else:
                 print("Warning: bench_tree directory exists. May not function as expected when writing files.")
@@ -409,8 +429,8 @@ def main():
         codegen_bench_tree_branch("","")
         for alloc_option in all_alloc_options :
             for size_option in iterator_of_selected_sizes :
-                for is_compilation_time_size in [False,True] :
-                    for kernel_mode in all_kernel_modes:
+                for is_compilation_time_size in all_compilation_time_size :
+                    for kernel_mode in all_kernel_mode_options:
                         filename, iters, ni, nj  = codegen_bench_tree_branch(alloc_option,size_option,\
                                                     is_compilation_time_size=is_compilation_time_size,kernel_mode=kernel_mode)
                         json_dict_all_parameters[filename] = {"kernel_mode": kernel_mode,
@@ -438,14 +458,15 @@ def main():
                                                 "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size}
     elif mode == "single" :
-        description = 'default' if (alloc_option=='' and size_option=='' and is_compilation_time_size=='')\
-            else str(alloc_option) + str(size_option) + "is_compilation_time_size: " + str(is_compilation_time_size)
+        description = 'default' if (alloc_option=='' and size_option=='' and is_compilation_time_size=='' and kernel_mode_option=='')\
+            else str(alloc_option) + str(size_option) + "is_compilation_time_size: " + str(is_compilation_time_size) + str(kernel_mode_option)
         print(f"Creating {description} benchmark script...")
-        filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option,is_compilation_time_size)
+        filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option,is_compilation_time_size,kernel_mode=kernel_mode_option)
         json_dict_all_parameters[filename] = {"size_option": size_option,
                                                 "alloc_option": alloc_option,
                                                 "iters": iters,
-                                                "is_compilation_time_size": is_compilation_time_size}
+                                                "is_compilation_time_size": is_compilation_time_size,
+                                                "kernel_mode_option": kernel_mode_option}
     elif mode != "clean" :
         print("Invalid command.",file=sys.stderr)
         parser.print_help(sys.stderr)

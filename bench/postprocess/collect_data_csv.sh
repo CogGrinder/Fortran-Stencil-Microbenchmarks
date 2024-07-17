@@ -1,23 +1,43 @@
 #!/bin/bash
 VERBOSE=false
-# defaultpath and tree_depth must be updated with each new added parameter
-defaultpath=bench_defaultalloc/_defaultsize/_sizenotcompiled/_defaultkernel
+PREVIEW=true
+# always contains default benchmark
+defaultfolder=bench_default/
+# UPDATE : tree_depth and fullpath() must be updated with each new added parameter
 tree_depth=4
-OUTPUT_FILE=../../postprocess/data.csv
-for i in $(seq 1 $tree_depth)
-do
-    OUTPUT_FILE=../$OUTPUT_FILE
-done
+fullpath() {
+printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/run.sh"
+}
 
+# output file is found at tree_depth + 2 upwards at postprocess/data.csv
+OUTPUT_FILE=$(printf '../%.0s' $(seq 1 $((tree_depth+2))) )postprocess/data.csv
 rm -f $(basename $OUTPUT_FILE)
 
-cd ../preprocess/bench_tree
+# go to preprocess to fetch data
+cd ../preprocess/bench_tree/
 
-cd $defaultpath
+# going down default folder in tree_depth amount of layers
+if $VERBOSE
+then echo -n $defaultfolder
+fi
+cd $defaultfolder
+for i in $(seq 1 $((tree_depth-1)) )
+do
+    defaultfolder=$(ls -d */)
+    if $VERBOSE
+    then echo -n $defaultfolder
+    fi
+    cd $defaultfolder
+done
+if $VERBOSE
+then echo
+fi
+# getting header labels from default bench output .csv
 while IFS= read -r line; do
+    # in .csv, perf_regions labels start with "Section"
     if [ "${line:0:7}" == "Section" ]
     then
-        if $VERBOSE
+        if $PREVIEW
         then
             echo "$line"
         fi
@@ -30,6 +50,11 @@ for i in $(seq 1 $tree_depth)
 do
     cd ..
 done
+
+if $VERBOSE
+then
+    echo -e "\nExploring directories..."
+fi
 
 directories_1=$(ls -d */)
 if $VERBOSE
@@ -73,13 +98,13 @@ do
                 while IFS= read -r line; do
                     if [ "${line:0:7}" != "Section" ] && [ "${line:0:1}" != "-" ] && [ "${line:0:31}" != "Performance counters profiling:" ] && [ "${line:0:6}" != "Error:" ]
                     then
-                        if $VERBOSE
-                        then
-                            echo "$line"
-                        fi
+                        outputline=$(fullpath)\\t${line:8}
                         # TODO : replace with json benchmark name or executable name
-                        # UPDATE : add new directory here
-                        echo -e "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/run.sh\t${line:8}" >> $OUTPUT_FILE
+                        if $PREVIEW
+                        then
+                            echo -e "$outputline"
+                        fi
+                        echo -e "$outputline" >> $OUTPUT_FILE
                     fi
                     # grep -o 'action'
                 done < <( cat out.csv )

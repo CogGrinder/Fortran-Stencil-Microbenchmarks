@@ -1,11 +1,26 @@
 # Executing a benchmark
 
-Once everything is installed, you may use one of two modes.
-The default mode is when you use the commands:
+## Variants
+Once everything is installed, you may execute and plot benchmarks in multiple ways.
+The default mode is run when you use the commands:
 ```bash
 $ make pre
 $ make post
 ```
+
+For more specific modes, check [``codegen.py --help``](../bench/preprocess/codegen.py).
+
+### Example
+To run an nvfortran compiler version on 1, 2, 3 Mb sizes with allocatable arrays, compiled array size and size 5 kernels, use these commands:
+```bash
+cd bench/preprocess
+python3 codegen.py --range 3 -nv --alloc ALLOC --compile-size True -c --kernel-mode SIZE_5_KERNEL
+./run_bench_tree.sh
+cd ../postprocess
+./collect_data_csv.sh
+python3 test_generate_graph.py
+```
+
 
 ## Accuracy of results
 To obtain more accurate results, the code generation has a speed parameter which scales the number of iterations.
