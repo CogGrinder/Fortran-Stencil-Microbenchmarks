@@ -7,8 +7,9 @@ import json
 import datetime
 
 import csv
+import pandas
 
-DEBUG = False
+DEBUG = True
 
 # global labels
 # global data
@@ -33,8 +34,85 @@ def import_data(normalise=True):
     global benchpaths
     global benchnames
     global label_mask 
-    f = open("../preprocess/all_benchmark_parameters.json", "r")
-    param_dict = json.load(f)
+    benchparamjsonf = open("../preprocess/all_benchmark_parameters.json", "r")
+    param_metadata_dict = json.load(benchparamjsonf)
+    benchparamjsonf.close()
+
+    # if DEBUG:
+    datacsvf = open('data.csv')
+    print("Reading with pandas...")
+    datacsvdf = pandas.read_csv(datacsvf, delimiter='\t')
+    datacsvdf.rename(mapper={'Section':'id'},axis=1,inplace=True)
+    # print(debugcsv)
+    print(datacsvdf.index)
+    datacsvdf.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
+    print(datacsvdf.index)
+    print(datacsvdf)
+    # l1cache = debugcsv.pivot(index='Section',columns=,values='PAPI_L1_TCM')
+    # print(l1cache)
+    l1cache=datacsvdf["PAPI_L1_TCM"]
+    print(l1cache)
+
+    jsonmetadata_df = pandas.json_normalize(param_metadata_dict,record_path="data")
+    jsonmetadata_df.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
+    print(jsonmetadata_df)
+    multiindex = pandas.MultiIndex.from_arrays(arrays=[
+    jsonmetadata_df["kernel_mode"].to_list(),
+    jsonmetadata_df["alloc_option"].to_list(),
+    jsonmetadata_df["is_compilation_time_size"].to_list(),
+    jsonmetadata_df["size_option"].to_list()
+    ])
+    print(multiindex)
+    print()
+    # join
+    joineddf = datacsvdf.join(jsonmetadata_df)
+    index_list = list(joineddf.index)
+    default_key = [i for i in index_list if 'bench_default' in i ]
+    default_key=default_key[0]
+    print(default_key)
+    joineddf.drop(index=default_key,inplace=True)
+    print(joineddf)
+    all_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'WALLCLOCKTIME']
+    all_columns=["size_option","alloc_option","is_compilation_time_size","kernel_mode"]
+    
+    # example:
+    size_optiondf = joineddf.pivot(index=['size_option'], columns=["alloc_option","is_compilation_time_size","kernel_mode"], values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'SPOILED',  'WALLCLOCKTIME',  'COUNTER'])
+    print(size_optiondf)
+    print(size_optiondf.index)
+    size_optiondf = size_optiondf.transpose()
+    size_optiondf.drop(['SPOILED', 'COUNTER'],inplace=True)
+    print(size_optiondf)
+    
+    index_list = list(list(str(i) for i in tuple_i) for tuple_i in size_optiondf.index)
+    column_list = list(map(int,size_optiondf.columns))
+    print(index_list)
+    print(column_list)
+
+    # len is the fastest, courtesy of https://stackoverflow.com/questions/15943769/how-do-i-get-the-row-count-of-a-pandas-dataframe
+    n_rows = len(size_optiondf.index)
+    for i in range(n_rows):
+        print(size_optiondf.iloc[i])
+        fig,ax = plt.subplots()
+        print(ax)
+        print(index_list[i])
+        ax.bar(column_list,size_optiondf.iloc[i].array)
+        ax.set_title(f"size_option with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}")
+        ax.set_xticks(ticks=column_list,labels=['1Mb','2Mb'], rotation=60, ha='right')
+        print(ax)
+        fig.legend()
+        fig.savefig(f"size_option_{str(index_list[i][0])}.pdf")
+    exit(-1)
+
+    # print(size_optiondf[].head())
+
+    # thank you https://stackoverflow.com/questions/18992086/save-a-pandas-series-histogram-plot-to-file
+    # and https://pandas.pydata.org/docs/getting_started/intro_tutorials/03_subset_data.html
+    ax = (size_optiondf).hist(legend=True)  # s is an instance of Series
+    print(ax)
+    for sublist in ax:
+        for subax in sublist:
+            fig = subax.get_figure()
+            fig.savefig(subax.title.get_text()+'size_option.pdf')
 
     with open('data.csv', newline='') as csvfile:
         csvfile_reader = csv.reader(csvfile, delimiter='\t', quotechar='|')
@@ -78,7 +156,7 @@ def import_data(normalise=True):
                             if (DEBUG):
                                 print(imported_data,end="int ")
                         if normalise:
-                            imported_data /= param_dict[row[0]]["iters"] * param_dict[row[0]]["ni"] * param_dict[row[0]]["nj"]
+                            imported_data /= param_metadata_dict[row[0]]["iters"] * param_metadata_dict[row[0]]["ni"] * param_metadata_dict[row[0]]["nj"]
                         # save data in appropriate data
                         if labels[j_row]=="WALLCLOCKTIME":
                             wallclocktime_data.append(imported_data)
@@ -86,18 +164,16 @@ def import_data(normalise=True):
                             if DEBUG:
                                 print(f"cache_miss_data[j_included_label] - j_included_label={j_included_label}")
                             cache_miss_data[j_included_label].append(imported_data)
-                            j_included_label+=1
-                        
-                            
-
+                            j_included_label+=1                
+        
         cache_miss_data = np.array(cache_miss_data)
         # label_mask = np.array([ len(benchnames) *[label in ['SPOILED', 'COUNTER']] for label in labels])
         # cache_miss_data = ma.masked_array(cache_miss_data, mask=label_mask)
         
         # JSON export
         filename = "data.json"
-        f = open(filename, "w")
-        json.dump(cache_miss_data.tolist(),f, indent=4)
+        benchparamjsonf = open(filename, "w")
+        json.dump(cache_miss_data.tolist(),benchparamjsonf, indent=4)
         
 def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
         global labels

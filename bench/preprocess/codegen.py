@@ -24,7 +24,8 @@ L3_SIZE = 16
 global IS_NVFORTRAN_COMPILER
 IS_NVFORTRAN_COMPILER = False
 
-# this parameter is used for readable implementation of relative directories, with "../" prefixes
+# UPDATE: when implementing new parameter, increment TREE_DEPTH
+# this parameter is used for setting relative directories, with repeated "../" prefixes
 TREE_DEPTH = 4
 
 allocation_suffixes = { "ALLOC"                 : "_alloc",
@@ -318,10 +319,11 @@ def main():
     all_compilation_time_size = [False, True]
 
     # dictionary used for exporting bench parameters as .JSON file
+    # courtesy of https://help.objectiflune.com/en/pres-connect-rest-api-cookbook/2019.2/Content/Cookbook/Technical_Overview/JSON_Structures/Specific_Structures/JSON_Record_Data_List.htm
     # if -c cleaning option is not used it is imported
     # because existing benchmarks have their parameters stored
     json_filename = "all_benchmark_parameters.json"
-    json_dict_all_parameters = {}
+    json_dict_all_parameters = {"data":[]}
 
     ### checking parameter values ###
     # courtesy of https://stackoverflow.com/questions/4042452/display-help-message-with-python-argparse-when-script-is-called-without-any-argu
@@ -394,11 +396,12 @@ def main():
     ###### executing command ######
     ### preparing folders and parameters dictionary ###
     if mode != "clean":
-        if pathlib.Path(json_filename).is_file() :
-            f = open("../preprocess/all_benchmark_parameters.json", "r")
-            print("Importing existing .JSON dictionary of benchmark parameters.")
-            json_dict_all_parameters = json.load(f)
-            f.close()
+        if not args.clean_before:
+            if pathlib.Path(json_filename).is_file() :
+                f = open("../preprocess/all_benchmark_parameters.json", "r")
+                print("Importing existing .JSON dictionary of benchmark parameters.")
+                json_dict_all_parameters = json.load(f)
+                f.close()
         if pathlib.Path("bench_tree").is_dir() :
             if args.clean_before:
                 os.remove(json_filename)
@@ -419,10 +422,11 @@ def main():
         for alloc_option in all_alloc_options :
             for size_option in iterator_of_selected_sizes :
                 filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option)
-                json_dict_all_parameters[filename] = {"size_option": size_option,
+                json_dict_all_parameters["data"].append({"id":filename,
+                                            "size_option": size_option,
                                             "alloc_option": alloc_option,
                                             "iters": iters,
-                                            "is_compilation_time_size": False}
+                                            "is_compilation_time_size": False})
     elif mode in ["all","all_compilation_time"]:
         # shutil.rmtree("bench_tree")
         print(f"Creating all benchmark scripts...")
@@ -433,13 +437,14 @@ def main():
                     for kernel_mode in all_kernel_mode_options:
                         filename, iters, ni, nj  = codegen_bench_tree_branch(alloc_option,size_option,\
                                                     is_compilation_time_size=is_compilation_time_size,kernel_mode=kernel_mode)
-                        json_dict_all_parameters[filename] = {"kernel_mode": kernel_mode,
+                        json_dict_all_parameters["data"].append({"id":filename,
+                                                    "kernel_mode": kernel_mode,
                                                     "size_option": size_option,
                                                     "ni": ni,
                                                     "nj": nj,
                                                     "alloc_option": alloc_option,
                                                     "iters": iters,
-                                                    "is_compilation_time_size": is_compilation_time_size}
+                                                    "is_compilation_time_size": is_compilation_time_size})
     elif mode == "all_l3":
         # shutil.rmtree("bench_tree")
         all_l3_relative_size_options = list(size_suffixes.keys())
@@ -451,22 +456,24 @@ def main():
                 for is_compilation_time_size in [False,True] :
                     filename, iters, ni, nj = codegen_bench_tree_branch(alloc_option,size_option,\
                                                 is_compilation_time_size=is_compilation_time_size)
-                    json_dict_all_parameters[filename] = {"size_option": size_option,
+                    json_dict_all_parameters["data"].append({"id":filename,
+                                                "size_option": size_option,
                                                 "ni": ni,
                                                 "nj": nj,
                                                 "alloc_option": alloc_option,
                                                 "iters": iters,
-                                                "is_compilation_time_size": is_compilation_time_size}
+                                                "is_compilation_time_size": is_compilation_time_size})
     elif mode == "single" :
         description = 'default' if (alloc_option=='' and size_option=='' and is_compilation_time_size=='' and kernel_mode_option=='')\
             else str(alloc_option) + str(size_option) + "is_compilation_time_size: " + str(is_compilation_time_size) + str(kernel_mode_option)
         print(f"Creating {description} benchmark script...")
         filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option,is_compilation_time_size,kernel_mode=kernel_mode_option)
-        json_dict_all_parameters[filename] = {"size_option": size_option,
+        json_dict_all_parameters["data"].append({"id":filename,
+                                                "size_option": size_option,
                                                 "alloc_option": alloc_option,
                                                 "iters": iters,
                                                 "is_compilation_time_size": is_compilation_time_size,
-                                                "kernel_mode_option": kernel_mode_option}
+                                                "kernel_mode_option": kernel_mode_option})
     elif mode != "clean" :
         print("Invalid command.",file=sys.stderr)
         parser.print_help(sys.stderr)
