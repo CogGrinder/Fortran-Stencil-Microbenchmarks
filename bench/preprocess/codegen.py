@@ -185,8 +185,15 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
 
         # see https://realpython.com/python-f-strings/
         f.write(f"""#! /bin/bash
+if $1
+then NOT_VERBOSE=false
+else NOT_VERBOSE=true
+fi
+PURPLE="\\033[1;35m"
+NO_COLOUR="\\033[0m"
+                
 writeprogressbar() {{
-    printf "%-8s[$progressbar]($progresspercent%%)\r" $1
+    printf "$PURPLE%-8s[$progressbar]($progresspercent%%)$NO_COLOUR\r" $1
 }}
 
 # set BENCH_EXECUTABLE
@@ -218,22 +225,32 @@ export KERNEL_MODE="{kernel_mode}"
 # pretty output for progress bar
 while IFS= read -r line; do
     echo -ne "                                \r"
-    echo "$line"
+    if $NOT_VERBOSE
+    then :
+    else echo "$line"
+    fi
     writeprogressbar compile
     # echo -ne "compile [$progressbar]($progresspercent%)\r"
     # grep -o 'action'
 done < <( make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} )
+echo -ne "                                \r"
 
 filename=out
 
-echo -ne "                                \r"
+if $NOT_VERBOSE
+then :
+else
 echo "Running mode {benchname}...     "
+fi
 writeprogressbar execute
 # echo -ne "execute [$progressbar]($progresspercent%)\r"
 # thank you to glenn jackman"s answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
     echo -ne "                                \r"
-    echo "$line"
+    if $NOT_VERBOSE
+    then :
+    else echo "$line"
+    fi
     writeprogressbar execute
     # echo -ne "execute [$progressbar]($progresspercent%)\r"
     # MULE lines are those without a " " space prefix
@@ -242,6 +259,7 @@ while IFS= read -r line; do
         echo "$line" >> $filename.csv
     fi
     # grep -o 'action'
+echo -ne "                                \r"
 done < <( ./$BENCH_EXECUTABLE iters={iters} {"" if is_compilation_time_size else f"ni={ni} nj={nj}"} )
 # |  grep -A100 Section | paste >> $filename.csv
 # cat $filename.csv

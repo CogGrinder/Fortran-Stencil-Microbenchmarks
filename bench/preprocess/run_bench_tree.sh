@@ -1,7 +1,29 @@
 #!/bin/bash
+#!usr/bin/bash
 # if struggling to execute on windows subsystem for linux
 # see https://askubuntu.com/questions/304999/not-able-to-execute-a-sh-file-bin-bashm-bad-interpreter
-#!usr/bin/bash
+
+# see https://man7.org/linux/man-pages/man3/printf.3.html
+# for printf options used here
+# and https://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
+# for return carriage special options
+
+if [[ "$1" == true ]]
+then VERBOSE=true
+else VERBOSE=false
+fi
+
+if [[ $VERBOSE == true ]]
+then NOT_VERBOSE=false
+else NOT_VERBOSE=true
+fi
+
+# note: using if $NOT_VERBOSE has this advantage:
+# $NOT_VERBOSE evaluates as "true" by default
+
+
+PURPLE="\033[1;35m"
+NO_COLOUR="\033[0m"
 
 # function used for printing bench <number>
 writeprogressbar() {
@@ -16,9 +38,14 @@ progress() {
     export progresspercent
     export progressbar
     echo -ne "                                \r"
-    writeprogressbar "bench $ibench"
-    writeprogressbar "bench $ibench"
-    printf "\n"
+    writeprogressbar "bench $((ibench+1))"
+    if $NOT_VERBOSE
+    then
+    echo -en "$PURPLE\033[1Abench $((ibench+1)) \033[1B\033[8D\]"
+    else
+    echo -en "$PURPLE bench $((ibench+1))"
+    printf "                                \n"
+    fi
 }
 
 cd bench_tree
@@ -27,31 +54,47 @@ directories_1=$(ls -d -1q */)
 nbench=$(find -mindepth 4 -maxdepth 4 -type d | wc -w)
 echo Total amount of benchmarks: $nbench
 echo
+if $NOT_VERBOSE
+then :
+else
 echo $directories_1
 echo
+fi
 ibench=0
 # sleep 1
 for directory_1 in $directories_1
 do
     cd $(basename $directory_1)
     directories_2=$(ls -d -1q */)
+    if $NOT_VERBOSE
+    then :
+    else
     echo $directories_2
     echo
+    fi
     # sleep 0.1
     for directory_2 in $directories_2
     do
 
         cd $(basename $directory_2)
         directories_3=$(ls -d -1q */)
+        if $NOT_VERBOSE
+        then :
+        else
         echo $directories_3
         echo
+        fi
         # sleep 2
         for directory_3 in $directories_3
         do
             cd $(basename $directory_3)
             directories_4=$(ls -d -1q */)
+            if $NOT_VERBOSE
+            then :
+            else
             echo $directories_4
             echo
+            fi
             # sleep 2
             for directory_4 in $directories_4
             do
@@ -59,7 +102,7 @@ do
                 # remove previous data
                 rm -f out.csv
                 progress
-                ./run.sh
+                ./run.sh $VERBOSE
                 # remove the anti-optimisation file
                 # used for output of elements of the array being computed
                 # to prevent compiler from removing computations from zero-closure
@@ -74,3 +117,12 @@ do
     done
     cd ..
 done
+if $NOT_VERBOSE
+then
+echo -en "$NO_COLOUR\033[1Adone.   \033[1B\033[8D"
+else
+echo -en "$NO_COLOUR"
+echo "done."
+# printf "                                \n"
+fi
+# echo -en "$NO_COLOUR\033[1Adone.   \033[1B\033[8D"
