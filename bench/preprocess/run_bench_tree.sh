@@ -8,19 +8,8 @@
 # and https://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
 # for return carriage special options
 
-if [[ "$1" == true ]]
-then VERBOSE=true
-else VERBOSE=false
-fi
-
-if [[ $VERBOSE == true ]]
-then NOT_VERBOSE=false
-else NOT_VERBOSE=true
-fi
-
-# note: using if $NOT_VERBOSE has this advantage:
-# $NOT_VERBOSE evaluates as "true" by default
-
+VERBOSE=$1
+: ${VERBOSE:=false}
 
 PURPLE="\033[1;35m"
 NO_COLOUR="\033[0m"
@@ -39,12 +28,12 @@ progress() {
     export progressbar
     echo -ne "                                \r"
     writeprogressbar "bench $((ibench+1))"
-    if $NOT_VERBOSE
+    if $VERBOSE
     then
-    echo -en "$PURPLE\033[1Abench $((ibench+1)) \033[1B\033[8D\]"
-    else
     echo -en "$PURPLE bench $((ibench+1))"
     printf "                                \n"
+    else
+    echo -en "$PURPLE\033[1Abench $((ibench+1)) \033[1B\033[8D\]"
     fi
 }
 
@@ -54,9 +43,8 @@ directories_1=$(ls -d -1q */)
 nbench=$(find -mindepth 4 -maxdepth 4 -type d | wc -w)
 echo Total amount of benchmarks: $nbench
 echo
-if $NOT_VERBOSE
-then :
-else
+if $VERBOSE
+then
 echo $directories_1
 echo
 fi
@@ -66,9 +54,8 @@ for directory_1 in $directories_1
 do
     cd $(basename $directory_1)
     directories_2=$(ls -d -1q */)
-    if $NOT_VERBOSE
-    then :
-    else
+    if $VERBOSE
+    then
     echo $directories_2
     echo
     fi
@@ -78,9 +65,8 @@ do
 
         cd $(basename $directory_2)
         directories_3=$(ls -d -1q */)
-        if $NOT_VERBOSE
-        then :
-        else
+        if $VERBOSE
+        then
         echo $directories_3
         echo
         fi
@@ -89,9 +75,8 @@ do
         do
             cd $(basename $directory_3)
             directories_4=$(ls -d -1q */)
-            if $NOT_VERBOSE
-            then :
-            else
+            if $VERBOSE
+            then
             echo $directories_4
             echo
             fi
@@ -102,7 +87,7 @@ do
                 # remove previous data
                 rm -f out.csv
                 progress
-                ./run.sh $VERBOSE
+                ./run.sh $1
                 # remove the anti-optimisation file
                 # used for output of elements of the array being computed
                 # to prevent compiler from removing computations from zero-closure

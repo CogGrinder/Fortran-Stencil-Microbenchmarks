@@ -185,10 +185,8 @@ def codegen_bench_tree_branch(alloc_option: str, size_option: Union[int, str],it
 
         # see https://realpython.com/python-f-strings/
         f.write(f"""#! /bin/bash
-if $1
-then NOT_VERBOSE=false
-else NOT_VERBOSE=true
-fi
+VERBOSE=$1
+: ${{VERBOSE:=false}}
 PURPLE="\\033[1;35m"
 NO_COLOUR="\\033[0m"
                 
@@ -225,9 +223,9 @@ export KERNEL_MODE="{kernel_mode}"
 # pretty output for progress bar
 while IFS= read -r line; do
     echo -ne "                                \r"
-    if $NOT_VERBOSE
-    then :
-    else echo "$line"
+    if $VERBOSE
+    then
+    echo "$line"
     fi
     writeprogressbar compile
     # echo -ne "compile [$progressbar]($progresspercent%)\r"
@@ -236,10 +234,8 @@ done < <( make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER
 echo -ne "                                \r"
 
 filename=out
-
-if $NOT_VERBOSE
-then :
-else
+if $VERBOSE
+then
 echo "Running mode {benchname}...     "
 fi
 writeprogressbar execute
@@ -247,9 +243,9 @@ writeprogressbar execute
 # thank you to glenn jackman"s answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
     echo -ne "                                \r"
-    if $NOT_VERBOSE
-    then :
-    else echo "$line"
+    if $VERBOSE
+    then
+    echo "$line"
     fi
     writeprogressbar execute
     # echo -ne "execute [$progressbar]($progresspercent%)\r"
