@@ -8,7 +8,16 @@
 # and https://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
 # for return carriage special options
 
-VERBOSE=$1
+if [[ "$1" == "" ]]
+then
+echo -e Set flag \"./run_bench_tree -v\" for verbose option, default is non verbose
+fi
+
+if [[ "$1" == "-v" ]]
+then
+VERBOSE=true
+fi
+
 : ${VERBOSE:=false}
 
 PURPLE="\033[1;35m"
@@ -87,7 +96,7 @@ do
                 # remove previous data
                 rm -f out.csv
                 progress
-                ./run.sh $1
+                ./run.sh $VERBOSE
                 # remove the anti-optimisation file
                 # used for output of elements of the array being computed
                 # to prevent compiler from removing computations from zero-closure
