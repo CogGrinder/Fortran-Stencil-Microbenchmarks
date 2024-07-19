@@ -1,1 +1,1 @@
-python3 ./../../../postprocess/test_generate_graph.py
+python3 ./../../../postprocess/generate_graph.py

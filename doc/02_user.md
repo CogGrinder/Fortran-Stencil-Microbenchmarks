@@ -18,7 +18,7 @@ python3 codegen.py --range 3 -nv --alloc ALLOC --compile-size True -c --kernel-m
 ./run_bench_tree.sh
 cd ../postprocess
 ./collect_data_csv.sh
-python3 test_generate_graph.py
+python3 generate_graph.py
 ```
 
 

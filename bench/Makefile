@@ -51,7 +51,7 @@ preprocess_old:
 post:postprocess
 postprocessing:postprocess
 postprocess:
-	cd postprocess;./collect_data_csv.sh;python3 test_generate_graph.py
+	cd postprocess;./collect_data_csv.sh;python3 generate_graph.py
 clean_pre:
 	cd preprocess;python3 codegen.py -M clean
 
