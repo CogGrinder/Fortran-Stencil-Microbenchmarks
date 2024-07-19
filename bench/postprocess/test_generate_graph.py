@@ -6,10 +6,16 @@ import sys
 import json
 import datetime
 
+import os
+import pathlib
+
 import csv
 import pandas as pd
 
-DEBUG = True
+global VERBOSE
+VERBOSE = False
+global DEBUG
+DEBUG = False
 
 # global labels
 # global data
@@ -19,27 +25,18 @@ ignored_counters = ['SPOILED', 'COUNTER']
 #used for ignoring folder with default benchmarks
 default_foldername = 'defaultalloc'
 
-def import_data(normalise=True):
-    """Function that imports csv data as numpy array and label lists
-
+def import_data_pandas(json_metadata_path="../preprocess/all_benchmark_parameters.json",
+                       csv_benchdata_path="data.csv",
+                       normalise=True):
+    """Function that imports csv data as pd.DataFrame
     Args:
         normalise (bool): Normalize all benchmark data
             relative to size and iterations
     """
-    global labels
-    global labels_no_superfluous
-    global cache_miss_data
-    global wallclocktime_data
-    global cache_miss_data
-    global benchpaths
-    global benchnames
-    global label_mask 
-    benchparamjsonf = open("../preprocess/all_benchmark_parameters.json", "r")
-    param_metadata_dict = json.load(benchparamjsonf)
-    benchparamjsonf.close()
+
 
     # import csv bench data
-    datacsvf = open('data.csv')
+    datacsvf = open(csv_benchdata_path)
     print("Reading with pd...")
     datacsvdf = pd.read_csv(datacsvf, delimiter='\t')
     datacsvdf.rename(mapper={'Section':'id'},axis=1,inplace=True)
@@ -47,10 +44,11 @@ def import_data(normalise=True):
     datacsvdf.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
     print(datacsvdf.index)
     print(datacsvdf)
-    l1cache=datacsvdf["PAPI_L1_TCM"]
-    # print(l1cache)
 
     # import json bench metadata
+    benchparamjsonf = open(json_metadata_path, "r")
+    param_metadata_dict = json.load(benchparamjsonf)
+    benchparamjsonf.close()
     jsonmetadata_df = pd.json_normalize(param_metadata_dict,record_path="data")
     jsonmetadata_df.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
     print(jsonmetadata_df)
@@ -67,94 +65,93 @@ def import_data(normalise=True):
 
     ### join ###
     print("JOIN")
-    joineddf = datacsvdf.join(jsonmetadata_df)
-    index_list = list(joineddf.index)
+    joined_df = datacsvdf.join(jsonmetadata_df)
+    index_list = list(joined_df.index)
     # removing default benchmark
     default_key = [i for i in index_list if 'bench_default' in i ]
     default_key=default_key[0]
-    # print(default_key)
-    joineddf.drop(index=default_key,inplace=True)
+    joined_df.drop(index=default_key,inplace=True)
     
     # len is the fastest, courtesy of https://stackoverflow.com/questions/15943769/how-do-i-get-the-row-count-of-a-pd-dataframe
-    n_rows = len(joineddf.index)
-    
-    if False:
-        # example from https://stackoverflow.com/questions/33042777/removing-duplicates-from-pd-dataframe-with-condition-for-retaining-original
-        df = pd.DataFrame([(1, 'Ms'),  (1, 'PhD'),  
-                        (2, 'Ms'),  (2, 'Bs'),  
-                        (3, 'PhD'), (3, 'Bs'),  
-                        (4, 'Ms'),  (4, 'PhD'),   (4, 'Bs')], 
-                        columns=['A', 'B']) 
-        print("Original data") 
-        print(df) 
-        
-        # force the column's string column B to type 'category'  
-        df['B'] = df['B'].astype('category') 
-        # define the valid categories: 
-        df['B'] = df['B'].cat.set_categories(['PhD', 'Bs', 'Ms'], ordered=True) 
-        #pandas dataframe sort_values to inflicts order on your categories 
-        df.sort_values(['A', 'B'], inplace=True, ascending=True) 
-        print("Now sorted by custom categories (PhD > Bs > Ms)") 
-        print(df) 
-        # dropping duplicates keeps first
-        df_unique = df.drop_duplicates('A') 
-        print("Keep the highest value category given duplicate integer group") 
-        print(df_unique)
-    
+    print(joined_df)
 
-    print(joineddf)
-    all_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'WALLCLOCKTIME']
-    all_columns=["size_option","alloc_option","is_compilation_time_size","kernel_mode"]
+    return joined_df
 
-    int_graphed_column = int(input(f"Choose column to graph, {all_columns}\n").strip() or "0")
-    graphed_column = all_columns[int_graphed_column]
+def make_graphs(df: pd.DataFrame,
+                interactive=False,
+                directory=None,
+                all_data_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'SPOILED',  'WALLCLOCKTIME',  'COUNTER'],
+                all_metadata_columns=["size_option","alloc_option","is_compilation_time_size","kernel_mode"],
+                graphed_column="size_option",
+                default_fixed=       {"size_option":None,
+                                      "alloc_option":"ALLOC",
+                                      "is_compilation_time_size":True,
+                                      "kernel_mode":"DEFAULT_KERNEL"}):
+    """Function that makes graphs by using data and metadata from DataFrame and setting fixed units
+    Args:
+        normalise (bool): Normalize all benchmark data
+            relative to size and iterations
+    """
+
+    if interactive:
+        # input column to graph
+        int_graphed_column = int(input(f"Choose column to graph, {all_metadata_columns}\n").strip() or "0")
+        graphed_column = all_metadata_columns[int_graphed_column]
 
 
     print(f"\nComputing table with {graphed_column}...\n")
-    column_selection = all_columns.copy()
+    column_selection = all_metadata_columns.copy()
     print(f"all columns:{column_selection}")
     column_selection.remove(graphed_column)
     print(f"column selection:{column_selection}")
 
     # fixed_columns = [None for i in range(len(column_selection))]
     fixed_columns = []
-    non_fixed_columns = all_columns.copy()
+    non_fixed_columns = all_metadata_columns.copy()
 
     # thank you to https://stackoverflow.com/questions/33042777/removing-duplicates-from-pd-dataframe-with-condition-for-retaining-original
-    # print(joineddf.columns)
-    # print(list(joineddf.columns))
     print(f"Searching fields with more than one value...")
-    for i, label in enumerate(column_selection):
-        set_of_label = list(set(joineddf[label].to_numpy()))
+    for label in column_selection:
+        set_of_label = list(set(df[label].to_numpy()))
         if len(set_of_label)>1:
-            print(f"label \"{label}\" has duplicates. Choose one: {set_of_label}")
-            # see https://stackoverflow.com/questions/22402548/how-to-define-default-value-if-empty-user-input-in-python
-            int_value = int(input(f"Choose index\n").strip() or "0")
-            str_value = set_of_label[int_value]
+            # set default choice:
+            str_value = default_fixed[label]
+            # if default choice is not in DataFrame, get first choice
+            if not default_fixed[label] in set_of_label:
+                str_value=set_of_label[0]
+            # set interactively
+            if interactive:
+                print(f"label \"{label}\" has duplicates. Choose one: {set_of_label}")
+                # see https://stackoverflow.com/questions/22402548/how-to-define-default-value-if-empty-user-input-in-python
+                # default input is 0 so one can press enter for default
+                int_value = int(input(f"Choose index\n").strip() or "0")
+                str_value = set_of_label[int_value]
             print(str_value)
-            # fixed_columns[i]=str_value
             fixed_columns.append(label)
             non_fixed_columns.remove(label)
             # TODO
             # force the column's string column label to type 'category'  
-            joineddf[label] = joineddf[label].astype('category')
+            df[label] = df[label].astype('category')
             # define the valid categories:
-            custom_sorted_category_list_from_label = list(set(jsonmetadata_df[label].to_list()))
+            custom_sorted_category_list_from_label = list(set(df[label].to_list()))
             custom_sorted_category_list_from_label.remove(str_value)
             custom_sorted_category_list_from_label.insert(0,str_value)
             print(custom_sorted_category_list_from_label)
-            joineddf[label] = joineddf[label].cat.set_categories(custom_sorted_category_list_from_label, ordered=True)
+            df[label] = df[label].cat.set_categories(custom_sorted_category_list_from_label, ordered=True)
         else:
             print(f"label \"{label}\" already has 1 or 0 values")
-    print(f"fixed_columns: {fixed_columns}")
-    print(f"non_fixed_columns: {non_fixed_columns}")
+    
+    if DEBUG:
+        print(f"fixed_columns: {fixed_columns}")
+        print(f"non_fixed_columns: {non_fixed_columns}")
 
-    #pd dataframe sort_values to inflicts order on your categories 
-    joineddf.sort_values(fixed_columns, inplace=True, ascending=True) 
-    print(f"Now sorted by custom categories") 
-    print(joineddf)
+    # sort to put first selected category at the top of each label 
+    df.sort_values(fixed_columns, inplace=True, ascending=True) 
+    if DEBUG:
+        print(f"Now sorted by custom categories") 
+        print(df)
     # dropping duplicates keeps first
-    size_optiondf = joineddf.drop_duplicates(non_fixed_columns,keep="first") 
+    size_optiondf = df.drop_duplicates(non_fixed_columns,keep="first") 
     print("Keep the highest value category given duplicate integer group") 
     print(size_optiondf)
 
@@ -164,33 +161,19 @@ def import_data(normalise=True):
     # ...           [1, 4], [7, 1], [16, 36]]
     # >>> df = pd.DataFrame(values, columns=['max_speed', 'shield'], index=index)
     # >>> df
-    
-    # for i, value in enumerate(fixed_columns):
-    #     if value!=None:
-    #         # force the column's string column B to type 'category'  
-    #         size_optiondf['B'] = size_optiondf['B'].astype('category') 
-    #         # define the valid categories: 
-    #         size_optiondf['B'] = size_optiondf['B'].cat.set_categories(['PhD', 'Bs', 'Ms'], ordered=True) 
-    #         #pd dataframe sort_values to inflicts order on your categories 
-    #         size_optiondf.sort_values(['A', 'B'], inplace=True, ascending=True) 
-    #         print("Now sorted by custom categories (PhD > Bs > Ms)") 
-    #         print(size_optiondf) 
-    #         # dropping duplicates keeps first
-    #         size_optiondf_unique = size_optiondf.drop_duplicates('A') 
-    #         print("Keep the highest value category given duplicate integer group") 
-    #         print(size_optiondf_unique)
 
-    size_optiondf = size_optiondf.pivot(index=[graphed_column], columns=column_selection, values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'SPOILED',  'WALLCLOCKTIME',  'COUNTER'])
-    # print(size_optiondf)
-    # print(size_optiondf.index)
+    size_optiondf = size_optiondf.pivot(index=[graphed_column],
+                                        columns=column_selection,
+                                        values=all_data_values)
     size_optiondf = size_optiondf.transpose()
     size_optiondf.drop(['SPOILED', 'COUNTER'],inplace=True)
     print(size_optiondf)
     
     index_list = list(list(str(i) for i in tuple_i) for tuple_i in size_optiondf.index)
     column_list = list(map(str,size_optiondf.columns))
-    # print(index_list)
     print(f"column_list:{column_list}")
+
+    dir = "./" if directory==None else str(directory).rstrip("/") + "/"
 
     n_rows_selection = len(size_optiondf.index)
     for i in range(n_rows_selection):
@@ -200,21 +183,32 @@ def import_data(normalise=True):
         print(index_list[i])
         ax.bar(column_list,size_optiondf.iloc[i].array)
         ax.set_title(f"{graphed_column} with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}")
-        ax.set_xticks(ticks=column_list,labels=list(set(jsonmetadata_df[graphed_column].to_list())), rotation=60, ha='right')
+        ax.set_xticks(ticks=column_list,labels=list(set(df[graphed_column].to_list())), rotation=60, ha='right')
         print(ax)
-        fig.savefig(f"{graphed_column}_{str(index_list[i][0])}.pdf")
+        fig.savefig(f"{dir}{graphed_column}_{str(index_list[i][0])}.pdf")
     exit(-1)
 
-    # print(size_optiondf[].head())
+def import_data_old(normalise=True,
+                    json_metadata_path="../preprocess/all_benchmark_parameters.json"):
+    """Function that imports csv data as numpy array and label lists
 
-    # thank you https://stackoverflow.com/questions/18992086/save-a-pd-series-histogram-plot-to-file
-    # and https://pd.pydata.org/docs/getting_started/intro_tutorials/03_subset_data.html
-    ax = (size_optiondf).hist(legend=True)  # s is an instance of Series
-    print(ax)
-    for sublist in ax:
-        for subax in sublist:
-            fig = subax.get_figure()
-            fig.savefig(subax.title.get_text()+'size_option.pdf')
+    Args:
+        normalise (bool): Normalize all benchmark data
+            relative to size and iterations
+    """
+    global labels
+    global labels_no_superfluous
+    global cache_miss_data
+    global wallclocktime_data
+    global cache_miss_data
+    global benchpaths
+    global benchnames
+    global label_mask 
+
+    # import json bench metadata
+    benchparamjsonf = open(json_metadata_path, "r")
+    param_metadata_dict = json.load(benchparamjsonf)
+    benchparamjsonf.close()
 
     with open('data.csv', newline='') as csvfile:
         csvfile_reader = csv.reader(csvfile, delimiter='\t', quotechar='|')
@@ -440,26 +434,64 @@ def show_graph_3D_2() :
         # plt.tight_layout()
         plt.show()
 
+def argument_parsing(parser: argparse.ArgumentParser):
+    parser.add_argument('-M','--MODE', nargs='?', default='default',
+                    help='Can be default, interactive or old.')
+    
+    parser.add_argument('-D', '--directory',
+                        help='Sets .pdf directory.')
+
+    # Optional arguments
+    # TODO:
+    parser.add_argument('-c', '--clean-before', action='store_true',
+                        help='Cleans existing files before generating.')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Displays more output')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Displays debug output')
+    return parser.parse_args()
+
 def main():
     """Main function of graph generation - interprets input from argparse
 
     Use --help for details.
     """
+    global VERBOSE
+    global DEBUG
     parser = argparse.ArgumentParser(description="Graph generator for benchmark results with options to choose data to compare with different groupings")
-    args = parser.parse_args()
+    args = argument_parsing(parser)
+    
     if len(sys.argv)==1:
         print("No arguments provided.",file=sys.stderr)
         parser.print_help(sys.stderr)
-        print("\nDefault execution:\n")
+        sys.exit(1)
+    if args.debug:
+        DEBUG=True
 
-    normalise = True
-    if len(sys.argv) >= 2:
-        normalise = sys.argv[1]
-    import_data(normalise)
-    show_graph_2D(fileprefix="cache_misses")
-    show_graph_2D(fileprefix="wallclocktime",is_wallclocktime_graph=True)
+    if DEBUG:
+        print(args)
+
+    if args.verbose:
+        VERBOSE=True
+
+    if not args.directory is None:
+        if not pathlib.Path(args.directory).is_dir() :
+                os.mkdir(args.directory)
+
+    if args.MODE=="default":
+        df = import_data_pandas(normalise=True)
+        make_graphs(df, interactive=False, directory=args.directory)
+    elif args.MODE=="interactive":
+        df = import_data_pandas(normalise=True)
+        make_graphs(df, interactive=True, directory=args.directory)
+
+    elif args.MODE=="old":
+        import_data_old(normalise=True)
+        show_graph_2D(fileprefix="cache_misses")
+        show_graph_2D(fileprefix="wallclocktime",is_wallclocktime_graph=True)
+    else:
+        print("Mode undefined.")
     print("\nDone.")
-
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html
 if __name__ == '__main__':

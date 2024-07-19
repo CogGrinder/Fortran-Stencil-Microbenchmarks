@@ -313,9 +313,6 @@ def main():
     ### argument parser ###
     parser = argparse.ArgumentParser(description="Code generator for benchmarking with various options in a tree structure")
     args = argument_parsing(parser)
-
-    # thank you to https://www.knowledgehut.com/blog/programming/sys-argv-python-examples#how-to-use-sys.argv-in-python?
-    phrase = shlex.join(sys.argv[1:])
     
     ### defaults ###
     mode = 'single'
