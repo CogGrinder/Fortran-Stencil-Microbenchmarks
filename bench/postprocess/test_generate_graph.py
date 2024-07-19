@@ -209,6 +209,11 @@ def import_data_old(normalise=True,
     benchparamjsonf = open(json_metadata_path, "r")
     param_metadata_dict = json.load(benchparamjsonf)
     benchparamjsonf.close()
+    # make a DataFile out of it - to parse the "data" list in the dictionary
+    jsonmetadata_df = pd.json_normalize(param_metadata_dict,record_path="data")
+    jsonmetadata_df.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
+    print(jsonmetadata_df)
+    print(jsonmetadata_df.loc["bench_tree/bench_size5kernel/_alloc/_01.00Mb/_sizecompiled/run.sh"])
 
     with open('data.csv', newline='') as csvfile:
         csvfile_reader = csv.reader(csvfile, delimiter='\t', quotechar='|')
@@ -252,7 +257,7 @@ def import_data_old(normalise=True,
                             if (DEBUG):
                                 print(imported_data,end="int ")
                         if normalise:
-                            imported_data /= param_metadata_dict[row[0]]["iters"] * param_metadata_dict[row[0]]["ni"] * param_metadata_dict[row[0]]["nj"]
+                            imported_data /= jsonmetadata_df.loc[row[0],"iters"] * jsonmetadata_df.loc[row[0],"ni"] * jsonmetadata_df.loc[row[0],"nj"]
                         # save data in appropriate data
                         if labels[j_row]=="WALLCLOCKTIME":
                             wallclocktime_data.append(imported_data)
@@ -271,7 +276,7 @@ def import_data_old(normalise=True,
         benchparamjsonf = open(filename, "w")
         json.dump(cache_miss_data.tolist(),benchparamjsonf, indent=4)
         
-def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
+def old_show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
         global labels
         global labels_no_superfluous
         global cache_miss_data
@@ -366,7 +371,7 @@ def show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
         plt.savefig(fileprefix+"fig" + str(now) + ".pdf")
         plt.show() if str(input("Open figure in new window? (Y/n)\n"))=='Y' else None
 
-def show_graph_3D_1() :
+def old_show_graph_3D_1() :
         global labels
         global cache_miss_data
         global benchnames
@@ -487,8 +492,8 @@ def main():
 
     elif args.MODE=="old":
         import_data_old(normalise=True)
-        show_graph_2D(fileprefix="cache_misses")
-        show_graph_2D(fileprefix="wallclocktime",is_wallclocktime_graph=True)
+        old_show_graph_2D(fileprefix="cache_misses")
+        old_show_graph_2D(fileprefix="wallclocktime",is_wallclocktime_graph=True)
     else:
         print("Mode undefined.")
     print("\nDone.")
