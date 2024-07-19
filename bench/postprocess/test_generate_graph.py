@@ -8,6 +8,7 @@ import datetime
 
 import os
 import pathlib
+import shutil
 
 import csv
 import pandas as pd
@@ -37,34 +38,43 @@ def import_data_pandas(json_metadata_path="../preprocess/all_benchmark_parameter
 
     # import csv bench data
     datacsvf = open(csv_benchdata_path)
-    print("Reading with pd...")
+    print("Reading .csv with pd...")
     datacsvdf = pd.read_csv(datacsvf, delimiter='\t')
     datacsvdf.rename(mapper={'Section':'id'},axis=1,inplace=True)
-    print(datacsvdf.index)
+    if DEBUG and VERBOSE:
+        print(datacsvdf.index)
     datacsvdf.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
-    print(datacsvdf.index)
-    print(datacsvdf)
+    if DEBUG and VERBOSE:
+        print(datacsvdf.index)
+    if VERBOSE or DEBUG:
+        print(datacsvdf)
+        print()
+
 
     # import json bench metadata
     benchparamjsonf = open(json_metadata_path, "r")
+    print("Reading .json with pd...")
     param_metadata_dict = json.load(benchparamjsonf)
     benchparamjsonf.close()
     jsonmetadata_df = pd.json_normalize(param_metadata_dict,record_path="data")
     jsonmetadata_df.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
-    print(jsonmetadata_df)
+    if VERBOSE or DEBUG:
+        print(jsonmetadata_df)
+        print()
 
-    #multiindex test
-    multiindex = pd.MultiIndex.from_arrays(arrays=[
-    jsonmetadata_df["kernel_mode"].to_list(),
-    jsonmetadata_df["alloc_option"].to_list(),
-    jsonmetadata_df["is_compilation_time_size"].to_list(),
-    jsonmetadata_df["size_option"].to_list()
-    ])
-    print(multiindex)
-    print()
+    if DEBUG:
+        #multiindex test
+        multiindex = pd.MultiIndex.from_arrays(arrays=[
+        jsonmetadata_df["kernel_mode"].to_list(),
+        jsonmetadata_df["alloc_option"].to_list(),
+        jsonmetadata_df["is_compilation_time_size"].to_list(),
+        jsonmetadata_df["size_option"].to_list()
+        ])
+        print(multiindex)
+        print()
 
     ### join ###
-    print("JOIN")
+    print("Joining both DataFrames...")
     joined_df = datacsvdf.join(jsonmetadata_df)
     index_list = list(joined_df.index)
     # removing default benchmark
@@ -73,13 +83,29 @@ def import_data_pandas(json_metadata_path="../preprocess/all_benchmark_parameter
     joined_df.drop(index=default_key,inplace=True)
     
     # len is the fastest, courtesy of https://stackoverflow.com/questions/15943769/how-do-i-get-the-row-count-of-a-pd-dataframe
-    print(joined_df)
-
+    if VERBOSE or DEBUG:
+        print(joined_df)
+    print("Done importing.")
+    print()
     return joined_df
+
+def find_non_unique_parameters(df: pd.DataFrame,
+                             columns=["size_option","alloc_option","is_compilation_time_size","kernel_mode"]):
+    """Function that checks for parameters that have more than one value in DataFrame.
+
+    Useful both for finding parameters with are interesting to graph (more than 1 value) or need to be specified, and parameters which are fixed already.
+
+    Args:
+        columns (list[str]): List of column labels to search
+    Returns:
+        np.array[bool] containing whether the label has only one value
+    """
+    return np.array([len(set(df[label].to_numpy()))>1 for label in columns])
 
 def make_graphs(df: pd.DataFrame,
                 interactive=False,
                 directory=None,
+                subplots_in_one_figure=False,
                 all_data_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'SPOILED',  'WALLCLOCKTIME',  'COUNTER'],
                 all_metadata_columns=["size_option","alloc_option","is_compilation_time_size","kernel_mode"],
                 graphed_column="size_option",
@@ -99,51 +125,57 @@ def make_graphs(df: pd.DataFrame,
         graphed_column = all_metadata_columns[int_graphed_column]
 
 
-    print(f"\nComputing table with {graphed_column}...\n")
+    print(f"Computing {graphed_column} graphing...")
     column_selection = all_metadata_columns.copy()
-    print(f"all columns:{column_selection}")
+    if VERBOSE:
+        print(f"all columns:{column_selection}")
     column_selection.remove(graphed_column)
-    print(f"column selection:{column_selection}")
+    if VERBOSE:
+        print(f"column selection:{column_selection}")
 
     # fixed_columns = [None for i in range(len(column_selection))]
     fixed_columns = []
     non_fixed_columns = all_metadata_columns.copy()
+    values_kept = []
 
     # thank you to https://stackoverflow.com/questions/33042777/removing-duplicates-from-pd-dataframe-with-condition-for-retaining-original
-    print(f"Searching fields with more than one value...")
+    if VERBOSE:
+        print(f"\nFiltering fields with more than one value...\n")
     for label in column_selection:
         set_of_label = list(set(df[label].to_numpy()))
         if len(set_of_label)>1:
             # set default choice:
-            str_value = default_fixed[label]
+            value_kept = default_fixed[label]
             # if default choice is not in DataFrame, get first choice
             if not default_fixed[label] in set_of_label:
-                str_value=set_of_label[0]
+                value_kept=set_of_label[0]
             # set interactively
             if interactive:
-                print(f"label \"{label}\" has duplicates. Choose one: {set_of_label}")
+                print(f"Label \"{label}\" has duplicates. Choose one: {set_of_label}")
                 # see https://stackoverflow.com/questions/22402548/how-to-define-default-value-if-empty-user-input-in-python
                 # default input is 0 so one can press enter for default
-                int_value = int(input(f"Choose index\n").strip() or "0")
-                str_value = set_of_label[int_value]
-            print(str_value)
+                index_kept = int(input(f"Choose index\n").strip() or "0")
+                value_kept = set_of_label[index_kept]
+            if DEBUG:
+                print(f"Kept value: {value_kept}")
             fixed_columns.append(label)
             non_fixed_columns.remove(label)
-            # TODO
+            values_kept.append(value_kept)
             # force the column's string column label to type 'category'  
             df[label] = df[label].astype('category')
-            # define the valid categories:
-            custom_sorted_category_list_from_label = list(set(df[label].to_list()))
-            custom_sorted_category_list_from_label.remove(str_value)
-            custom_sorted_category_list_from_label.insert(0,str_value)
-            print(custom_sorted_category_list_from_label)
-            df[label] = df[label].cat.set_categories(custom_sorted_category_list_from_label, ordered=True)
-        else:
-            print(f"label \"{label}\" already has 1 or 0 values")
+            # put the kept value first in the ordered category for dropping duplicates later
+            sorted_category = list(set(df[label].to_list()))
+            sorted_category.remove(value_kept)
+            sorted_category.insert(0,value_kept)
+            df[label] = df[label].cat.set_categories(sorted_category, ordered=True)
+        elif VERBOSE:
+            print(f"Label \"{label}\" already has 1 or 0 values.")
     
     if DEBUG:
         print(f"fixed_columns: {fixed_columns}")
         print(f"non_fixed_columns: {non_fixed_columns}")
+    if VERBOSE:
+        print(f"Values kept: {values_kept}")
 
     # sort to put first selected category at the top of each label 
     df.sort_values(fixed_columns, inplace=True, ascending=True) 
@@ -151,42 +183,58 @@ def make_graphs(df: pd.DataFrame,
         print(f"Now sorted by custom categories") 
         print(df)
     # dropping duplicates keeps first
-    size_optiondf = df.drop_duplicates(non_fixed_columns,keep="first") 
-    print("Keep the highest value category given duplicate integer group") 
-    print(size_optiondf)
+    graphing_df = df.drop_duplicates(non_fixed_columns,keep="first") 
+    if DEBUG:
+        print("Graphing datafile") 
+        print(graphing_df)
+    # pivot and transpose make our graph into a more readable format
+    # with the index being a "MultiIndex" in the form of a tuple of parameters
+    graphing_df = graphing_df.pivot(index=[graphed_column],
+                                        columns=column_selection,
+                                        values=all_data_values)
+    graphing_df = graphing_df.transpose()
 
-
-    #other option to try: >>> index = pd.MultiIndex.from_tuples(tuples)
+    # TODO: another option to try: >>> index = pd.MultiIndex.from_tuples(tuples)
     # >>> values = [[12, 2], [0, 4], [10, 20],
     # ...           [1, 4], [7, 1], [16, 36]]
     # >>> df = pd.DataFrame(values, columns=['max_speed', 'shield'], index=index)
     # >>> df
 
-    size_optiondf = size_optiondf.pivot(index=[graphed_column],
-                                        columns=column_selection,
-                                        values=all_data_values)
-    size_optiondf = size_optiondf.transpose()
-    size_optiondf.drop(['SPOILED', 'COUNTER'],inplace=True)
-    print(size_optiondf)
+    graphing_df.drop(['SPOILED', 'COUNTER'],inplace=True)
+    if DEBUG and VERBOSE:
+        print("Dropped ['SPOILED', 'COUNTER'].") 
+        print(graphing_df)
     
-    index_list = list(list(str(i) for i in tuple_i) for tuple_i in size_optiondf.index)
-    column_list = list(map(str,size_optiondf.columns))
-    print(f"column_list:{column_list}")
+    index_list = list(list(str(i) for i in tuple_i) for tuple_i in graphing_df.index)
+    column_list = list(map(str,graphing_df.columns))
+    if DEBUG:
+        print(f"column_list:{column_list}")
 
-    dir = "./" if directory==None else str(directory).rstrip("/") + "/"
-
-    n_rows_selection = len(size_optiondf.index)
+    # generate graphs
+    n_rows_selection = len(graphing_df.index)
+    ax = None
+    fig,axlist = plt.subplots(1,n_rows_selection)
+    if not subplots_in_one_figure:
+        dir = f"{'.' if directory==None else str(directory).rstrip('/')}/{graphed_column}"
+        os.mkdir(dir)
     for i in range(n_rows_selection):
-        print(size_optiondf.iloc[i])
-        fig,ax = plt.subplots()
-        print(ax)
-        print(index_list[i])
-        ax.bar(column_list,size_optiondf.iloc[i].array)
-        ax.set_title(f"{graphed_column} with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}")
+        if not subplots_in_one_figure:
+            fig,ax = plt.subplots()
+        else:
+            ax = axlist[i]          
+        if VERBOSE:
+            print(f"Graphing {index_list[i]}...")
+        ax.bar(column_list,graphing_df.iloc[i].array)
+        title = str(index_list[i][0]) if subplots_in_one_figure else f"{graphed_column} with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}"
+        title_size = 10 if subplots_in_one_figure else 20
+        ax.set_title(title, fontsize=title_size)
         ax.set_xticks(ticks=column_list,labels=list(set(df[graphed_column].to_list())), rotation=60, ha='right')
-        print(ax)
-        fig.savefig(f"{dir}{graphed_column}_{str(index_list[i][0])}.pdf")
-    exit(-1)
+        if not subplots_in_one_figure:
+            fig.savefig(f"{dir}/{graphed_column}_{str(index_list[i][0])}.pdf")
+    if subplots_in_one_figure:
+        fig.suptitle(f"Graphs of {graphed_column}\nFixed options: {' '.join(index_list[i][1:])}")
+        fig.tight_layout()
+        fig.savefig(f"{str(directory).rstrip('/')}/{graphed_column}_{datetime.date.today()}.pdf")
 
 def import_data_old(normalise=True,
                     json_metadata_path="../preprocess/all_benchmark_parameters.json"):
@@ -212,8 +260,9 @@ def import_data_old(normalise=True,
     # make a DataFile out of it - to parse the "data" list in the dictionary
     jsonmetadata_df = pd.json_normalize(param_metadata_dict,record_path="data")
     jsonmetadata_df.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
-    print(jsonmetadata_df)
-    print(jsonmetadata_df.loc["bench_tree/bench_size5kernel/_alloc/_01.00Mb/_sizecompiled/run.sh"])
+    if DEBUG:
+        print(jsonmetadata_df)
+        print(jsonmetadata_df.loc["bench_tree/bench_size5kernel/_alloc/_01.00Mb/_sizecompiled/run.sh"])
 
     with open('data.csv', newline='') as csvfile:
         csvfile_reader = csv.reader(csvfile, delimiter='\t', quotechar='|')
@@ -371,83 +420,16 @@ def old_show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
         plt.savefig(fileprefix+"fig" + str(now) + ".pdf")
         plt.show() if str(input("Open figure in new window? (Y/n)\n"))=='Y' else None
 
-def old_show_graph_3D_1() :
-        global labels
-        global cache_miss_data
-        global benchnames
-        fig = plt.figure(figsize=(8, 3))
-        ax1 = fig.add_subplot(projection='3d')
-
-        # _xx, _yy = np.meshgrid(benchnames, labels)
-        _xx, _yy = np.meshgrid(np.arange(len(benchnames)), np.arange(len(labels)))
-        x, y = _xx.ravel(), _yy.ravel()
-        print(x)
-        print(y)
-        print(x.shape)
-        bottom = np.zeros_like(x)
-        width = 1
-        depth = 1
-        flattened_data = np.array([x for line in cache_miss_data for x in line])
-        print(flattened_data.shape)
-        ax1.bar3d(x, y, bottom, width, depth, flattened_data, shade=True)
-        ax1.set_title('Shaded')
-        # ax1.zscale('log')
-
-        """
-        for i, label in enumerate(labels):
-            if not label in ['SPOILED','COUNTER'] :
-                plt.bar(benchnames,data[i], label=labels[i])
-        plt.yscale('log')
-        """
-        # plt.xticks(rotation=90)
-        # plt.xticks(rotation=60, ha='right')
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
-
-def polygon_under_graph(x, y):
-    """
-    Construct the vertex list which defines the polygon filling the space under
-    the (x, y) line graph. This assumes x is in ascending order.
-    """
-    return [(x[0], 0.), *zip(x, y), (x[-1], 0.)]
-
-def show_graph_3D_2() :
-        global labels
-        global cache_miss_data
-        global benchnames
-
-        # 3D accumulation courtesy of https://matplotlib.org/stable/gallery/mplot3d/polys3d.html
-        ax = plt.figure().add_subplot(projection='3d')
-
-        # x = np.linspace(0., 1.*(len(labels)-2), (len(labels)-2)*4)
-
-        # 2D subgraph courtesy of https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
-        tickleft = np.arange(len(benchnames))
-        sub_width = 1.0/(len(labels)-2)
-        for j in range(2):
-            index = 0
-            for i, label in enumerate(labels):
-                offset = index * sub_width
-                if not label in ['SPOILED','COUNTER'] :
-                    ax.bar(tickleft + offset,cache_miss_data[i],width=sub_width, label=label, alpha=1, zs=j+1, zdir='y')
-                    index += 1
-        # plt.yscale('log')
-        # plt.xticks(rotation=90)
-        # ax.xticks(ticks=tickleft+0.5,labels=benchnames, rotation=60, ha='right')
-        ax.legend()
-        # plt.tight_layout()
-        plt.show()
-
 def argument_parsing(parser: argparse.ArgumentParser):
     parser.add_argument('-M','--MODE', nargs='?', default='default',
                     help='Can be default, interactive or old.')
     
-    parser.add_argument('-D', '--directory',
+    parser.add_argument('-D', '--directory',  default=f"figs_{datetime.date.today()}",
                         help='Sets .pdf directory.')
 
     # Optional arguments
-    # TODO:
+    parser.add_argument('-sp', '--subplots', action='store_true',
+                        help='Makes subplot graphs to see all types of data at once.')
     parser.add_argument('-c', '--clean-before', action='store_true',
                         help='Cleans existing files before generating.')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -480,12 +462,24 @@ def main():
         VERBOSE=True
 
     if not args.directory is None:
-        if not pathlib.Path(args.directory).is_dir() :
+        if pathlib.Path(args.directory).is_dir() :
+            if args.clean_before and args.MODE!="old":
+                shutil.rmtree(args.directory)
+                print(f"Cleaned {args.directory} directory")
                 os.mkdir(args.directory)
+        else:
+            os.mkdir(args.directory)
 
     if args.MODE=="default":
         df = import_data_pandas(normalise=True)
-        make_graphs(df, interactive=False, directory=args.directory)
+        columns = ["size_option","alloc_option","is_compilation_time_size","kernel_mode"]
+        non_unique_parameters = find_non_unique_parameters(df,columns=columns)
+        if DEBUG:
+            print(non_unique_parameters)
+        # iterate over non unique parameters to graph all of them
+        for i in range(len(non_unique_parameters)):
+            if non_unique_parameters[i]:
+                make_graphs(df, graphed_column=columns[i], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
     elif args.MODE=="interactive":
         df = import_data_pandas(normalise=True)
         make_graphs(df, interactive=True, directory=args.directory)
@@ -496,7 +490,7 @@ def main():
         old_show_graph_2D(fileprefix="wallclocktime",is_wallclocktime_graph=True)
     else:
         print("Mode undefined.")
-    print("\nDone.")
+    print("Done.")
 
 # courtesy of https://docs.python.org/fr/3/library/__main__.html
 if __name__ == '__main__':
