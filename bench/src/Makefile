@@ -3,11 +3,7 @@
 # see https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html for special targets
 .SUFFIXES: #disable automatic rules to override default modula2 compiling
 # (avoid .mod being interpreted as modula-2 source files)
-ifndef F90
-FC = gfortran
-else
-FC = $(F90)
-endif
+F90?=gfortran
 NV = nvfortran
 FFLAGS = -cpp -O3 #-Wall -Wextra
 
@@ -22,7 +18,7 @@ VPATH = $(BUILD_DIR)
 MODULE_F90 := $(wildcard $(SRC_DIR)/*.F90)
 
 # # if not compiling with nvfortran, ignore benchmark_2d_gpu.F90
-# ifneq ( $(FC) , nvfortran )
+# ifneq ( $(F90) , nvfortran )
 # MODULE_F90 := $(MODULE_F90:$(SRC_DIR)/benchmark_2d_gpu.F90=)
 # endif
 
@@ -54,7 +50,7 @@ library: $(LIB_DIR)/libbench.a
 
 # default rule
 $(BUILD_DIR)/%.o $(BUILD_DIR)/%.mod : $(SRC_DIR)/%.F90 | $(BUILD_DIR)
-	$(FC) $(FFLAGS) -c $< -o $(BUILD_DIR)/$(basename $<).o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ}
+	$(F90) $(FFLAGS) -c $< -o $(BUILD_DIR)/$(basename $<).o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ}
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 ####################### compilation flags ########################
@@ -84,20 +80,20 @@ $(BUILD_DIR)/benchmark_2d_gpu.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_
 ####################### compilation with special flags #######################
 
 $(BUILD_DIR)/benchmark_1d.o $(BUILD_DIR)/benchmark_1d.mod : $(SRC_DIR)/benchmark_1d.F90 | $(BUILD_DIR)
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_1d.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	${F90} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_1d.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 $(BUILD_DIR)/benchmark_2d_cpu.o $(BUILD_DIR)/benchmark_2d_cpu.mod : $(SRC_DIR)/benchmark_2d_cpu.F90 | $(BUILD_DIR)
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_cpu.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	${F90} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_cpu.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 # GPU compilation commented when FC is not nvfortran:
 $(BUILD_DIR)/benchmark_2d_gpu.o $(BUILD_DIR)/benchmark_2d_gpu.mod : $(SRC_DIR)/benchmark_2d_gpu.F90 | $(BUILD_DIR)
-ifeq ( $(FC) , nvfortran )
+ifeq ( $(F90) , nvfortran )
 	${NV} -cpp -Minfo=mp -mp=gpu -gpu=sm_75 $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 else
-	${FC} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DNO_GPU -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	${F90} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DNO_GPU -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 endif
 

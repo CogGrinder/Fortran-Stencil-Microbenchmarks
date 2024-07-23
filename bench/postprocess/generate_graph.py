@@ -18,13 +18,16 @@ VERBOSE = False
 global DEBUG
 DEBUG = False
 
-# global labels
-# global data
-# global benchnames
-
+# default benchmark, also known as baseline benchmark or control experiment
+baseline_for_comparison =\
+    {"size_option" : None,
+    "alloc_option" : "ALLOC",
+    "is_compilation_time_size" : True,
+    "kernel_mode" : "DEFAULT_KERNEL"}
+# used to ignore counters collected by perf_regions that have a debug purpose
 ignored_counters = ['SPOILED', 'COUNTER']
-#used for ignoring folder with default benchmarks
-default_foldername = 'defaultalloc'
+# deprecated: used for ignoring folder with default benchmark
+default_foldername = 'bench_default'
 
 def import_data_pandas(json_metadata_path="../preprocess/all_benchmark_parameters.json",
                        csv_benchdata_path="data.csv",
@@ -109,10 +112,7 @@ def make_graphs(df: pd.DataFrame,
                 all_data_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'SPOILED',  'WALLCLOCKTIME',  'COUNTER'],
                 all_metadata_columns=["size_option","alloc_option","is_compilation_time_size","kernel_mode"],
                 graphed_column="size_option",
-                default_fixed=       {"size_option":None,
-                                      "alloc_option":"ALLOC",
-                                      "is_compilation_time_size":True,
-                                      "kernel_mode":"DEFAULT_KERNEL"}):
+                baseline_for_comparison=baseline_for_comparison):
     """Function that makes graphs by using data and metadata from DataFrame and setting fixed units
     Args:
         normalise (bool): Normalize all benchmark data
@@ -145,9 +145,9 @@ def make_graphs(df: pd.DataFrame,
         set_of_label = list(set(df[label].to_numpy()))
         if len(set_of_label)>1:
             # set default choice:
-            value_kept = default_fixed[label]
+            value_kept = baseline_for_comparison[label]
             # if default choice is not in DataFrame, get first choice
-            if not default_fixed[label] in set_of_label:
+            if not baseline_for_comparison[label] in set_of_label:
                 value_kept=set_of_label[0]
             # set interactively
             if interactive:
@@ -286,7 +286,7 @@ def import_data_old(normalise=True,
         for row in csvfile_reader:
             benchpath = row[0]
             benchname = benchpath
-            benchname = benchname.lstrip("bench_tree/bench_").rstrip("/run.sh").replace("/","")
+            benchname = benchname.lstrip("bench_tree/").rstrip("/run.sh").replace("/","")
             # if DEBUG:
             #     print(benchname)
             if default_foldername not in benchname:

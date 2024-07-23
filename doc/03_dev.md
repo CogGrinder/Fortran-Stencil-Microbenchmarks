@@ -27,3 +27,11 @@ TODO : add a further check to assert that the target in the makefile made from t
 - [optional] update the passing of the new parameter by creating an argparse entry and passing the parameter to the newly created parameter of ``codegen_bench_tree_branch`` in [``codegen.py``](../bench/preprocessing/codegen.py)
 ### Postprocessing update
 TODO
+
+## Checklist for adding new stencil to benchmark
+### ``src/`` update
+#### add a new preprocessing option
+add an entry in 
+#### implement kernel
+make a new ``.h`` file in [``bench/src/kernels/``](../bench/src/kernels/):
+update [``select_kernel_2D.h``](../bench/src/kernels/select_kernel_2D.h) or 3D selector respectively.

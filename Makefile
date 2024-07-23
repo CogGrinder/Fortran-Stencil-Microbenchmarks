@@ -49,8 +49,9 @@ tuto:
 run_tuto:
 	$(MAKE) -C $(TUTO) run
 
-clean_all: clean clean_perf_regions clean_pre
-clean:
+clean_all: clean clean_pre
+clean: clean_bench
+clean_bench:
 	-$(MAKE) -C $(BENCH) clean
 clean_perf_regions:
 	-$(MAKE) -C $(PERF_REGIONS_FOLDER) clean

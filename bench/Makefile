@@ -1,10 +1,7 @@
 ### bench makefile ###
 
-ifndef F90
-FC:=gfortran
-else
-FC:=$(F90)
-endif
+# use F90 flag for Fortran compiler
+F90?=gfortran
 CC:=gcc
 CXX:=g++
 FFLAGS = -cpp -O3 #-Wall -Wextra 
@@ -116,30 +113,23 @@ $(BIN_DIR)/$(MAIN) : main.F90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(
 # @export |grep NI
 # @export |grep NJ
 	@export |grep KERNEL_MODE
-	${FC} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.F90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${F90} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.F90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)
 	./run_default.sh
 
 
-# clean depending on OS
-ifeq ($(OS),Windows_NT)
 clean:
-	rm -f *.exe
-	rm -f *.o
-else
-clean:
-	rm -f main main.o output.txt
-	rm -f perf_region_list.txt
+	make -C src/perf_regions clean
+	rm -f tmp.txt out.csv
 	rm -f build/*
 	rm -f bin/*
 	rm -f lib/*
-endif
 
 ####################### dependency rules #######################
 
-# MODULE LIBRARY COMPILATION
+# MODULE TARGETS
 MODULE_F90 := $(wildcard $(SRC_DIR)/*.F90)
 MODULE_O := $(patsubst $(SRC_DIR)/%.F90,$(BUILD_DIR)/%.o, $(MODULE_F90))
 
@@ -148,8 +138,7 @@ $(LIB_DIR)/libbench.a : $(MODULE_O)
 	@touch $(LIB_DIR)/libbench.a
 
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.F90
-	@echo .F90 files newer than .o files :
-	@echo $?
+# @echo .F90 files newer than .o files : $?
 	make -C src
 
 # DIRECTORIES

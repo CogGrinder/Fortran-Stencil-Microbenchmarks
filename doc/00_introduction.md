@@ -12,12 +12,10 @@ Our mode of operation is to compare the performance at multiple memory sizes
 We benchmark relative to a baseline CPU computation using all that is commonly effective to optimize with little effort, in other words an "ideally easy" scenario, discussed below. The goal is to measure which tradeoffs are worthwhile. #TODO discuss baseline
 
 ### Baseline
-Our current baseline is called ``COMPUTATION_2D_MODULE``.
-The baseline uses
+The default baseline benchmark is
 - dynamic arrays (``allocatable``)
 - in-module implementation with same-file computation kernel
 - ``contiguous`` arrays #TODO not yet implemented
 - no ``reshape``
 - double precision
-
-#TODO : for 2D allocate vs static, use module version
+- size 3 kernel

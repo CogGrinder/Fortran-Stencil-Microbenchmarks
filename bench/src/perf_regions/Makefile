@@ -13,4 +13,4 @@ run_tests:
 
 clean:
 	make -C ./src clean MODE=${MODE}
-	make -C ./examples clean MODE=${MODE}
+# make -C ./examples clean MODE=${MODE}

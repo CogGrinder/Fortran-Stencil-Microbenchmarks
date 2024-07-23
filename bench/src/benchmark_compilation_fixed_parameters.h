@@ -1,15 +1,14 @@
 #ifndef BENCH_PARAMS_H
 #define BENCH_PARAMS_H
 
-#define NONE 0
+!!!!!! preprocessor option names
+#define NONE 0 /* acts as default */
+
+! allocation type
 #define ALLOC 1
 #define STATIC 2
 
-#define SMALLER_THAN_L3 100
-#define SLIGHTLY_SMALLER_THAN_L3 101
-#define SLIGHTLY_BIGGER_THAN_L3 102
-#define BIGGER_THAN_L3 103
-
+! 2D kernels
 #define DEFAULT_KERNEL 0
 #define X_KERNEL 1
 #define Y_KERNEL 2
@@ -30,5 +29,4 @@
 # define nj (NJ)
 #endif /*SIZE_AT_COMPILATION*/
 
-! included benchmark_compilation_fixed_parameters.h file
 #endif /*BENCH_PARAMS_H*/
