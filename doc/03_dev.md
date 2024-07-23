@@ -18,14 +18,27 @@ All parameters are set in JSON file [``all_benchmark_parameters.json`](../bench/
 TODO : add a further check to assert that the target in the makefile made from the parameters corresponds to the code-generated target.
 
 ## Checklist for adding new parameters to benchmark
+### Source and compilation update
+- if compilation parameter
+    - add preprocessor option in targets if at compilation
+    - add default value in both [``Makefile``](../bench/Makefile) and [``src/Makefile``](../bench/src/Makefile)
+- if execution time parameter
+    - add parsing in main function of [``main.F90``](../bench/main.F90)
+    - TODO: explain this better: add in generated scripts as execution parameter
 ### Preprocessing update
 - update the ``TREE_DEPTH`` parameter in  [``codegen.py``](../bench/preprocess/codegen.py) and [``collect_data_csv.sh``](../bench/postprocess/collect_data_csv.sh) by adding 1 (one).
-- add a layer of folder creation in ``codegen_bench_tree_branch`` of [``codegen.py``](../bench/preprocess/codegen.py):
-    - add parameter to signature, setting a default value
-    - translate the new parameter's values to a suffix using a dictionary or string manipulation
-    - add this suffix to the ``directory`` string and create a corresponding directory on the chosen depth, as was done for other parameters
-- [optional] update the passing of the new parameter by creating an argparse entry and passing the parameter to the newly created parameter of ``codegen_bench_tree_branch`` in [``codegen.py``](../bench/preprocessing/codegen.py)
+- [``codegen.py``](../bench/preprocess/codegen.py):
+    - ``codegen_bench_tree_branch``:
+        - add parameter to signature, setting a default value
+        - add a layer of folder creation
+            - translate the new parameter's values to a suffix using a global dictionary or string manipulation
+            - add this suffix to the ``directory`` string and create a corresponding directory on the chosen depth, as was done for other parameters
+        - add new export line in fstring
+    - [interface] update the passing of the new parameter by creating an argparse entry and passing the parameter to the newly created parameter of ``codegen_bench_tree_branch`` in [``codegen.py``](../bench/preprocessing/codegen.py) in all execution modes.
+        - make an array of all values you want to iterate over in the generator of all benchmarks and modify it using the argparse entry.
 ### Postprocessing update
+- increment tree depth in collect_data_csv.sh
+- same as run_bench_tree.sh
 TODO
 
 ## Checklist for adding new stencil to benchmark

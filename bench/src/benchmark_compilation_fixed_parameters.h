@@ -4,9 +4,24 @@
 !!!!!! preprocessor option names
 #define NONE 0 /* acts as default */
 
+! bench names
+#define BENCH_1D 0
+#define BENCH_1D_MODULE 1
+    
+#define BENCH_2D_CPU_JI 3
+#define BENCH_2D_CPU_IJ 4
+#define BENCH_2D_CPU_MODULE_STATIC 5
+#define BENCH_2D_CPU_MODULE 6
+    
+#define BENCH_2D_GPU_OMP_BASE 7
+
 ! allocation type
-#define ALLOC 1
+#define ALLOCATABLE 1
 #define STATIC 2
+#define DEFAULT_ALLOC ALLOCATABLE /* default is allocatable */
+#ifndef ALLOC_MODE
+# define ALLOC_MODE DEFAULT_ALLOC
+#endif
 
 ! 2D kernels
 #define DEFAULT_KERNEL 0

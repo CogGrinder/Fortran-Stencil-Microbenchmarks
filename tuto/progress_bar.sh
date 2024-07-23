@@ -5,6 +5,20 @@ progressbar=$(printf -- '-%.0s' $(seq 1 $n))$(printf ' %.0s' $(seq $n 24))
 echo -ne "$progressbar ($progresspercent%)\r"
 }
 
+
+
+
+suffix=bzz
+declare prefix_$suffix=mystr
+
+# ...and then...
+
+varname=prefix_$suffix
+echo ${varname}
+echo ${!varname}
+echo $(echo !($prefix_$suffix))
+
+
 # echo -ne '#####                     (33%)\r'
 progress 33
 sleep 1

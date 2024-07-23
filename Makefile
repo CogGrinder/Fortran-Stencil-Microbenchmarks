@@ -27,7 +27,7 @@ endif
 
 all:
 	@echo make: $(MAKE)
-	-$(MAKE) -C $(BENCH)
+	$(MAKE) -C $(BENCH)
 
 run: run_bench
 run_bench:

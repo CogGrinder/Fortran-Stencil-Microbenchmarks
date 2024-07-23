@@ -1,6 +1,4 @@
 #include "benchmark_compilation_fixed_parameters.h"
-! #define DEBUG
-! #define DEBUG_PERF
 
 MODULE BENCHMARK_1D
     USE BENCHMARK_NAMES
@@ -12,7 +10,7 @@ MODULE BENCHMARK_1D
     
     
 ! to test 1D stencils in a module
-SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str,array_len)
+SUBROUTINE COMPUTATION_1D_MODULE(bench_id,bench_str,array_len)
     USE TOOLS
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -24,9 +22,17 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str,array_len)
     integer, intent(in) :: array_len
     real    :: sten_sum
     integer :: sten_len, i, k
+#if ALLOC_MODE == ALLOCATABLE
     real(dp), allocatable :: array(:), result(:)
     allocate(array(array_len))
     allocate(result(array_len) , source=0.0_dp)
+#elif ALLOC_MODE == STATIC
+    real(dp), dimension(array_len) :: array
+    real(dp), dimension(array_len) :: result
+#else
+    real(dp), dimension(array_len) :: array
+    real(dp), dimension(array_len) :: result
+#endif /*ALLOC_MODE*/
 
 #ifdef DEBUG_PERF
     CALL perf_regions_init()
@@ -70,6 +76,6 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE(bench_id,bench_str,array_len)
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,array_len)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,array_len)))
 
-end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY_MODULE
+end SUBROUTINE COMPUTATION_1D_MODULE
 
 end MODULE

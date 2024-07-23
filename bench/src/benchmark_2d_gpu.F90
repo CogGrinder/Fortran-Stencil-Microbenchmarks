@@ -27,11 +27,16 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
     integer :: i,j
     integer :: sten_len = 3
     ! 2D arrays
+#if ALLOC_MODE == ALLOCATABLE
     real(dp), allocatable :: array(:,:), result(:,:)
     allocate(array(ni,&
                     nj))
     allocate(result(ni,&
                     nj) , source=-1.0_dp)
+#elif ALLOC_MODE == STATIC
+    real(dp), dimension(array_len,array_len) :: array
+    real(dp), dimension(array_len,array_len) :: result
+#endif /*ALLOC_MODE*/
 
     do j = 1, nj
         do i = 1, ni

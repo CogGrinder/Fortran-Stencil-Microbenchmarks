@@ -4,9 +4,9 @@ PREVIEW=true
 # always contains default benchmark
 defaultfolder=bench_default/
 # UPDATE : tree_depth and fullpath() must be updated with each new added parameter
-tree_depth=4
+tree_depth=5
 fullpath() {
-printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/run.sh"
+printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/run.sh"
 }
 
 # output file is found at tree_depth + 2 upwards at postprocess/data.csv
@@ -93,21 +93,33 @@ do
             for directory_4 in $directories_4
             do
                 cd $(basename $directory_4)
-                # write to global output
-                # cat out.csv | xargs echo >> $OUTPUT_FILE
-                while IFS= read -r line; do
-                    if [ "${line:0:7}" != "Section" ] && [ "${line:0:1}" != "-" ] && [ "${line:0:31}" != "Performance counters profiling:" ] && [ "${line:0:6}" != "Error:" ]
+                directories_5=$(ls -d */)
+                if $VERBOSE
                     then
-                        outputline=$(fullpath)\\t${line:8}
-                        # TODO : replace with json benchmark name or executable name
-                        if $PREVIEW
-                        then
-                            echo -e "$outputline"
-                        fi
-                        echo -e "$outputline" >> $OUTPUT_FILE
+                        echo $directories_5
+                        echo
                     fi
-                    # grep -o 'action'
-                done < <( cat out.csv )
+                # sleep 2
+                for directory_5 in $directories_5
+                do
+                    cd $(basename $directory_5)
+                    # write to global output
+                    # cat out.csv | xargs echo >> $OUTPUT_FILE
+                    while IFS= read -r line; do
+                        if [ "${line:0:7}" != "Section" ] && [ "${line:0:1}" != "-" ] && [ "${line:0:31}" != "Performance counters profiling:" ] && [ "${line:0:6}" != "Error:" ]
+                        then
+                            outputline=$(fullpath)\\t${line:8}
+                            # TODO : replace with json benchmark name or executable name
+                            if $PREVIEW
+                            then
+                                echo -e "$outputline"
+                            fi
+                            echo -e "$outputline" >> $OUTPUT_FILE
+                        fi
+                        # grep -o 'action'
+                    done < <( cat out.csv )
+                    cd ..
+                done
                 cd ..
             done
             cd ..

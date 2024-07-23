@@ -6,13 +6,20 @@
 ! see following file for macro definitions
 #include "src/benchmark_compilation_fixed_parameters.h"
 
-! TODO : change from BENCH_ID paradigm
-#if     ALLOC_MODE == ALLOC
-# define BENCH_ID 6
-#elif   ALLOC_MODE == STATIC
-# define BENCH_ID 5
-#elif   ALLOC_MODE == NONE
-# define BENCH_ID 6
+#if DIM == 1
+# if     MODULE_MODE == 1
+#  define BENCH_ID BENCH_1D_MODULE
+# elif   MODULE_MODE == 0
+#  define BENCH_ID BENCH_1D
+# endif
+
+#elif DIM == 2
+# if     MODULE_MODE == 1
+#  define BENCH_ID BENCH_2D_CPU_MODULE
+# elif   MODULE_MODE == 0
+#  define BENCH_ID BENCH_2D_CPU_JI
+# endif
+
 #else
 # define BENCH_ID 0
 #endif
@@ -37,7 +44,7 @@ PROGRAM main
 ! #endif
     character(len=32) :: arg
     character(len=7) :: bench_str
-    character(len=32) :: kernel_name
+    character(len=32) :: kernel_name, alloc_name
     character(len=128) :: binary_name
     
     
@@ -49,16 +56,11 @@ PROGRAM main
         SUBROUTINE WARMUP_COMPUTATION(sten_len, array_len)
             integer, intent(in) :: sten_len, array_len
         end SUBROUTINE WARMUP_COMPUTATION
-        SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str, array_len)
+        SUBROUTINE COMPUTATION_1D(bench_id,bench_str, array_len)
             integer, intent(in) :: array_len
             integer(KIND=4), intent(in) :: bench_id
             character(len=7), intent(in) :: bench_str
-        end SUBROUTINE COMPUTATION_FIXED_ARRAY
-        SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
-            integer, intent(in) :: array_len
-            integer(KIND=4), intent(in) :: bench_id
-            character(len=7), intent(in) :: bench_str
-        end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
+        end SUBROUTINE COMPUTATION_1D
         SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
             integer, intent(in) :: array_len
             integer(KIND=4), intent(in) :: bench_id
@@ -127,17 +129,24 @@ CALL perf_regions_init()
         case (SIZE_5_KERNEL)
             kernel_name = 'size 5 kernel'
         case DEFAULT
-            kernel_name = 'default_kernel'
+            kernel_name = 'non specified kernel'
     end select
-    write (*,*) 'Using ', kernel_name
+    select case (ALLOC_MODE)
+        case (ALLOCATABLE)
+            alloc_name = 'allocatable'
+        case (STATIC)
+            alloc_name = 'static'
+        case DEFAULT
+            alloc_name = 'default'
+    end select
+    write (*,*) 'Kernel type: ', kernel_name
+    write (*,*) 'Allocation type: ', alloc_name
     
     ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
     select case (BENCH_ID)
-        case (BENCH_FIXED_ARRAY)
-            bench_str = '1D_FIXD'
-        case (BENCH_ALLOCATABLE_ARRAY)
-            bench_str = '1D_ALOC'
-        case (BENCH_ALLOCATABLE_ARRAY_MODULE)
+        case (BENCH_1D)
+            bench_str = '1D'
+        case (BENCH_1D_MODULE)
             bench_str = '1D_MODU'
             
         case(BENCH_2D_CPU_JI)
@@ -183,9 +192,9 @@ USE BENCHMARK_PARAMETERS
 
     write (*,*) 'Running bench ', bench_str, '...'
     WRITE(*,*) "**************************************"
-    if (     BENCH_ID == BENCH_FIXED_ARRAY              &
+    if (     BENCH_ID == BENCH_1D              &
         .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY        &
-        .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY_MODULE) then
+        .or. BENCH_ID == BENCH_1D_MODULE) then
         WRITE(*,*) "Mem size: ", array_len*0.001 ," KByte"
     else
         WRITE(*,*) "Mem size: ", ni* &
@@ -197,12 +206,10 @@ USE BENCHMARK_PARAMETERS
         CALL perf_region_start(99, "DEBUG"//achar(0))
 #endif
         select case (BENCH_ID)
-            case (BENCH_FIXED_ARRAY)
-                CALL COMPUTATION_FIXED_ARRAY(BENCH_ID, bench_str, array_len)
-            case (BENCH_ALLOCATABLE_ARRAY)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY(BENCH_ID, bench_str, array_len)
-            case (BENCH_ALLOCATABLE_ARRAY_MODULE)
-                CALL COMPUTATION_ALLOCATABLE_ARRAY_MODULE(BENCH_ID, bench_str, array_len)
+            case (BENCH_1D)
+                CALL COMPUTATION_1D(BENCH_ID, bench_str, array_len)
+            case (BENCH_1D_MODULE)
+                CALL COMPUTATION_1D_MODULE(BENCH_ID, bench_str, array_len)
 
             case (BENCH_2D_CPU_JI)
                 CALL COMPUTATION_2D_JI(BENCH_ID, bench_str, array_len)
@@ -210,9 +217,6 @@ USE BENCHMARK_PARAMETERS
                 CALL COMPUTATION_2D_IJ(BENCH_ID, bench_str, array_len)
             case (BENCH_2D_CPU_MODULE)
                 CALL COMPUTATION_2D_MODULE(BENCH_ID, bench_str, array_len)
-            case (BENCH_2D_CPU_MODULE_STATIC)
-                CALL COMPUTATION_2D_MODULE_FIXED(BENCH_ID, bench_str, array_len)
-
             case (BENCH_2D_GPU_OMP_BASE)
                 CALL COMPUTATION_GPU_OMP_BASE(BENCH_ID, bench_str, array_len)
                 
@@ -301,7 +305,7 @@ CALL perf_region_stop(bench_id)
 
 end SUBROUTINE COMPUTATION_FIXED_ARRAY
 
-SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
+SUBROUTINE COMPUTATION_1D(bench_id,bench_str, array_len)
     USE TOOLS
     use perf_regions_fortran
 #include "perf_regions_defines.h"
@@ -313,9 +317,15 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
     integer, intent(in) :: array_len
     real    :: sten_sum
     integer :: sten_len
+
+#if ALLOC_MODE == ALLOCATABLE
     real(dp), allocatable :: array(:), result(:)
     allocate(array(array_len))
     allocate(result(array_len) , source=0.0_dp)
+#elif ALLOC_MODE == STATIC
+    real(dp), dimension(array_len) :: array
+    real(dp), dimension(array_len) :: result
+#endif /*ALLOC_MODE*/
 
     stencil = (/ 1, 0, 1/)
 
@@ -348,7 +358,7 @@ SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY(bench_id,bench_str, array_len)
     CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,array_len)))
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,array_len)))
 
-end SUBROUTINE COMPUTATION_ALLOCATABLE_ARRAY
+end SUBROUTINE COMPUTATION_1D
 
 SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     USE TOOLS
@@ -362,11 +372,17 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     integer :: i,j
     integer :: sten_len = 3
     ! 2D arrays
+#if ALLOC_MODE == ALLOCATABLE
     real(dp), allocatable :: array(:,:), result(:,:)
     allocate(array(ni,&
                     nj))
     allocate(result(ni,&
                     nj) , source=-1.0_dp)
+#elif ALLOC_MODE == STATIC
+    real(dp), dimension(array_len,array_len) :: array
+    real(dp), dimension(array_len,array_len) :: result
+#endif /*ALLOC_MODE*/
+
 
     do j = 1, nj
         do i = 1, ni
@@ -422,11 +438,16 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
     integer :: i,j
     integer :: sten_len = 3
     ! 2D arrays
+#if ALLOC_MODE == ALLOCATABLE
     real(dp), allocatable :: array(:,:), result(:,:)
     allocate(array(ni,&
                     nj))
     allocate(result(ni,&
                     nj) , source=-1.0_dp)
+#elif ALLOC_MODE == STATIC
+    real(dp), dimension(array_len,array_len) :: array
+    real(dp), dimension(array_len,array_len) :: result
+#endif /*ALLOC_MODE*/
 
     do i = 1, ni
         do j = 1, nj

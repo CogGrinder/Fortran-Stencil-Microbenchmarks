@@ -6,14 +6,32 @@ CC:=gcc
 CXX:=g++
 FFLAGS = -cpp -O3 #-Wall -Wextra 
 
+### nvfortran exports - used by all nvfortran compilations
+NVARCH=Linux_x86_64#`Linux_x86_64 -s`_`Linux_x86_64 -m`
+export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk
+export NVCOMPILERS
+export MANPATH:=$(MANPATH):$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/man
+export PATH:=$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/bin:$(PATH)
+export PATH:=/usr/local/cuda-12:/usr/local/cuda-12/bin:$(PATH)
+export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_PATH)
+
 # default value variables - managed with export to avoid explicit passing to recursive make
 # for details on alternatives:
 # see https://www.gnu.org/software/make/manual/html_node/Setting.html
 
 ####################### defaults ########################
 
+ifndef DIM
+export DIM=2
+endif
+
 ifndef ALLOC_MODE
-export ALLOC_MODE=NONE
+export ALLOC_MODE=DEFAULT_ALLOC
+endif
+
+ifndef MODULE_MODE
+export MODULE_MODE=0
 endif
 
 ifndef SIZE_MODE
@@ -87,33 +105,20 @@ endif
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
-CFLAGS:= -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
+CPPMACROS:=-DDIM=${DIM} -DALLOC_MODE=${ALLOC_MODE} -DMODULE_MODE=${MODULE_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ}
+CFLAGS:= $(CPPMACROS) -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
-
-### nvfortran exports
-NVARCH=Linux_x86_64#`Linux_x86_64 -s`_`Linux_x86_64 -m`
-export NVARCH
-NVCOMPILERS=/opt/nvidia/hpc_sdk
-export NVCOMPILERS
-export MANPATH:=$(MANPATH):$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/man
-export PATH:=$(NVCOMPILERS)/$(NVARCH)/24.5/compilers/bin:$(PATH)
-export PATH:=/usr/local/cuda-12:/usr/local/cuda-12/bin:$(PATH)
-export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_PATH)
-
 ####################### main compilation #######################
 print_main:
 	echo from make:___$(BIN_DIR)/$(MAIN)
 main : $(BIN_DIR)/$(MAIN)
-## Why not mkdir -d $(BIN_DIR)?
-#https://stackoverflow.com/questions/64036620/what-is-the-use-of-or-operator-in-dependency-list
+# use of | https://stackoverflow.com/questions/64036620/what-is-the-use-of-or-operator-in-dependency-list
 $(BIN_DIR)/$(MAIN) : main.F90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/libbench.a | $(BIN_DIR)
 	@export |grep ALLOC_MODE
 	@export |grep SIZE_MODE
 	@export |grep SIZE_AT_COMPILATION
-# @export |grep NI
-# @export |grep NJ
 	@export |grep KERNEL_MODE
-	${F90} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.F90 -DALLOC_MODE=${ALLOC_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ} ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${F90} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.F90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)
@@ -132,20 +137,18 @@ clean:
 # MODULE TARGETS
 MODULE_F90 := $(wildcard $(SRC_DIR)/*.F90)
 MODULE_O := $(patsubst $(SRC_DIR)/%.F90,$(BUILD_DIR)/%.o, $(MODULE_F90))
-
 $(LIB_DIR)/libbench.a : $(MODULE_O)
 	make -C src ../$(LIB_DIR)/libbench.a
 	@touch $(LIB_DIR)/libbench.a
-
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.F90
-# @echo .F90 files newer than .o files : $?
 	make -C src
 
 # DIRECTORIES
 $(BUILD_DIR) $(LIB_DIR) $(BIN_DIR) :
 	-@mkdir $@
 
-$(PERF_REGIONS_FOLDER)/build/libperf_regions.so :
+# PERF_REGIONS
 # add MODE=debug as a trailing option for debugging
 # -$(MAKE) -C $(PERF_REGIONS_FOLDER) MODE=debug
+$(PERF_REGIONS_FOLDER)/build/libperf_regions.so :
 	make -C $(PERFREGION_SRC)

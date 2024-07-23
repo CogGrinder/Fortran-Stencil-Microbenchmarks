@@ -55,9 +55,9 @@ test:
 
 
 # testing scope of variables in make
-# ALLOC_MODE?=0
+# ALLOC_MODE?=ALLOC
 ifndef ALLOC_MODE
-export ALLOC_MODE=0
+export ALLOC_MODE=DEFAULT_ALLOC
 endif
 test2:
 	make -C dummy_folder
