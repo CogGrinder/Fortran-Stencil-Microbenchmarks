@@ -222,7 +222,7 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 
 export MAIN="{benchname}"
 export ALLOC_MODE="{alloc_option}"
-export MODULE_MODE="{is_module}"
+export MODULE_MODE="{int(is_module)}"
 export SIZE_MODE="{size_option}"
 export SIZE_AT_COMPILATION="{int(is_compilation_time_size)}"
 export NI="{ni if is_compilation_time_size else ""}"
