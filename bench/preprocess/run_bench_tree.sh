@@ -27,7 +27,7 @@ NO_COLOUR="\033[0m"
 
 # function used for printing bench <number>
 writeprogressbar() {
-    printf "$(printf "%-8s" "$1")[$progressbar]($progresspercent%%)\r"
+    printf "$(printf "%-8s" "$1")[$progressbar]($progresspercent%%)"
 }
 
 writeprogress() {
@@ -37,15 +37,14 @@ writeprogress() {
     progressbar=${progressbar:1:16}
     export progresspercent
     export progressbar
-    echo -ne "                                \r"
-    writeprogressbar "bench $((ibench+1))"
+    echo -ne "\r                                \r"
     if $VERBOSE
     then
-    echo -en "$PURPLE bench $((ibench+1))"
-    printf "                                \n"
+    echo -en "$PURPLE bench $((ibench+1))\n"
     else
-    echo -en "$PURPLE\033[1Abench $((ibench+1)) \033[1B\033[8D\]"
+    echo -en "$PURPLE\033[1A$(printf "%-16s" "bench $((ibench+1))")\033[1B\033[16D"
     fi
+    writeprogressbar launch
 }
 
 cd bench_tree
@@ -141,7 +140,12 @@ do
                     # remove previous data
                     rm -f out.csv
                     writeprogress
+                    printf "\r"
                     ./run.sh $VERBOSE
+                    if $VERBOSE
+                    then
+                    echo -ne "\r                                \r"
+                    fi
                     # remove the anti-optimisation file
                     # used for output of elements of the array being computed
                     # to prevent compiler from removing computations from zero-closure

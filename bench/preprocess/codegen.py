@@ -71,6 +71,7 @@ def generate_2d_array_size(size_in_mb):
 
 def codegen_bench_tree_branch(alloc_option: str,
                               size_option: Union[int, str],
+                              hardware_option="GPU",
                               iters=42,
                               is_module=True,
                               is_compilation_time_size=False,
@@ -99,112 +100,109 @@ def codegen_bench_tree_branch(alloc_option: str,
     """    
     ni=0
     nj=0
-    iters=42
     if size_option in size_suffixes.keys() or int(size_option) == 0:
         iters = math.ceil(ACCURACY*32)
     else:
         # max is used to insure there is at least 1 iteration
         iters = max(1,int(ACCURACY*100//size_option))
 
-    if True:
+    ###### generating directory ######
+    # directory is represented as an str
+    directory = "bench_tree"
 
-        ###### generating directory ######
-        # directory is represented as an str
-        directory = "bench_tree"
+    # first depth is kernel_mode_suffix
+    directory += f"/bench{kernel_mode_suffixes[kernel_mode]}"
+    if not pathlib.Path(directory).is_dir() :
+        os.mkdir(directory)
 
-        # first depth is kernel_mode_suffix
-        directory += f"/bench{kernel_mode_suffixes[kernel_mode]}"
-        if not pathlib.Path(directory).is_dir() :
-            os.mkdir(directory)
-
-        # adding allocation_type TODO : make the second depth CPU/GPU once that is functional
-        directory += f"/{allocation_suffixes[alloc_option]}"
-        if not pathlib.Path(directory).is_dir() :
-            os.mkdir(directory)
+    # adding allocation_type TODO : make the second depth CPU/GPU once that is functional
+    directory += f"/{allocation_suffixes[alloc_option]}"
+    if not pathlib.Path(directory).is_dir() :
+        os.mkdir(directory)
+    
+    # adding is_module
+    directory += f"/{module_suffixes[is_module]}"
+    if not pathlib.Path(directory).is_dir() :
+        os.mkdir(directory)
+    
+    # size_suffix in the _01Mb format or _{option suffix} format
+    # size_suffix = "_"+str(size_option).zfill(2)+"Mb"\
+    #     if (size_option!="" and int(size_option) in range(0,100))\
+    #     else size_suffixes[size_option]
+    size_suffix = size_suffixes[size_option] if (size_option in size_suffixes.keys())\
+            else "_"+"%05.2f"%size_option+"Mb"
         
-        # adding is_module
-        directory += f"/{module_suffixes[is_module]}"
-        if not pathlib.Path(directory).is_dir() :
-            os.mkdir(directory)
-        
-        # size_suffix in the _01Mb format or _{option suffix} format
-        # size_suffix = "_"+str(size_option).zfill(2)+"Mb"\
-        #     if (size_option!="" and int(size_option) in range(0,100))\
-        #     else size_suffixes[size_option]
-        size_suffix = size_suffixes[size_option] if (size_option in size_suffixes.keys())\
-              else "_"+"%05.2f"%size_option+"Mb"
-            
-        directory += f"/{size_suffix}"
-        if not pathlib.Path(directory).is_dir() :
-            os.mkdir(directory)
-        
-        # adding compilation_size_suffix
-        directory += f"/{is_compilation_time_size_suffixes[is_compilation_time_size]}"
-        if not pathlib.Path(directory).is_dir() :
-            os.mkdir(directory)
+    directory += f"/{size_suffix}"
+    if not pathlib.Path(directory).is_dir() :
+        os.mkdir(directory)
+    
+    # adding compilation_size_suffix
+    directory += f"/{is_compilation_time_size_suffixes[is_compilation_time_size]}"
+    if not pathlib.Path(directory).is_dir() :
+        os.mkdir(directory)
 
 
-        # the last depth joined directory is the full directory
-        fulldirectory = directory
-        # bench binary name is the concatenation of all
-        benchname = (directory.removeprefix("bench_tree/")).replace("/","")
-        if (VERBOSE):
-            print(f"benchname:{benchname} directory:{fulldirectory}")
+    # the last depth joined directory is the full directory
+    fulldirectory = directory
+    # bench binary name is the concatenation of all
+    benchname = (directory.removeprefix("bench_tree/")).replace("/","")
+    if (VERBOSE):
+        print(f"benchname:{benchname} directory:{fulldirectory}")
 
-        ######### is_compilation_time_size and kernel_mode #########
-        # if we compile array sizes then we need to copy all source files and compile them with special preprocessing
-        # see in the f.write() conditionals to change the make directory and BENCH_EXECUTABLE bin directory
-        is_copy_bench_files = is_compilation_time_size or kernel_mode!=""
-        if  is_copy_bench_files:
-            fulldirectory_absolute = pathlib.Path(fulldirectory).resolve()
-            if DEBUG and VERBOSE:
-                print(fulldirectory_absolute)
-            tic = 0
-            if DEBUG:
-                tic = time.perf_counter()
-            args = shlex.split(f"cp -r {src.resolve()} {str(fulldirectory_absolute)+'/src'}")
-            subprocess.run(args=args,executable="cp")
-            # shutil.copytree(src.resolve(),str(fulldirectory_absolute)+"/src",dirs_exist_ok=True)
-            if DEBUG:
-                toc = time.perf_counter()
-                if (toc-tic)>0.5:
-                    print(f"Copied source in {toc-tic:0.4f}s")
-            shutil.copy2(mainfile.resolve(),fulldirectory_absolute)
-            shutil.copy2(makefile.resolve(),fulldirectory_absolute)
+    ######### is_compilation_time_size and kernel_mode #########
+    # if we compile array sizes then we need to copy all source files and compile them with special preprocessing
+    # see in the f.write() conditionals to change the make directory and BENCH_EXECUTABLE bin directory
+    is_copy_bench_files = is_compilation_time_size or kernel_mode!=""
+    if  is_copy_bench_files:
+        fulldirectory_absolute = pathlib.Path(fulldirectory).resolve()
+        if DEBUG and VERBOSE:
+            print(fulldirectory_absolute)
+        tic = 0
+        if DEBUG:
+            tic = time.perf_counter()
+        args = shlex.split(f"cp -r {src.resolve()} {str(fulldirectory_absolute)+'/src'}")
+        subprocess.run(args=args,executable="cp")
+        # shutil.copytree(src.resolve(),str(fulldirectory_absolute)+"/src",dirs_exist_ok=True)
+        if DEBUG:
+            toc = time.perf_counter()
+            if (toc-tic)>0.5:
+                print(f"Copied source in {toc-tic:0.4f}s")
+        shutil.copy2(mainfile.resolve(),fulldirectory_absolute)
+        shutil.copy2(makefile.resolve(),fulldirectory_absolute)
 
 
-        filename = f"{fulldirectory}/run.sh"
-        f = open(filename, "w")
-        os.chmod(filename,0b111111111)
-        
-        ####### pre-compilation bench parameters #######
-        # here compute the bench parameters for using at compile time if is_compilation_time_size
-        if type(size_option)==int or type(size_option)==float:
-            ni, nj = generate_2d_array_size(size_option)
-        else:
-            percentage_of_l3 = 100
-            match size_option:
-                case "SMALLER_THAN_L3":
-                    percentage_of_l3 = 15.625
-                case "SLIGHTLY_SMALLER_THAN_L3":
-                    percentage_of_l3 = 96.875
-                case "SLIGHTLY_BIGGER_THAN_L3":
-                    percentage_of_l3 = 103.125
-                case "BIGGER_THAN_L3":
-                    percentage_of_l3 = 300.0
-                case _:
-                    pass
-            ni, nj = generate_2d_array_size(L3_SIZE*percentage_of_l3/100.0)
+    filename = f"{fulldirectory}/run.sh"
+    f = open(filename, "w")
+    os.chmod(filename,0b111111111)
+    
+    ####### pre-compilation bench parameters #######
+    # here compute the bench parameters for using at compile time if is_compilation_time_size
+    if type(size_option)==int or type(size_option)==float:
+        ni, nj = generate_2d_array_size(size_option)
+    else:
+        percentage_of_l3 = 100
+        match size_option:
+            case "SMALLER_THAN_L3":
+                percentage_of_l3 = 15.625
+            case "SLIGHTLY_SMALLER_THAN_L3":
+                percentage_of_l3 = 96.875
+            case "SLIGHTLY_BIGGER_THAN_L3":
+                percentage_of_l3 = 103.125
+            case "BIGGER_THAN_L3":
+                percentage_of_l3 = 300.0
+            case _:
+                pass
+        ni, nj = generate_2d_array_size(L3_SIZE*percentage_of_l3/100.0)
 
-        # see https://realpython.com/python-f-strings/
-        f.write(f"""#! /bin/bash
+    # see https://realpython.com/python-f-strings/
+    f.write(f"""#! /bin/bash
 VERBOSE=$1
 : ${{VERBOSE:=false}}
 PURPLE="\\033[1;35m"
 NO_COLOUR="\\033[0m"
                 
 writeprogressbar() {{
-    printf "$PURPLE%-8s[$progressbar]($progresspercent%%)$NO_COLOUR\r" $1
+    printf "$PURPLE%-8s[$progressbar]($progresspercent%%)$NO_COLOUR" $1
 }}
 
 # set BENCH_EXECUTABLE
@@ -235,49 +233,62 @@ export KERNEL_MODE="{kernel_mode}"
 # make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""}
 
 # pretty output for progress bar
+if $VERBOSE
+then :
+else
+printf "\\r"
+writeprogressbar compile
+# printf "\\r"
+fi
 while IFS= read -r line; do
-    echo -ne "                                \r"
     if $VERBOSE
     then
+    echo -ne "                                \\r"
     echo "$line"
-    fi
     writeprogressbar compile
-    # echo -ne "compile [$progressbar]($progresspercent%)\r"
+    echo -ne "\\r"
+    fi
+    # echo -ne "compile [$progressbar]($progresspercent%)\\r"
     # grep -o 'action'
 done < <( make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} )
-echo -ne "                                \r"
+printf "\\r"
 
 filename=out
+
 if $VERBOSE
 then
+echo -ne "\\r                                \\r"
 echo "Running mode {benchname}...     "
-fi
 writeprogressbar execute
-# echo -ne "execute [$progressbar]($progresspercent%)\r"
+else
+echo -ne "\\r                                \\r"
+writeprogressbar execute
+fi
+
 # thank you to glenn jackman"s answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
-    echo -ne "                                \r"
     if $VERBOSE
     then
+    echo -ne "\\r                                \\r"
     echo "$line"
-    fi
     writeprogressbar execute
-    # echo -ne "execute [$progressbar]($progresspercent%)\r"
+    fi
+    # echo -ne "execute [$progressbar]($progresspercent%)\\r"
     # MULE lines are those without a " " space prefix
     if [ "${{line:0:1}}" != " " ]
     then
         echo "$line" >> $filename.csv
     fi
     # grep -o 'action'
-echo -ne "                                \r"
 done < <( ./$BENCH_EXECUTABLE iters={iters} {"" if is_compilation_time_size else f"ni={ni} nj={nj}"} )
+printf "\\r"
+writeprogressbar done
+printf "\\r"
 # |  grep -A100 Section | paste >> $filename.csv
 # cat $filename.csv
 """)
-        f.close()
-        return filename, iters, ni, nj
-    else:
-        raise ValueError("Parameter wrong - read script for more information")
+    f.close()
+    return filename, iters, ni, nj
 
 def argument_parsing(parser: argparse.ArgumentParser):
     parser.add_argument('-M','--MODE', nargs='?', default='all',

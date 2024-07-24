@@ -5,7 +5,7 @@ progressbar=$(printf -- '-%.0s' $(seq 1 $n))$(printf ' %.0s' $(seq $n 24))
 echo -ne "$progressbar ($progresspercent%)\r"
 }
 
-
+PURPLE="\033[1;35m"
 
 
 suffix=bzz
@@ -44,3 +44,7 @@ echo -ne '\n'
 echo seq 16 15 $(seq 16 15)
 echo seq 16 1 15 $(seq 16 1 15)
 echo seq 16 -1 15 $(seq 16 -1 15)
+
+echo -en "$PURPLE$(printf "%-16s" "bench $((ibench+1))")\n"
+echo hi
+echo -en "$PURPLE$(printf "%-16s" "bench $((ibench+1))")[16D"
