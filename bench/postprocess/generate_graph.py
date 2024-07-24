@@ -30,7 +30,7 @@ all_data_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'WALLCLOCKTIME'
 # default benchmark, also known as baseline benchmark or control experiment
 baseline_for_comparison =\
     {"size_option" : None,
-    "alloc_option" : "ALLOC",
+    "alloc_option" : "ALLOCATABLE",
     "is_module" : True,
     "is_compilation_time_size" : True,
     "kernel_mode" : "DEFAULT_KERNEL"}
@@ -255,7 +255,12 @@ def make_graphs(df: pd.DataFrame,
             ax = ax_list[i]          
         if VERBOSE:
             print(f"Graphing {index_list[i]}...")
+        
+        if DEBUG:
+            print(graphing_df.iloc[i].array)
+            print(graphing_df.columns.array)
         ax.bar(range(len(column_list)),graphing_df.iloc[i].array)
+
         title = str(index_list[i][0]) if subplots_in_one_figure else f"{graphed_column} with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}"
         title_size = 10 if subplots_in_one_figure else 20
         ax.set_title(title, fontsize=title_size)
@@ -457,8 +462,10 @@ def argument_parsing(parser: argparse.ArgumentParser):
     
     parser.add_argument('-D', '--directory',  default=f"figs_{datetime.date.today()}",
                         help='Sets .pdf directory.')
+    parser.add_argument('-G', '--graphed',
+                        help=f'Sets a single metadata variable to graph - from {", ".join(all_metadata_columns)}.')
 
-    # Optional arguments
+    # Optional flags
     parser.add_argument('-sp', '--subplots', action='store_true',
                         help='Makes subplot graphs to see all types of data at once.')
     parser.add_argument('-c', '--clean-before', action='store_true',
@@ -492,6 +499,11 @@ def main():
     if args.verbose:
         VERBOSE=True
 
+    try:
+        igraphed=all_metadata_columns.index(args.graphed)
+    except ValueError:
+        parser.error(f"{args.graphed} invalid metadata variable.")
+
     if not args.directory is None:
         if pathlib.Path(args.directory).is_dir() :
             if args.clean_before and args.MODE!="old":
@@ -507,10 +519,18 @@ def main():
         non_unique_parameters = find_non_unique_parameters(df,columns=columns)
         if DEBUG:
             print(non_unique_parameters)
-        # iterate over non unique parameters to graph all of them
-        for i in range(len(non_unique_parameters)):
-            if non_unique_parameters[i]:
-                make_graphs(df, graphed_column=columns[i], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+        
+        # if graphed variable is not specified
+        if args.graphed is None:
+            # iterate over non unique parameters to graph all of them
+            for i in range(len(non_unique_parameters)):
+                if non_unique_parameters[i]:
+                    make_graphs(df, graphed_column=columns[i], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+        else:
+            if non_unique_parameters[igraphed]:
+                make_graphs(df, graphed_column=columns[igraphed], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+            else:
+                parser.error(f"{args.graphed} cannot be graphed because it is uniquely represented.")
     elif args.MODE=="interactive":
         df = import_data_pandas(normalise=True)
         make_graphs(df, interactive=True, directory=args.directory)

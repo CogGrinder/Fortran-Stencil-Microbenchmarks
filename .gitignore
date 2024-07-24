@@ -12,6 +12,7 @@ bench/tmp.txt
 bench/src/*.mod
 bench/src/perf_regions/src/perf_regions_fortran.mod
 bench/*.csv
+bench/*/*.csv
 bench/preprocess/__pycache__
 bench/preprocess/bench_tree
 bench/preprocess/test_codegen_run.sh

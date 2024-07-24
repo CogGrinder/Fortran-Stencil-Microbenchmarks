@@ -167,5 +167,5 @@ then
 echo -en "$NO_COLOUR"
 echo "done."
 else
-echo -en "$NO_COLOUR\033[1Adone.   \033[1B\033[8D"
+echo -en "$NO_COLOUR\033[1Adone.           \033[1B\033[16D"
 fi
