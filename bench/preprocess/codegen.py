@@ -307,14 +307,17 @@ def argument_parsing(parser: argparse.ArgumentParser):
     parser_mode_specific.add_argument('--alloc', nargs='?',
                     help=f'An alloc_option in {", ".join(list(allocation_suffixes.keys())).rstrip(", ")}')
     parser_mode_specific.add_argument('--size', nargs='?',
-                    help=f'A size_option in {", ".join(list(size_suffixes.keys()))} or between 0 and 99')
+                    help=f'A size_option in {", ".join(list(size_suffixes.keys()))} or between 0 and 99.\
+                        Has precedence over --range and sets single size in mode "all".')
     parser_mode_specific.add_argument('--compile-size', nargs='?', type=bool,
                 help=f'Sets if the array size is set at compilation time. Either True of False.')
     parser_mode_specific.add_argument('--module', nargs='?', type=bool,
                 help=f'Sets if the function is in a module. Either True of False.')
     parser_mode_specific.add_argument('--range', metavar="size", nargs='+', default=[1,17],
-                        help='Used in mode "all". Represents the scope of sizes in Mb to study. If length is 2, acts as lower and upper bound. If length is\
-                             1, acts as upper bound with lower bound 1, if is number only selects that number, else it is the list of sizes in Mb.')
+                        help='Used in mode "all". Represents the scope of sizes in Mb to study. If --size is used, flag is ignored and scope is set to single size.\
+                              If length is 2, acts as lower and upper bound.\
+                              If length is 1, acts as upper bound with lower bound 1.\
+                              If length is greater than 2, it is the list of sizes in Mb.')
     # Optional arguments
     parser.add_argument('-nv', '--nvfortran', action='store_true',
                         help='Uses nvfortran compiler and enables GPU benchmarking.')
@@ -400,29 +403,30 @@ def main():
         else:
             parser.error(f"{args.alloc} invalid value for alloc_option")
     if args.size is not None:
-        if args.size in size_suffixes.keys() or int(size_option) in range(0,100):
+        if args.size in size_suffixes.keys() or int(args.size) in range(0,100):
             size_option = args.size
-            if mode!="single":
-                iterator_of_selected_sizes = [args.size]
         else:
             parser.error(f"{args.size} invalid value for size")
     if args.compile_size is not None:
         is_compilation_time_size = args.compile_size
         if mode!="single":
             all_compilation_time_size = [args.compile_size]
-    
-    if args.range is not None:
-        if DEBUG:
-            print("range: " + str(args.range))
-            print("range type: " + str(type(args.range)))
-        if type(args.range) in [float, int]:
-            iterator_of_selected_sizes = [args.range]
-        elif len(args.range)==1:
-            iterator_of_selected_sizes = range(1,math.ceil(float(args.range[0])))
-        elif len(args.range)==2:
-            iterator_of_selected_sizes = range(math.floor(float(args.range[0])),math.ceil(float(args.range[1])))
-        else:
-            iterator_of_selected_sizes = list(map(float,args.range))
+
+    # range selector    
+    if DEBUG:
+        print("range: " + str(args.range))
+        print("range type: " + str(type(args.range)))
+    if args.size is not None:
+        if args.size in size_suffixes.keys():
+            iterator_of_selected_sizes = [args.size]
+        else :
+            iterator_of_selected_sizes = [float(args.size)]
+    elif len(args.range)==1:
+        iterator_of_selected_sizes = range(1,math.ceil(float(args.range[0])))
+    elif len(args.range)==2:
+        iterator_of_selected_sizes = range(math.floor(float(args.range[0])),math.ceil(float(args.range[1])))
+    else:
+        iterator_of_selected_sizes = list(map(float,args.range))
     if args.ACCURACY is not None:
         if args.ACCURACY <= 0:
             parser.error(f"Accuracy flag set to {args.ACCURACY}: cannot be non-positive")
@@ -451,8 +455,9 @@ def main():
                 f.close()
         if pathlib.Path("bench_tree").is_dir() :
             if args.clean_before:
-                os.remove(json_filename)
-                print(f"Cleaned {json_filename}")
+                if pathlib.Path(json_filename).is_file():
+                    os.remove(json_filename)
+                    print(f"Cleaned {json_filename}")
                 shutil.rmtree("bench_tree")
                 print("Cleaned bench_tree")
                 os.mkdir("bench_tree")

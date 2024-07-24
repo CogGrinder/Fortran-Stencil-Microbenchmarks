@@ -162,12 +162,10 @@ do
     done
     cd ..
 done
-if $NOT_VERBOSE
+if $VERBOSE
 then
-echo -en "$NO_COLOUR\033[1Adone.   \033[1B\033[8D"
-else
 echo -en "$NO_COLOUR"
 echo "done."
-# printf "                                \n"
+else
+echo -en "$NO_COLOUR\033[1Adone.   \033[1B\033[8D"
 fi
-# echo -en "$NO_COLOUR\033[1Adone.   \033[1B\033[8D"
