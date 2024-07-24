@@ -21,6 +21,16 @@ cd ../postprocess
 python3 generate_graph.py
 ```
 
+# Results
+
+For tracing results
+TODO : examples and instructions
+
+## Normalisation of data
+For graphing, data is normalized by dividing by array size dimensions and by number of iterations executed.
+The number of iterations roughly compensates the size for most small sizes, however it is preferable to normalise everything for more comparable data.
+Beware, the data is not normalised relative to stencil type.
+
 
 ## Accuracy of results
 To obtain more accurate results, the code generation has a speed parameter which scales the number of iterations.

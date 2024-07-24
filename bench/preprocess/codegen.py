@@ -341,6 +341,7 @@ def main():
 
     ### program data ###
     all_alloc_options = list(allocation_suffixes.keys())
+    all_alloc_options.remove("")
     all_module = [False, True]
     all_kernel_mode_options = list(kernel_mode_suffixes.keys())
     all_kernel_mode_options.remove("")

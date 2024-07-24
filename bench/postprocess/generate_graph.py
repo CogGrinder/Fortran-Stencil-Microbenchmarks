@@ -18,12 +18,23 @@ VERBOSE = False
 global DEBUG
 DEBUG = False
 
+# used for selecting benchmarks classifying data
+all_metadata_columns=["kernel_mode","size_option","alloc_option","is_module","is_compilation_time_size"]
+metadata_types =\
+    {"size_option" : float,
+    "alloc_option" : str,
+    "is_module" : bool,
+    "is_compilation_time_size" : bool,
+    "kernel_mode" : str}
+all_data_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'WALLCLOCKTIME']
 # default benchmark, also known as baseline benchmark or control experiment
 baseline_for_comparison =\
     {"size_option" : None,
     "alloc_option" : "ALLOC",
+    "is_module" : True,
     "is_compilation_time_size" : True,
     "kernel_mode" : "DEFAULT_KERNEL"}
+
 # used to ignore counters collected by perf_regions that have a debug purpose
 ignored_counters = ['SPOILED', 'COUNTER']
 # deprecated: used for ignoring folder with default benchmark
@@ -31,6 +42,8 @@ default_foldername = 'bench_default'
 
 def import_data_pandas(json_metadata_path="../preprocess/all_benchmark_parameters.json",
                        csv_benchdata_path="data.csv",
+                       all_metadata_columns=all_metadata_columns,
+                       all_data_values=all_data_values,
                        normalise=True):
     """Function that imports csv data as pd.DataFrame
     Args:
@@ -61,6 +74,8 @@ def import_data_pandas(json_metadata_path="../preprocess/all_benchmark_parameter
     benchparamjsonf.close()
     jsonmetadata_df = pd.json_normalize(param_metadata_dict,record_path="data")
     jsonmetadata_df.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
+    # sorting
+    jsonmetadata_df.sort_values(by=all_metadata_columns, inplace=True, ascending=True)
     if VERBOSE or DEBUG:
         print(jsonmetadata_df)
         print()
@@ -90,10 +105,19 @@ def import_data_pandas(json_metadata_path="../preprocess/all_benchmark_parameter
         print(joined_df)
     print("Done importing.")
     print()
+
+    if normalise:
+        print("Normalising...")
+        labels = all_data_values
+        for label in labels:
+            joined_df[label] = joined_df[label] / (joined_df["iters"] * joined_df["ni"] * joined_df["nj"])
+        if VERBOSE:
+            print(joined_df[labels])
+
     return joined_df
 
 def find_non_unique_parameters(df: pd.DataFrame,
-                             columns=["size_option","alloc_option","is_compilation_time_size","kernel_mode"]):
+                             columns=all_metadata_columns):
     """Function that checks for parameters that have more than one value in DataFrame.
 
     Useful both for finding parameters with are interesting to graph (more than 1 value) or need to be specified, and parameters which are fixed already.
@@ -109,8 +133,8 @@ def make_graphs(df: pd.DataFrame,
                 interactive=False,
                 directory=None,
                 subplots_in_one_figure=False,
-                all_data_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'SPOILED',  'WALLCLOCKTIME',  'COUNTER'],
-                all_metadata_columns=["size_option","alloc_option","is_compilation_time_size","kernel_mode"],
+                all_data_values=all_data_values,
+                all_metadata_columns=all_metadata_columns,
                 graphed_column="size_option",
                 baseline_for_comparison=baseline_for_comparison):
     """Function that makes graphs by using data and metadata from DataFrame and setting fixed units
@@ -118,6 +142,8 @@ def make_graphs(df: pd.DataFrame,
         normalise (bool): Normalize all benchmark data
             relative to size and iterations
     """
+
+    ############ selecting data ############
 
     if interactive:
         # input column to graph
@@ -181,12 +207,17 @@ def make_graphs(df: pd.DataFrame,
     df.sort_values(fixed_columns, inplace=True, ascending=True) 
     if DEBUG:
         print(f"Now sorted by custom categories") 
-        print(df)
+        if VERBOSE:
+            print(df)
     # dropping duplicates keeps first
     graphing_df = df.drop_duplicates(non_fixed_columns,keep="first") 
     if DEBUG:
-        print("Graphing datafile") 
+        print("Dropped duplicates") 
         print(graphing_df)
+    
+
+    ############ making table of graphs ############
+
     # pivot and transpose make our graph into a more readable format
     # with the index being a "MultiIndex" in the form of a tuple of parameters
     graphing_df = graphing_df.pivot(index=[graphed_column],
@@ -199,36 +230,36 @@ def make_graphs(df: pd.DataFrame,
     # ...           [1, 4], [7, 1], [16, 36]]
     # >>> df = pd.DataFrame(values, columns=['max_speed', 'shield'], index=index)
     # >>> df
-
-    graphing_df.drop(['SPOILED', 'COUNTER'],inplace=True)
-    if DEBUG and VERBOSE:
-        print("Dropped ['SPOILED', 'COUNTER'].") 
+    
+    if DEBUG:
         print(graphing_df)
+
+    ############ generating graphs ############
     
     index_list = list(list(str(i) for i in tuple_i) for tuple_i in graphing_df.index)
-    column_list = list(map(str,graphing_df.columns))
+    column_list = list(map(metadata_types[graphed_column],graphing_df.columns))
     if DEBUG:
-        print(f"column_list:{column_list}")
-
-    # generate graphs
-    n_rows_selection = len(graphing_df.index)
+        print(f"column_list: {column_list}")
+    n_graphs = len(graphing_df.index)
+    
+    # declaring matplotlib ax and fig, and ax_list
     ax = None
-    fig,axlist = plt.subplots(1,n_rows_selection)
+    fig,ax_list = plt.subplots(1,n_graphs)
     if not subplots_in_one_figure:
         dir = f"{'.' if directory==None else str(directory).rstrip('/')}/{graphed_column}"
         os.mkdir(dir)
-    for i in range(n_rows_selection):
+    for i in range(n_graphs):
         if not subplots_in_one_figure:
             fig,ax = plt.subplots()
         else:
-            ax = axlist[i]          
+            ax = ax_list[i]          
         if VERBOSE:
             print(f"Graphing {index_list[i]}...")
-        ax.bar(column_list,graphing_df.iloc[i].array)
+        ax.bar(range(len(column_list)),graphing_df.iloc[i].array)
         title = str(index_list[i][0]) if subplots_in_one_figure else f"{graphed_column} with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}"
         title_size = 10 if subplots_in_one_figure else 20
         ax.set_title(title, fontsize=title_size)
-        ax.set_xticks(ticks=column_list,labels=list(set(df[graphed_column].to_list())), rotation=60, ha='right')
+        ax.set_xticks(ticks=range(len(column_list)),labels=column_list, rotation=60, ha='right')
         if not subplots_in_one_figure:
             fig.savefig(f"{dir}/{graphed_column}_{str(index_list[i][0])}.pdf")
     if subplots_in_one_figure:
@@ -472,7 +503,7 @@ def main():
 
     if args.MODE=="default":
         df = import_data_pandas(normalise=True)
-        columns = ["size_option","alloc_option","is_compilation_time_size","kernel_mode"]
+        columns = all_metadata_columns
         non_unique_parameters = find_non_unique_parameters(df,columns=columns)
         if DEBUG:
             print(non_unique_parameters)

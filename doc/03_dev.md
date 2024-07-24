@@ -34,12 +34,14 @@ TODO : add a further check to assert that the target in the makefile made from t
             - translate the new parameter's values to a suffix using a global dictionary or string manipulation
             - add this suffix to the ``directory`` string and create a corresponding directory on the chosen depth, as was done for other parameters
         - add new export line in fstring
-    - [interface] update the passing of the new parameter by creating an argparse entry and passing the parameter to the newly created parameter of ``codegen_bench_tree_branch`` in [``codegen.py``](../bench/preprocessing/codegen.py) in all execution modes.
+    - [interface] update the passing of the new parameter by creating an argparse entry and passing the parameter to the newly created parameter of ``codegen_bench_tree_branch`` in [``codegen.py``](../bench/preprocess/codegen.py) in all execution modes.
         - make an array of all values you want to iterate over in the generator of all benchmarks and modify it using the argparse entry.
+    - in the main function, add it to the benchmark metadata .JSON file in the for loops
 ### Postprocessing update
 - increment tree depth in collect_data_csv.sh
 - same as run_bench_tree.sh
 TODO
+- in [``generate_graph.py``](../bench/postprocess/generate_graph.py), add the new parameter in ``all_metadata_columns``, ``metadata_types``, and ``baseline_for_comparison`` at the top of the file. Pay attention to having the same name as in the .JSON file
 
 ## Checklist for adding new stencil to benchmark
 ### ``src/`` update
