@@ -16,14 +16,14 @@ bench/*/*.csv
 bench/preprocess/__pycache__
 bench/preprocess/bench_tree
 bench/preprocess/test_codegen_run.sh
-bench/preprocess/all_benchmark_parameters.json
+bench/preprocess/*.json
 bench/preprocess/array_alloc.csv
 bench/postprocess/data.*
 bench/postprocess/*.pdf
+bench/postprocess/*/
 tuto/echo
 tuto/omp
 venv
 bench/testing/postprocess_testing/postprocess/data.csv
 bench/testing/out.csv
 bench/testing/tmp.txt
-bench/postprocess/*/

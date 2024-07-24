@@ -24,7 +24,16 @@ python3 generate_graph.py
 # Results
 
 For tracing results
-TODO : examples and instructions
+For example, we can trace size_option data with alloc_option rows like this:
+```bash
+python3 generate_graph.py -sp -G size_option -sG alloc_option
+```
+Or maybe alloc_option with is_module rows:
+```bash
+python3 generate_graph.py -sp -c -G alloc_option -sG is_module
+```
+TODO : examples and instructions eg -G size_option -sG all 
+python3 generate_graph.py -sp -sG alloc_option
 
 ## Normalisation of data
 For graphing, data is normalized by dividing by array size dimensions and by number of iterations executed.

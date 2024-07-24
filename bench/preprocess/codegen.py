@@ -313,7 +313,7 @@ def argument_parsing(parser: argparse.ArgumentParser):
                 help=f'Sets if the array size is set at compilation time. Either True of False.')
     parser_mode_specific.add_argument('--module', nargs='?', type=bool,
                 help=f'Sets if the function is in a module. Either True of False.')
-    parser_mode_specific.add_argument('--range', metavar="size", nargs='+', default=[1,17],
+    parser_mode_specific.add_argument('--size-range', metavar="size", nargs='+', default=[1,17],
                         help='Used in mode "all". Represents the scope of sizes in Mb to study. If --size is used, flag is ignored and scope is set to single size.\
                               If length is 2, acts as lower and upper bound.\
                               If length is 1, acts as upper bound with lower bound 1.\
@@ -414,19 +414,19 @@ def main():
 
     # range selector    
     if DEBUG:
-        print("range: " + str(args.range))
-        print("range type: " + str(type(args.range)))
+        print("size_range: " + str(args.size_range))
+        print("size_range type: " + str(type(args.size_range)))
     if args.size is not None:
         if args.size in size_suffixes.keys():
             iterator_of_selected_sizes = [args.size]
         else :
             iterator_of_selected_sizes = [float(args.size)]
-    elif len(args.range)==1:
-        iterator_of_selected_sizes = range(1,math.ceil(float(args.range[0])))
-    elif len(args.range)==2:
-        iterator_of_selected_sizes = range(math.floor(float(args.range[0])),math.ceil(float(args.range[1])))
+    elif len(args.size_range)==1:
+        iterator_of_selected_sizes = range(1,math.ceil(float(args.size_range[0])))
+    elif len(args.size_range)==2:
+        iterator_of_selected_sizes = range(math.floor(float(args.size_range[0])),math.ceil(float(args.size_range[1])))
     else:
-        iterator_of_selected_sizes = list(map(float,args.range))
+        iterator_of_selected_sizes = list(map(float,args.size_range))
     if args.ACCURACY is not None:
         if args.ACCURACY <= 0:
             parser.error(f"Accuracy flag set to {args.ACCURACY}: cannot be non-positive")
@@ -440,7 +440,7 @@ def main():
         print("verbose output on")
         print(alloc_option)
         print(size_option)
-        print("range: " + str(iterator_of_selected_sizes))
+        print("size_range: " + str(iterator_of_selected_sizes))
         print(is_compilation_time_size)
         print("ACCURACY="+str(ACCURACY))
 
