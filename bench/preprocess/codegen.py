@@ -13,6 +13,10 @@ import math
 import time
 import subprocess
 
+# UPDATE: when implementing new parameter, increment TREE_DEPTH
+# this parameter is used for setting relative directories, with repeated "../" prefixes
+TREE_DEPTH = 6
+
 global ACCURACY
 ACCURACY = 1
 
@@ -24,9 +28,9 @@ L3_SIZE = 16
 global IS_NVFORTRAN_COMPILER
 IS_NVFORTRAN_COMPILER = False
 
-# UPDATE: when implementing new parameter, increment TREE_DEPTH
-# this parameter is used for setting relative directories, with repeated "../" prefixes
-TREE_DEPTH = 5
+hardware_suffixes =   { "CPU"                   : "_cpu",
+                        "GPU"                   : "_gpu",
+                        ""                      : "_defaulthardware"}
 
 allocation_suffixes = { "ALLOCATABLE"           : "_allocatable",
                         "STATIC"                : "_static",
@@ -115,7 +119,12 @@ def codegen_bench_tree_branch(alloc_option: str,
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
 
-    # adding allocation_type TODO : make the second depth CPU/GPU once that is functional
+    # CPU/GPU
+    directory += f"/{hardware_suffixes[hardware_option]}"
+    if not pathlib.Path(directory).is_dir() :
+        os.mkdir(directory)
+
+    # adding allocation_type
     directory += f"/{allocation_suffixes[alloc_option]}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
@@ -126,12 +135,8 @@ def codegen_bench_tree_branch(alloc_option: str,
         os.mkdir(directory)
     
     # size_suffix in the _01Mb format or _{option suffix} format
-    # size_suffix = "_"+str(size_option).zfill(2)+"Mb"\
-    #     if (size_option!="" and int(size_option) in range(0,100))\
-    #     else size_suffixes[size_option]
     size_suffix = size_suffixes[size_option] if (size_option in size_suffixes.keys())\
             else "_"+"%05.2f"%size_option+"Mb"
-        
     directory += f"/{size_suffix}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
@@ -322,20 +327,22 @@ def argument_parsing(parser: argparse.ArgumentParser):
     # Arguments for single mode
     parser_mode_specific.add_argument('--kernel-mode', nargs='?',
                     help=f'A kernel_mode_option in {", ".join(list(kernel_mode_suffixes.keys())).rstrip(", ")}')
+    parser_mode_specific.add_argument('--hardware', nargs='?',
+                    help=f'An hardware_option in {", ".join(list(hardware_suffixes.keys())).rstrip(", ")}')
     parser_mode_specific.add_argument('--alloc', nargs='?',
                     help=f'An alloc_option in {", ".join(list(allocation_suffixes.keys())).rstrip(", ")}')
+    parser_mode_specific.add_argument('--module', nargs='?', type=bool,
+                help=f'Sets if the function is in a module. Either True of False.')
     parser_mode_specific.add_argument('--size', nargs='?',
                     help=f'A size_option in {", ".join(list(size_suffixes.keys()))} or between 0 and 99.\
                         Has precedence over --range and sets single size in mode "all".')
-    parser_mode_specific.add_argument('--compile-size', nargs='?', type=bool,
-                help=f'Sets if the array size is set at compilation time. Either True of False.')
-    parser_mode_specific.add_argument('--module', nargs='?', type=bool,
-                help=f'Sets if the function is in a module. Either True of False.')
     parser_mode_specific.add_argument('--size-range', metavar="size", nargs='+', default=[1,17],
                         help='Used in mode "all". Represents the scope of sizes in Mb to study. If --size is used, flag is ignored and scope is set to single size.\
                               If length is 2, acts as lower and upper bound.\
                               If length is 1, acts as upper bound with lower bound 1.\
                               If length is greater than 2, it is the list of sizes in Mb.')
+    parser_mode_specific.add_argument('--compile-size', nargs='?', type=bool,
+                help=f'Sets if the array size is set at compilation time. Either True of False.')
     # Optional arguments
     parser.add_argument('-nv', '--nvfortran', action='store_true',
                         help='Uses nvfortran compiler and enables GPU benchmarking.')
@@ -372,6 +379,8 @@ def main():
     iterator_of_selected_sizes = range(1,16+1)
 
     ### program data ###
+    all_hardware_options= list(hardware_suffixes.keys())
+    all_hardware_options.remove("")
     all_alloc_options = list(allocation_suffixes.keys())
     all_alloc_options.remove("")
     all_module = [False, True]
@@ -409,10 +418,13 @@ def main():
                 all_kernel_mode_options = [args.kernel_mode]
         else:
             parser.error(f"{args.kernel_mode} invalid value for kernel_mode")
-    if args.module is not None:
-        is_module = args.module
-        if mode!="single":
-            all_module = [args.module]
+    if args.hardware is not None:
+        if args.hardware in all_hardware_options:
+            hardware_option = args.hardware
+            if mode!="single":
+                all_hardware_options = [args.hardware]
+        else:
+            parser.error(f"{args.hardware} invalid value for hardware_option")
     if args.alloc is not None:
         if args.alloc in all_alloc_options:
             alloc_option = args.alloc
@@ -420,6 +432,10 @@ def main():
                 all_alloc_options = [args.alloc]
         else:
             parser.error(f"{args.alloc} invalid value for alloc_option")
+    if args.module is not None:
+        is_module = args.module
+        if mode!="single":
+            all_module = [args.module]
     if args.size is not None:
         if args.size in size_suffixes.keys() or int(args.size) in range(0,100):
             size_option = args.size
@@ -485,52 +501,61 @@ def main():
         else:
             os.mkdir("bench_tree")
     # for debugging new implementations
-    if mode in ["debug","all_old"]:
-        print(f"Debug: Creating all benchmark scripts...")
-        codegen_bench_tree_branch("","")
-        
-        for alloc_option in all_alloc_options :
-            for size_option in iterator_of_selected_sizes :
-                for is_compilation_time_size in all_compilation_time_size :
-                    for kernel_mode in all_kernel_mode_options:
-                        filename, iters, ni, nj  = codegen_bench_tree_branch(alloc_option,size_option,\
-                                                    is_compilation_time_size=is_compilation_time_size,kernel_mode=kernel_mode)
-                        json_dict_all_parameters["data"].append({"id":filename,
-                                                    "kernel_mode": kernel_mode,
-                                                    "size_option": size_option,
-                                                    "ni": ni,
-                                                    "nj": nj,
-                                                    "alloc_option": alloc_option,
-                                                    "iters": iters,
-                                                    "is_compilation_time_size": is_compilation_time_size})
-    elif mode in ["all","all_compilation_time"]:
-        # shutil.rmtree("bench_tree")
+    if mode in ["all","all_compilation_time"]:
         print(f"Creating all benchmark scripts...")
         codegen_bench_tree_branch("","")
         all_module
-        for kernel_mode in all_kernel_mode_options:
-            for alloc_option in all_alloc_options :
-                for is_module in all_module :
-                    for size_option in iterator_of_selected_sizes :
-                        for is_compilation_time_size in all_compilation_time_size :
-                            filename, iters, ni, nj  = codegen_bench_tree_branch(
-                                alloc_option,
-                                size_option,
-                                is_module=is_module,
-                                is_compilation_time_size=is_compilation_time_size,
-                                kernel_mode=kernel_mode)
-                            json_dict_all_parameters["data"].append(
-                                {"id":filename,
-                                "kernel_mode": kernel_mode,
-                                "size_option": size_option,
-                                "is_module": is_module,
-                                "ni": ni,
-                                "nj": nj,
-                                "alloc_option": alloc_option,
-                                "iters": iters,
-                                "is_compilation_time_size": is_compilation_time_size})
+        for kernel_mode in all_kernel_mode_options :
+            for hardware_option in all_hardware_options :
+                for alloc_option in all_alloc_options :
+                    for is_module in all_module :
+                        for size_option in iterator_of_selected_sizes :
+                            for is_compilation_time_size in all_compilation_time_size :
+                                filename, iters, ni, nj  = codegen_bench_tree_branch(
+                                    alloc_option,size_option,
+                                    is_module=is_module,
+                                    hardware_option=hardware_option,
+                                    is_compilation_time_size=is_compilation_time_size,
+                                    kernel_mode=kernel_mode)
+                                json_dict_all_parameters["data"].append(
+                                    {"id":filename,
+                                    "kernel_mode": kernel_mode,
+                                    "hardware_option" : hardware_option,
+                                    "alloc_option": alloc_option,
+                                    "is_module": is_module,
+                                    "size_option": size_option,
+                                    "is_compilation_time_size": is_compilation_time_size,
+                                    "ni": ni,
+                                    "nj": nj,
+                                    "iters": iters})
+    elif mode in ["debug","all_old"]:
+        print(f"Debug: Creating all benchmark scripts...")
+        codegen_bench_tree_branch("","")
+        
+        for kernel_mode in all_kernel_mode_options :
+            # for hardware_option in all_hardware_options :
+                for alloc_option in all_alloc_options :
+                    for is_module in all_module :
+                        for size_option in iterator_of_selected_sizes :
+                            for is_compilation_time_size in all_compilation_time_size :
+                                filename, iters, ni, nj  = codegen_bench_tree_branch(
+                                    alloc_option,size_option,
+                                    is_module=is_module,
+                                    # hardware_option=hardware_option,
+                                    is_compilation_time_size=is_compilation_time_size,
+                                    kernel_mode=kernel_mode)
+                                json_dict_all_parameters["data"].append(
+                                    {"id":filename,
+                                    "kernel_mode": kernel_mode,
+                                    # "hardware_option" : hardware_option,
+                                    "alloc_option": alloc_option,
+                                    "is_module": is_module,
+                                    "size_option": size_option,
+                                    "is_compilation_time_size": is_compilation_time_size,
+                                    "ni": ni,
+                                    "nj": nj,
+                                    "iters": iters})
     elif mode == "all_l3":
-        # shutil.rmtree("bench_tree")
         all_l3_relative_size_options = list(size_suffixes.keys())
         all_l3_relative_size_options.remove("")
         # TODO : pass L3 size as compilation/execution time parameter - using grep and command

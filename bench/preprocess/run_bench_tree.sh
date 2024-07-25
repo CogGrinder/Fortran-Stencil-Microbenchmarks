@@ -8,7 +8,7 @@
 # and https://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
 # for return carriage special options
 
-tree_depth=5
+tree_depth=6
 
 if [[ "$1" == "" ]]
 then
@@ -145,22 +145,34 @@ do
                 for directory_5 in $directories_5
                 do
                     cd $(basename $directory_5)
-                    # remove previous data
-                    rm -f out.csv
-                    writeprogress
-                    printf "\r"
-                    ./run.sh $1 $2
+                    directories_6=$(ls -d -1q */)
                     if $VERBOSE
                     then
-                    echo -ne "\r                                \r"
+                    echo $directories_6
+                    echo
                     fi
-                    # remove the anti-optimisation file
-                    # used for output of elements of the array being computed
-                    # to prevent compiler from removing computations from zero-closure
-                    # the choice of a file output is because it removes the verbosity from the terminal output
-                    rm tmp.txt
+                    # sleep 2
+                    for directory_7 in $directories_6
+                    do
+                        cd $(basename $directory_7)
+                        # remove previous data
+                        rm -f out.csv
+                        writeprogress
+                        printf "\r"
+                        ./run.sh $1 $2
+                        if $VERBOSE
+                        then
+                        echo -ne "\r                                \r"
+                        fi
+                        # remove the anti-optimisation file
+                        # used for output of elements of the array being computed
+                        # to prevent compiler from removing computations from zero-closure
+                        # the choice of a file output is because it removes the verbosity from the terminal output
+                        rm tmp.txt
+                        cd ..
+                        ((ibench+=1))
+                    done
                     cd ..
-                    ((ibench+=1))
                 done
                 cd ..
             done

@@ -19,21 +19,32 @@ global DEBUG
 DEBUG = False
 
 # used for selecting benchmarks classifying data
-all_metadata_columns=["kernel_mode","size_option","alloc_option","is_module","is_compilation_time_size"]
+all_metadata_columns=["kernel_mode",
+                      "hardware_option",
+                      "alloc_option",
+                      "is_module",
+                      "size_option",
+                      "is_compilation_time_size"]
 metadata_types =\
-    {"size_option" : float,
+    {
+    "kernel_mode" : str,
+    "hardware_option" : str,
     "alloc_option" : str,
     "is_module" : bool,
-    "is_compilation_time_size" : bool,
-    "kernel_mode" : str}
+    "size_option" : float,
+    "is_compilation_time_size" : bool
+    }
 all_data_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'WALLCLOCKTIME']
 # default benchmark, also known as baseline benchmark or control experiment
 baseline_for_comparison =\
-    {"size_option" : None,
+    {
+    "kernel_mode" : "DEFAULT_KERNEL",
+    "hardware_option" : "CPU",
     "alloc_option" : "ALLOCATABLE",
     "is_module" : True,
-    "is_compilation_time_size" : True,
-    "kernel_mode" : "DEFAULT_KERNEL"}
+    "size_option" : None,
+    "is_compilation_time_size" : True
+    }
 
 # used to ignore counters collected by perf_regions that have a debug purpose
 ignored_counters = ['SPOILED', 'COUNTER']

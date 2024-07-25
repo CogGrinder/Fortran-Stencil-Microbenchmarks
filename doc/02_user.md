@@ -2,6 +2,8 @@
 ## Warnings
 You must clean before generating code to avoid keeping compiled files made with the wrong compiler.
 
+Using non-nvfortran with GPUs is not supported as of now.
+
 ## Variants
 Once everything is installed, you may execute and plot benchmarks in multiple ways.
 The default mode is run when you use the commands:

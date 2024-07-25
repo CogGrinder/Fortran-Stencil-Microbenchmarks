@@ -18,28 +18,40 @@ All parameters are set in JSON file [``all_benchmark_parameters.json`](../bench/
 TODO : add a further check to assert that the target in the makefile made from the parameters corresponds to the code-generated target.
 
 ## Checklist for adding new parameters to benchmark
+*[preliminary]* marked items should be prioritized for testing new parameter implementation to see if anything breaks.
+
+*[interface]* marked items are not necessary and should be done last, for user experience.
+
 ### Source and compilation update
-- if compilation parameter
-    - add preprocessor option in targets if at compilation
-    - add default value in both [``Makefile``](../bench/Makefile) and [``src/Makefile``](../bench/src/Makefile)
-- if execution time parameter
+- [preliminary] if compilation parameter
+    - in source files: add preprocessor option in targets if at compilation
+    - in both [``Makefile``](../bench/Makefile) and [``src/Makefile``](../bench/src/Makefile)
+        - update CFLAGS with new preprocessor directive
+        - add default value as export
+- [preliminary] if execution time parameter
     - add parsing in main function of [``main.F90``](../bench/main.F90)
     - TODO: explain this better: add in generated scripts as execution parameter
 ### Preprocessing update
-- update the ``TREE_DEPTH`` parameter in  [``codegen.py``](../bench/preprocess/codegen.py) and [``collect_data_csv.sh``](../bench/postprocess/collect_data_csv.sh) by adding 1 (one).
+- [``codegen.py``](../bench/preprocess/codegen.py), [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh) and [``collect_data_csv.sh``](../bench/postprocess/collect_data_csv.sh):
+    - update the ``TREE_DEPTH`` parameter in   by adding 1 (one)
+    - [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh) and [``collect_data_csv.sh``](../bench/postprocess/): add loop depth and shift all parameter indexes
+    - TODO: make this easier
 - [``codegen.py``](../bench/preprocess/codegen.py):
     - ``codegen_bench_tree_branch``:
-        - add parameter to signature, setting a default value
+        - [preliminary] add parameter to signature, setting a default value
         - add a layer of folder creation
             - translate the new parameter's values to a suffix using a global dictionary or string manipulation
             - add this suffix to the ``directory`` string and create a corresponding directory on the chosen depth, as was done for other parameters
         - add new export line in fstring
+    - add new parameter as a loop, adding an iterable in main function (such as ``all_<parameter name>``)
     - [interface] update the passing of the new parameter by creating an argparse entry and passing the parameter to the newly created parameter of ``codegen_bench_tree_branch`` in [``codegen.py``](../bench/preprocess/codegen.py) in all execution modes.
-        - make an array of all values you want to iterate over in the generator of all benchmarks and modify it using the argparse entry.
+        - modify the iterator you created above using the argparse entry
     - in the main function, add it to the benchmark metadata .JSON file in the for loops
 ### Postprocessing update
-- increment tree depth in collect_data_csv.sh
-- same as run_bench_tree.sh
+- increment tree depth in [``collect_data_csv.sh``](../bench/postprocess/collect_data_csv.sh)
+- [``collect_data_csv.sh``](../bench/postprocess/): add loop depth and shift all parameter indexes
+- [``collect_data_csv.sh``](../bench/postprocess/): add directory to ``fullpath()`` function
+- same as [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh)
 TODO
 - in [``generate_graph.py``](../bench/postprocess/generate_graph.py), add the new parameter in ``all_metadata_columns``, ``metadata_types``, and ``baseline_for_comparison`` at the top of the file. Pay attention to having the same name as in the .JSON file
 
