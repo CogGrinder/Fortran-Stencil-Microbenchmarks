@@ -17,69 +17,120 @@ import subprocess
 # this parameter is used for setting relative directories, with repeated "../" prefixes
 TREE_DEPTH = 6
 
+# global variables set later by user
 global ACCURACY
-ACCURACY = 1
-
 global VERBOSE
-VERBOSE = False
 global DEBUG
-DEBUG = False
-L3_SIZE = 16
 global IS_NVFORTRAN_COMPILER
+# defaults
+ACCURACY = 1
+VERBOSE = False
+DEBUG = False
 IS_NVFORTRAN_COMPILER = False
 
-hardware_suffixes =   { "CPU"                   : "_cpu",
-                        "GPU"                   : "_gpu",
-                        ""                      : "_defaulthardware"}
+# L3_SIZE (float or int): set your L3 cache size here. Used for setting sizes relative to L3 cache.
+L3_SIZE = 16
 
-allocation_suffixes = { "ALLOCATABLE"           : "_allocatable",
+###### metadata for developers #######
+# all_metadata_variables (dict) : names of parameters. Used for filtering arguments when executing in 'single' mode.
+# UPDATE: add new parameter here
+metadata_names = ["kernel_mode",
+                      "hardware",
+                      "allocation",
+                      "module",
+                      "size",
+                      "compile_size"]
+
+# metadata_types (dict) : types of parameters. Currently not used, may be used to simplify maintainability.
+# UPDATE: add new parameter type here
+metadata_types =\
+    {
+    "kernel_mode" : str,
+    "hardware_option" : str,
+    "alloc_option" : str,
+    "is_module" : bool,
+    "size_option" : float,
+    "is_compilation_time_size" : bool
+    }
+
+# metadata_defaults (dict) : values of parameters. Used for replacing missing parameters when omitted.
+# UPDATE: add new parameter default here
+metadata_defaults =\
+    {
+    "kernel_mode" : "DEFAULT_KERNEL",
+    "hardware" : "CPU",
+    "allocation" : "ALLOCATABLE",
+    "module" : True,
+    "size" : 16.0,
+    "compile_size" : True
+    }
+
+# suffixes (dict of dict) : used for naming folders, naming binaries and iterating over all possible values for each parameter.
+# "" is used to specify default folder name.
+# Please be aware this is set as "_default" currently to simplify csv fetching.
+# NB: booleans need boolean keys
+# UPDATE: add new parameter options and their prefixes here
+
+suffixes = {}
+
+suffixes['hardware'] = { "CPU"                   : "_cpu",
+                        "GPU"                   : "_gpu",
+                        ""                      : "_default"}
+
+suffixes['allocation'] = { "ALLOCATABLE"           : "_allocatable",
                         "STATIC"                : "_static",
-                        ""                      : "_defaultalloc"}
-module_suffixes = { False                       : "_nomodule",
+                        ""                      : "_default"}
+
+suffixes['module'] =  { False                       : "_nomodule",
                         True                    : "_module",
-                        ""                      : "_defaultmodule"}
-size_suffixes =       { "SMALLER_THAN_L3"           : "_smallerl3",
+                        ""                      : "_default"}
+
+suffixes['size'] =    { "SMALLER_THAN_L3"           : "_smallerl3",
                         "SLIGHTLY_SMALLER_THAN_L3"  : "_ssmallerl3",
                         "SLIGHTLY_BIGGER_THAN_L3"   : "_sbiggerl3",
                         "BIGGER_THAN_L3"            : "_biggerl3",
-                        ""                          : "_defaultsize"}
+                        ""                          : "_default"}
 
-is_compilation_time_size_suffixes = { False     : "_sizenotcompiled",
+suffixes['compile_size'] = { False     : "_sizenotcompiled",
                         True                    : "_sizecompiled",
-                        ""                      : "_defaultcompilation"}
+                        ""                      : "_default"}
 
-kernel_mode_suffixes ={ "X_KERNEL"              : "_xkernel",
+suffixes['kernel_mode'] = { "X_KERNEL"              : "_xkernel",
                         "Y_KERNEL"              : "_ykernel",
                         "SIZE_5_KERNEL"         : "_size5kernel",
                         "DEFAULT_KERNEL"        : "_defaultkernel",
                         ""                      : "_default"}
-
-# dictionary containing number related to size identifier
-# thank you Abhijit at https://stackoverflow.com/questions/36459969/how-to-convert-a-list-to-a-dictionary-with-indexes-as-values
-size_mode_number = {k: v+100 for v, k in enumerate(size_suffixes.keys())}
-
+# location of source files
 src = pathlib.Path("../src/")
 mainfile = pathlib.Path("../main.F90")
-if DEBUG and VERBOSE:
-    mainfile = pathlib.Path("../main.test.F90")
+# if DEBUG :
+#     # testing mainfile
+#     mainfile = pathlib.Path("../main.test.F90")
 makefile = pathlib.Path("../Makefile")
 
 
-def generate_2d_array_size(size_in_mb):
+def generate_2d_array_size(size_in_mb: float, bitsize_per_float=8):
+    """Calculate array dimensions to obtain a total memory cost
+
+    Args:
+        size_in_mb (float): size in Mb to obtain
+        bitsize_per_float (int, optional): specify floating point bit precision
+    """
     # default is 16
     if size_in_mb == 0:
         size_in_mb = 16
-    ni = int(math.sqrt(1024*1024*(size_in_mb)))
-    nj = math.floor(1024*1024*(size_in_mb) // ni)
-    return ni,nj
+    memory_spaces = 1024*1024*(size_in_mb)*8.0/bitsize_per_float
+    ni = math.sqrt(memory_spaces)
+    nj = memory_spaces / ni
+    return math.floor(ni),math.floor(nj)
 
-def codegen_bench_tree_branch(alloc_option: str,
-                              size_option: Union[int, str],
-                              hardware_option="GPU",
-                              iters=42,
-                              is_module=True,
-                              is_compilation_time_size=False,
-                              kernel_mode=""):
+def codegen_bench_tree_branch(
+        allocation =    metadata_defaults["allocation"],
+        kernel_mode =   metadata_defaults["kernel_mode"],
+        size =          metadata_defaults["size"],
+        hardware =      metadata_defaults["hardware"],
+        module =        metadata_defaults["module"],
+        compile_size =  metadata_defaults["compile_size"]):
     """Function for generating script that compiles and execute benchmark
 
     Codegen generates a branch in a folder tree of root 'bench_tree'
@@ -87,14 +138,12 @@ def codegen_bench_tree_branch(alloc_option: str,
     using naming conventions defined from suffix dictionaries
 
     Args:
-        alloc_option (str): String that represents the type of allocation used in bench
-        size_option (Union[int, str]): Integer or string that represents the size of the arrays
+        allocation (str): String that represents the type of allocation used in bench
+        size (Union[int, str]): Integer or string that represents the size of the arrays
             if non-zero int, corresponds to size in Mb;
             if zero, falls back to default;
             if str, is related to L3 size. TODO : autodetect L3 size
-        iters (int, optional): Number of iterations - higher is more precise
-            can be left void for adaptive relative to array size. Defaults to 42.
-        is_compilation_time_size (bool, optional): Decides wether array size is baked in
+        compile_size (bool, optional): Decides whether array size is baked in
             by passing it to compiler directly.
             Size is calculated either in python script and passed
             through preprocessing or calculated in a module at the
@@ -104,45 +153,45 @@ def codegen_bench_tree_branch(alloc_option: str,
     """    
     ni=0
     nj=0
-    if size_option in size_suffixes.keys() or int(size_option) == 0:
+    if size in suffixes['size'].keys() or int(size) == 0:
         iters = math.ceil(ACCURACY*16)
     else:
         # max is used to insure there is at least 1 iteration
-        iters = max(1,int(ACCURACY*100//size_option))
+        iters = max(1,int(ACCURACY*100//size))
 
     ###### generating directory ######
     # directory is represented as an str
     directory = "bench_tree"
 
     # first depth is kernel_mode_suffix
-    directory += f"/bench{kernel_mode_suffixes[kernel_mode]}"
+    directory += f"/bench{suffixes['kernel_mode'][kernel_mode]}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
 
     # CPU/GPU
-    directory += f"/{hardware_suffixes[hardware_option]}"
+    directory += f"/{suffixes['hardware'][hardware]}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
 
     # adding allocation_type
-    directory += f"/{allocation_suffixes[alloc_option]}"
+    directory += f"/{suffixes['allocation'][allocation]}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
     
-    # adding is_module
-    directory += f"/{module_suffixes[is_module]}"
+    # adding module
+    directory += f"/{suffixes['module'][module]}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
     
     # size_suffix in the _01Mb format or _{option suffix} format
-    size_suffix = size_suffixes[size_option] if (size_option in size_suffixes.keys())\
-            else "_"+"%05.2f"%size_option+"Mb"
+    size_suffix = suffixes['size'][size] if (size in suffixes['size'].keys())\
+            else "_"+"%05.2f"%size+"Mb"
     directory += f"/{size_suffix}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
     
     # adding compilation_size_suffix
-    directory += f"/{is_compilation_time_size_suffixes[is_compilation_time_size]}"
+    directory += f"/{suffixes['compile_size'][compile_size]}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
 
@@ -154,10 +203,10 @@ def codegen_bench_tree_branch(alloc_option: str,
     if (VERBOSE):
         print(f"benchname:{benchname} directory:{fulldirectory}")
 
-    ######### is_compilation_time_size and kernel_mode #########
+    ######### compile_size and kernel_mode #########
     # if we compile array sizes then we need to copy all source files and compile them with special preprocessing
     # see in the f.write() conditionals to change the make directory and BENCH_EXECUTABLE bin directory
-    is_copy_bench_files = is_compilation_time_size or kernel_mode!=""
+    is_copy_bench_files = compile_size or kernel_mode!=""
     if  is_copy_bench_files:
         fulldirectory_absolute = pathlib.Path(fulldirectory).resolve()
         if DEBUG and VERBOSE:
@@ -181,12 +230,12 @@ def codegen_bench_tree_branch(alloc_option: str,
     os.chmod(filename,0b111111111)
     
     ####### pre-compilation bench parameters #######
-    # here compute the bench parameters for using at compile time if is_compilation_time_size
-    if type(size_option)==int or type(size_option)==float:
-        ni, nj = generate_2d_array_size(size_option)
+    # here compute the bench parameters for using at compile time if compile_size
+    if type(size)==int or type(size)==float:
+        ni, nj = generate_2d_array_size(size)
     else:
         percentage_of_l3 = 100
-        match size_option:
+        match size:
             case "SMALLER_THAN_L3":
                 percentage_of_l3 = 15.625
             case "SLIGHTLY_SMALLER_THAN_L3":
@@ -237,15 +286,16 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 # Uncomment for non-PAPI:
 # export PERF_REGIONS_COUNTERS="WALLCLOCKTIME"
 
+# NB: booleans are encoded as 0 or 1 in scripts
 export MAIN="{benchname}"
-export HARDWARE="{hardware_option}"
+export HARDWARE="{hardware}"
 export KERNEL_MODE="{kernel_mode}"
-export ALLOC_MODE="{alloc_option}"
-export MODULE_MODE="{int(is_module)}"
-export SIZE_MODE="{size_option}"
-export SIZE_AT_COMPILATION="{int(is_compilation_time_size)}"
-export NI="{ni if is_compilation_time_size else ""}"
-export NJ="{nj if is_compilation_time_size else ""}"
+export ALLOC_MODE="{allocation}"
+export MODULE_MODE="{module if type(module)==bool else ''}"
+export SIZE_MODE="{size}"
+export SIZE_AT_COMPILATION="{compile_size if type(compile_size)==bool else ''}"
+export NI="{ni if compile_size else ""}"
+export NJ="{nj if compile_size else ""}"
 
 # pretty output for progress bar
 if $VERBOSE
@@ -303,7 +353,7 @@ while IFS= read -r line; do
     then
         echo "$line" >> $filename.csv
     fi
-done < <( {"" if not "GPU" in hardware_option else "OMP_TARGET_OFFLOAD=mandatory "}./$BENCH_EXECUTABLE iters={iters} {"" if is_compilation_time_size else f"ni={ni} nj={nj}"} )
+done < <( {"" if not "GPU" in hardware else "OMP_TARGET_OFFLOAD=mandatory "}./$BENCH_EXECUTABLE iters={iters} {"" if compile_size else f"ni={ni} nj={nj}"} )
 printf "\\r"
 writeprogressbar done
 printf "\\r"
@@ -312,6 +362,39 @@ printf "\\r"
 """)
     f.close()
     return filename, iters, ni, nj
+
+def get_parsed_parameter(parser_namespace: argparse.Namespace, param_name: str, default_dic=metadata_defaults):
+    return getattr(parser_namespace, param_name, default_dic[param_name])
+
+def iterator(parsed: argparse.Namespace, param_name: str):
+    parameter = getattr(parsed, param_name)
+    if param_name=='size':
+        # size range
+        if DEBUG:
+            print("size_range: " + str(parsed.size_range))
+            print("size_range type: " + str(type(parsed.size_range)))
+        # if parsed.size is None
+        l=[metadata_defaults['size']]
+        # parsed.size takes precedence over parsed.size_range
+        if parsed.size is not None:
+            if parsed.size in suffixes['size'].keys():
+                l = [parsed.size]
+            else :
+                l = [float(parsed.size)]
+        elif len(parsed.size_range)==1:
+            l = range(1,math.ceil(float(parsed.size_range[0])))
+        elif len(parsed.size_range)==2:
+            l = range(math.floor(float(parsed.size_range[0])),math.ceil(float(parsed.size_range[1])))
+        else:
+            l = list(map(float,parsed.size_range))
+        return l
+    elif parameter is None:
+        l = list(suffixes[param_name].keys())
+        if "" in l:
+            l.remove("")
+        return l
+    else:
+        return [parameter]
 
 def argument_parsing(parser: argparse.ArgumentParser):
     parser.add_argument('-M','--MODE', nargs='?', default='all',
@@ -326,18 +409,19 @@ def argument_parsing(parser: argparse.ArgumentParser):
     
     # Arguments for single mode
     parser_mode_specific.add_argument('--kernel-mode', nargs='?',
-                    help=f'A kernel_mode_option in {", ".join(list(kernel_mode_suffixes.keys())).rstrip(", ")}')
+                    help=f'A kernel_mode_option in {", ".join(list(suffixes["kernel_mode"].keys())).rstrip(", ")}')
     parser_mode_specific.add_argument('--hardware', nargs='?',
-                    help=f'An hardware_option in {", ".join(list(hardware_suffixes.keys())).rstrip(", ")}')
-    parser_mode_specific.add_argument('--alloc', nargs='?',
-                    help=f'An alloc_option in {", ".join(list(allocation_suffixes.keys())).rstrip(", ")}')
+                    help=f'An hardware in {", ".join(list(suffixes["hardware"].keys())).rstrip(", ")}')
+    parser_mode_specific.add_argument('--allocation', nargs='?',
+                    help=f'An allocation in {", ".join(list(suffixes["allocation"].keys())).rstrip(", ")}')
     parser_mode_specific.add_argument('--module', nargs='?', type=bool,
                 help=f'Sets if the function is in a module. Either True of False.')
     parser_mode_specific.add_argument('--size', nargs='?',
-                    help=f'A size_option in {", ".join(list(size_suffixes.keys()))} or between 0 and 99.\
+                    help=f'A size in {", ".join(list(suffixes["size"].keys()))} or between 0 and 99.\
                         Has precedence over --range and sets single size in mode "all".')
     parser_mode_specific.add_argument('--size-range', metavar="size", nargs='+', default=[1,17],
-                        help='Used in mode "all". Represents the scope of sizes in Mb to study. If --size is used, flag is ignored and scope is set to single size.\
+                        help='Used in mode "all". Represents the scope of sizes in Mb to study.\
+                              If --size is used, flag is ignored and scope is set to single size.\
                               If length is 2, acts as lower and upper bound.\
                               If length is 1, acts as upper bound with lower bound 1.\
                               If length is greater than 2, it is the list of sizes in Mb.')
@@ -370,24 +454,9 @@ def main():
     args = argument_parsing(parser)
     
     ### defaults ###
-    mode = 'single'
-    alloc_option = ""
-    is_module = ""
-    size_option = ""
-    is_compilation_time_size = ""
-    kernel_mode_option = ""
     iterator_of_selected_sizes = range(1,16+1)
 
-    ### program data ###
-    all_hardware_options= list(hardware_suffixes.keys())
-    all_hardware_options.remove("")
-    all_alloc_options = list(allocation_suffixes.keys())
-    all_alloc_options.remove("")
-    all_module = [False, True]
-    all_kernel_mode_options = list(kernel_mode_suffixes.keys())
-    all_kernel_mode_options.remove("")
-    all_compilation_time_size = [False, True]
-
+    ### metadata ###
     # dictionary used for exporting bench parameters as .JSON file
     # courtesy of https://help.objectiflune.com/en/pres-connect-rest-api-cookbook/2019.2/Content/Cookbook/Technical_Overview/JSON_Structures/Specific_Structures/JSON_Record_Data_List.htm
     # if -c cleaning option is not used it is imported
@@ -407,80 +476,47 @@ def main():
         print(args)
 
     # setting command
-    if args.MODE is not None:
-        mode = args.MODE
+    # if args.MODE is not None:
+    #     args.MODE = args.MODE
 
     # setting options
     if args.kernel_mode is not None:
-        if args.kernel_mode in all_kernel_mode_options:
-            kernel_mode_option = args.kernel_mode
-            if mode!="single":
-                all_kernel_mode_options = [args.kernel_mode]
-        else:
+        if not args.kernel_mode in iterator(args,"kernel_mode"):
             parser.error(f"{args.kernel_mode} invalid value for kernel_mode")
     if args.hardware is not None:
-        if args.hardware in all_hardware_options:
-            hardware_option = args.hardware
-            if mode!="single":
-                all_hardware_options = [args.hardware]
-        else:
-            parser.error(f"{args.hardware} invalid value for hardware_option")
-    if args.alloc is not None:
-        if args.alloc in all_alloc_options:
-            alloc_option = args.alloc
-            if mode!="single":
-                all_alloc_options = [args.alloc]
-        else:
-            parser.error(f"{args.alloc} invalid value for alloc_option")
-    if args.module is not None:
-        is_module = args.module
-        if mode!="single":
-            all_module = [args.module]
+        if not args.hardware in iterator(args,"hardware"):
+            parser.error(f"{args.hardware} invalid value for hardware")
+    if args.allocation is not None:
+        if not args.allocation in iterator(args,"allocation"):
+            parser.error(f"{args.allocation} invalid value for allocation")
     if args.size is not None:
-        if args.size in size_suffixes.keys() or int(args.size) in range(0,100):
-            size_option = args.size
+        if args.size in suffixes['size'].keys():
+            pass
+        elif 0.1<=float(args.size):
+            args.size = float(args.size)
         else:
             parser.error(f"{args.size} invalid value for size")
-    if args.compile_size is not None:
-        is_compilation_time_size = args.compile_size
-        if mode!="single":
-            all_compilation_time_size = [args.compile_size]
 
-    # range selector    
-    if DEBUG:
-        print("size_range: " + str(args.size_range))
-        print("size_range type: " + str(type(args.size_range)))
-    if args.size is not None:
-        if args.size in size_suffixes.keys():
-            iterator_of_selected_sizes = [args.size]
-        else :
-            iterator_of_selected_sizes = [float(args.size)]
-    elif len(args.size_range)==1:
-        iterator_of_selected_sizes = range(1,math.ceil(float(args.size_range[0])))
-    elif len(args.size_range)==2:
-        iterator_of_selected_sizes = range(math.floor(float(args.size_range[0])),math.ceil(float(args.size_range[1])))
-    else:
-        iterator_of_selected_sizes = list(map(float,args.size_range))
     if args.ACCURACY is not None:
-        if args.ACCURACY <= 0:
-            parser.error(f"Accuracy flag set to {args.ACCURACY}: cannot be non-positive")
-        else:
-            ACCURACY = args.ACCURACY
+            if args.ACCURACY <= 0:
+                parser.error(f"Accuracy flag set to {args.ACCURACY}: cannot be non-positive")
+            else:
+                ACCURACY = args.ACCURACY
     if args.nvfortran:
         IS_NVFORTRAN_COMPILER=True
     if args.verbose:
         VERBOSE=True
     if VERBOSE:
         print("verbose output on")
-        print(alloc_option)
-        print(size_option)
+        print(args.allocation)
+        print(args.size)
         print("size_range: " + str(iterator_of_selected_sizes))
-        print(is_compilation_time_size)
+        print(args.compile_size)
         print("ACCURACY="+str(ACCURACY))
 
     ###### executing command ######
     ### preparing folders and parameters dictionary ###
-    if mode != "clean":
+    if args.MODE != "clean":
         if not args.clean_before:
             if pathlib.Path(json_filename).is_file() :
                 f = open("../preprocess/all_benchmark_parameters.json", "r")
@@ -501,102 +537,113 @@ def main():
         else:
             os.mkdir("bench_tree")
     # for debugging new implementations
-    if mode in ["all","all_compilation_time"]:
+    if args.MODE == "all":
         print(f"Creating all benchmark scripts...")
-        codegen_bench_tree_branch("","")
-        all_module
-        for kernel_mode in all_kernel_mode_options :
-            for hardware_option in all_hardware_options :
-                for alloc_option in all_alloc_options :
-                    for is_module in all_module :
-                        for size_option in iterator_of_selected_sizes :
-                            for is_compilation_time_size in all_compilation_time_size :
+        codegen_bench_tree_branch()
+        for kernel in iterator(args,"kernel_mode") :
+            for hardware in iterator(args,"hardware") :
+                for alloc in iterator(args,"allocation") :
+                    for module in iterator(args,"module") :
+                        for size in iterator_of_selected_sizes :
+                            for compile_size in iterator(args,"compile_size") :
                                 filename, iters, ni, nj  = codegen_bench_tree_branch(
-                                    alloc_option,size_option,
-                                    is_module=is_module,
-                                    hardware_option=hardware_option,
-                                    is_compilation_time_size=is_compilation_time_size,
-                                    kernel_mode=kernel_mode)
+                                    kernel_mode=kernel,
+                                    hardware=hardware,
+                                    allocation=alloc,
+                                    module=module,
+                                    size=size,
+                                    compile_size=compile_size,
+                                    )
                                 json_dict_all_parameters["data"].append(
                                     {"id":filename,
-                                    "kernel_mode": kernel_mode,
-                                    "hardware_option" : hardware_option,
-                                    "alloc_option": alloc_option,
-                                    "is_module": is_module,
-                                    "size_option": size_option,
-                                    "is_compilation_time_size": is_compilation_time_size,
+                                    "kernel_mode": kernel,
+                                    "hardware" : hardware,
+                                    "allocation": alloc,
+                                    "module": module,
+                                    "size": size,
+                                    "compile_size": compile_size,
                                     "ni": ni,
                                     "nj": nj,
                                     "iters": iters})
-    elif mode in ["debug","all_old"]:
+    elif args.MODE in ["debug","all_old"]:
         print(f"Debug: Creating all benchmark scripts...")
-        codegen_bench_tree_branch("","")
+        codegen_bench_tree_branch()
         
-        for kernel_mode in all_kernel_mode_options :
-            # for hardware_option in all_hardware_options :
-                for alloc_option in all_alloc_options :
-                    for is_module in all_module :
-                        for size_option in iterator_of_selected_sizes :
-                            for is_compilation_time_size in all_compilation_time_size :
+        for kernel in iterator(args,"kernel_mode") :
+            # for hardware in iterator(args,"hardware") :
+                for alloc in iterator(args,"allocation") :
+                    for module in iterator(args,"module") :
+                        for size in iterator_of_selected_sizes :
+                            for compile_size in iterator(args,"compile_size") :
                                 filename, iters, ni, nj  = codegen_bench_tree_branch(
-                                    alloc_option,size_option,
-                                    is_module=is_module,
-                                    # hardware_option=hardware_option,
-                                    is_compilation_time_size=is_compilation_time_size,
-                                    kernel_mode=kernel_mode)
+                                    kernel_mode=kernel,
+                                    # hardware=hardware,
+                                    allocation=alloc,
+                                    module=module,
+                                    size=size,
+                                    compile_size=compile_size,
+                                    )
                                 json_dict_all_parameters["data"].append(
                                     {"id":filename,
-                                    "kernel_mode": kernel_mode,
-                                    # "hardware_option" : hardware_option,
-                                    "alloc_option": alloc_option,
-                                    "is_module": is_module,
-                                    "size_option": size_option,
-                                    "is_compilation_time_size": is_compilation_time_size,
+                                    "kernel_mode": kernel,
+                                    # "hardware" : hardware,
+                                    "allocation": alloc,
+                                    "module": module,
+                                    "size": size,
+                                    "compile_size": compile_size,
                                     "ni": ni,
                                     "nj": nj,
                                     "iters": iters})
-    elif mode == "all_l3":
-        all_l3_relative_size_options = list(size_suffixes.keys())
-        all_l3_relative_size_options.remove("")
+    elif args.MODE == "all_l3":
+        all_l3_relative_sizes = list(suffixes['size'].keys())
+        all_l3_relative_sizes.remove("")
         # TODO : pass L3 size as compilation/execution time parameter - using grep and command
         print(f"Creating all L3-relative benchmark scripts...")
-        for alloc_option in all_alloc_options :
-            for size_option in all_l3_relative_size_options :
-                for is_compilation_time_size in [False,True] :
-                    filename, iters, ni, nj = codegen_bench_tree_branch(alloc_option,size_option,\
-                                                is_compilation_time_size=is_compilation_time_size)
+        for alloc in iterator(args,"allocation") :
+            for size in all_l3_relative_sizes :
+                for compile_size in [False,True] :
+                    filename, iters, ni, nj = codegen_bench_tree_branch(alloc,size,\
+                                                compile_size=compile_size)
                     json_dict_all_parameters["data"].append({"id":filename,
-                                                "size_option": size_option,
+                                                "size": size,
                                                 "ni": ni,
                                                 "nj": nj,
-                                                "alloc_option": alloc_option,
+                                                "allocation": alloc,
                                                 "iters": iters,
-                                                "is_compilation_time_size": is_compilation_time_size})
-    elif mode == "single" :
-        description = 'default' if (alloc_option=='' and size_option=='' and is_compilation_time_size=='' and kernel_mode_option=='')\
-            else str(alloc_option) + str(size_option) + "is_compilation_time_size: " + str(is_compilation_time_size) + str(kernel_mode_option)
+                                                "compile_size": compile_size})
+    elif args.MODE == "single" :
+        description = 'default' if (args.allocation is None and args.size is None and args.compile_size is None and args.kernel_mode is None)\
+            else str(args.allocation) + str(args.size) + "compile_size: " + str(args.compile_size) + str(args.kernel_mode)
         print(f"Creating {description} benchmark script...")
-        filename,iters,_,_ = codegen_bench_tree_branch(alloc_option,size_option,is_compilation_time_size,kernel_mode=kernel_mode_option)
+        # argparse unpacking https://stackoverflow.com/questions/7336181/python-pass-arguments-to-different-methods-from-argparse
+        # use args.vars()
+        argsdict=vars(args)
+        # subset of dictionary:
+        # https://stackoverflow.com/questions/3953371/get-a-sub-set-of-a-python-dictionary
+        single_mode_vars = {k:(argsdict[k] if not argsdict[k] is None else "") for k in metadata_names if k in argsdict}
+        print(single_mode_vars)
+        filename,iters,_,_ =\
+            codegen_bench_tree_branch(**single_mode_vars)
         json_dict_all_parameters["data"].append({"id":filename,
-                                                "size_option": size_option,
-                                                "alloc_option": alloc_option,
+                                                "size": args.size,
+                                                "allocation": args.allocation,
                                                 "iters": iters,
-                                                "is_compilation_time_size": is_compilation_time_size,
-                                                "kernel_mode_option": kernel_mode_option})
-    elif mode != "clean" :
+                                                "compile_size": args.compile_size,
+                                                "kernel_mode_option": args.kernel_mode})
+    elif args.MODE != "clean" :
         print("Invalid command.",file=sys.stderr)
         parser.print_help(sys.stderr)
         sys.exit(1)
 
     ### JSON dump of all parameters used ###
-    if mode != "clean":
+    if args.MODE != "clean":
         f = open(json_filename, "w")
         json.dump(json_dict_all_parameters,f,sort_keys=True, indent=4)
         f.close()
         print("done.")
     
     ### clean mode ###
-    if mode == "clean":
+    if args.MODE == "clean":
         print("Cleaning benchmark script tree and .JSON metadata...\nY/n ?")
         if (str(input()) == "Y") :
             os.remove(json_filename)

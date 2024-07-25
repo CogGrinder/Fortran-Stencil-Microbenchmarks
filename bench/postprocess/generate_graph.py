@@ -13,6 +13,8 @@ import shutil
 import csv
 import pandas as pd
 
+import warnings
+
 global VERBOSE
 VERBOSE = False
 global DEBUG
@@ -20,30 +22,30 @@ DEBUG = False
 
 # used for selecting benchmarks classifying data
 all_metadata_columns=["kernel_mode",
-                      "hardware_option",
-                      "alloc_option",
-                      "is_module",
-                      "size_option",
-                      "is_compilation_time_size"]
+                      "hardware",
+                      "allocation",
+                      "module",
+                      "size",
+                      "compile_size"]
 metadata_types =\
     {
     "kernel_mode" : str,
-    "hardware_option" : str,
-    "alloc_option" : str,
-    "is_module" : bool,
-    "size_option" : float,
-    "is_compilation_time_size" : bool
+    "hardware" : str,
+    "allocation" : str,
+    "module" : bool,
+    "size" : float,
+    "compile_size" : bool
     }
 all_data_values=['PAPI_L1_TCM',  'PAPI_L2_TCM',  'PAPI_L3_TCM',  'WALLCLOCKTIME']
 # default benchmark, also known as baseline benchmark or control experiment
 baseline_for_comparison =\
     {
     "kernel_mode" : "DEFAULT_KERNEL",
-    "hardware_option" : "CPU",
-    "alloc_option" : "ALLOCATABLE",
-    "is_module" : True,
-    "size_option" : None,
-    "is_compilation_time_size" : True
+    "hardware" : "CPU",
+    "allocation" : "ALLOCATABLE",
+    "module" : True,
+    "size" : None,
+    "compile_size" : True
     }
 
 # used to ignore counters collected by perf_regions that have a debug purpose
@@ -84,9 +86,18 @@ def import_data_pandas(json_metadata_path,
     param_metadata_dict = json.load(benchparamjsonf)
     benchparamjsonf.close()
     jsonmetadata_df = pd.json_normalize(param_metadata_dict,record_path="data")
+    # WARNING: may cause errors. Chooses first in case of duplicate benchmarks.
+    # jsonmetadata_df.drop_duplicates('id',inplace=True)
+    # removing default benchmark
+    default_key = [i for i in list(jsonmetadata_df.index) if 'bench_default' in jsonmetadata_df.iloc[i]['id'] ]
+    if DEBUG:
+        print(f"default keys: {default_key}")
+    # default_key=default_key[0]
+    jsonmetadata_df.drop(index=default_key,inplace=True)
+    
     jsonmetadata_df.set_index(keys='id',drop=True,verify_integrity=True,inplace=True)
     # sorting
-    jsonmetadata_df.sort_values(by=all_metadata_columns, inplace=True, ascending=True)
+    jsonmetadata_df.sort_values(by=list(jsonmetadata_df.columns), inplace=True, ascending=True)
     if VERBOSE or DEBUG:
         print(jsonmetadata_df)
         print()
@@ -94,10 +105,7 @@ def import_data_pandas(json_metadata_path,
     if DEBUG:
         #multiindex test
         multiindex = pd.MultiIndex.from_arrays(arrays=[
-        jsonmetadata_df["kernel_mode"].to_list(),
-        jsonmetadata_df["alloc_option"].to_list(),
-        jsonmetadata_df["is_compilation_time_size"].to_list(),
-        jsonmetadata_df["size_option"].to_list()
+        jsonmetadata_df[metaparam].to_list() for metaparam in all_metadata_columns
         ])
         print(multiindex)
         print()
@@ -108,9 +116,11 @@ def import_data_pandas(json_metadata_path,
     index_list = list(joined_df.index)
     # removing default benchmark
     default_key = [i for i in index_list if 'bench_default' in i ]
+    if DEBUG:
+        print(f"default keys: {default_key}")
     default_key=default_key[0]
     joined_df.drop(index=default_key,inplace=True)
-    
+
     # len is the fastest, courtesy of https://stackoverflow.com/questions/15943769/how-do-i-get-the-row-count-of-a-pd-dataframe
     if VERBOSE or DEBUG:
         print(joined_df)
@@ -146,7 +156,7 @@ def make_graphs(df: pd.DataFrame,
                 subplots_in_one_figure=False,
                 all_data_values=all_data_values,
                 all_metadata_columns=all_metadata_columns,
-                graphed_column="size_option",
+                graphed_column="size",
                 secondary_graphed=None,
                 baseline_for_comparison=baseline_for_comparison):
     """Function that makes graphs by using data and metadata from DataFrame and setting fixed units
@@ -164,7 +174,9 @@ def make_graphs(df: pd.DataFrame,
 
 
     print(f"Computing {graphed_column}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'} graphing...")
+    
     column_selection = all_metadata_columns.copy()
+    
     if VERBOSE:
         print(f"all columns:{column_selection}")
     column_selection.remove(graphed_column)
@@ -178,6 +190,12 @@ def make_graphs(df: pd.DataFrame,
     fixed_columns = []
     non_fixed_columns = all_metadata_columns.copy()
     values_kept = []
+
+    if DEBUG:
+        # removes unnecessary data for debugging
+        df = df.copy()
+        df.drop([col for col in list(df.columns) if not col in all_metadata_columns and not col in all_data_values],axis=1,inplace=True)
+        print(df)
 
     # thank you to https://stackoverflow.com/questions/33042777/removing-duplicates-from-pd-dataframe-with-condition-for-retaining-original
     if VERBOSE:
@@ -198,7 +216,7 @@ def make_graphs(df: pd.DataFrame,
                 index_kept = int(input(f"Choose index\n").strip() or "0")
                 value_kept = set_of_label[index_kept]
             if DEBUG:
-                print(f"Kept value: {value_kept}")
+                print(f"{label} kept value: {value_kept}")
             fixed_columns.append(label)
             non_fixed_columns.remove(label)
             values_kept.append(value_kept)
@@ -208,6 +226,8 @@ def make_graphs(df: pd.DataFrame,
             sorted_category = list(set(df[label].to_list()))
             sorted_category.remove(value_kept)
             sorted_category.insert(0,value_kept)
+            if DEBUG:
+                print(sorted_category)
             df[label] = df[label].cat.set_categories(sorted_category, ordered=True)
         elif VERBOSE:
             print(f"Label \"{label}\" already has 1 or 0 values.")
@@ -217,18 +237,40 @@ def make_graphs(df: pd.DataFrame,
         print(f"non_fixed_columns: {non_fixed_columns}")
     if VERBOSE:
         print(f"Values kept: {values_kept}")
-
     # sort to put first selected category at the top of each label 
     df.sort_values(fixed_columns, inplace=True, ascending=True) 
+
+    
+
     if DEBUG:
         print(f"Now sorted by custom categories") 
-        if VERBOSE:
-            print(df)
+        print(df)
     # dropping duplicates keeps first
     graphing_df = df.drop_duplicates(non_fixed_columns,keep="first") 
     if DEBUG:
         print("Dropped duplicates") 
         print(graphing_df)
+
+    warned=False
+    # check for fixed columns with leftover "ugly duckling" data
+    for i, label in enumerate(fixed_columns):
+        set_of_label = list(set(graphing_df[label].to_numpy()))
+        if len(set_of_label)>1:
+            # https://docs.python.org/3/tutorial/errors.html
+            # raise ValueError(f"Metavariable '{label}' failed filtering: values {set_of_label}")
+            warnings.warn(f"\nMetavariable '{label}' failed filtering duplicates. Values: {set_of_label}.\
+                          \n  Attempting to remove unfiltered data.\
+                          \n\nLikely explanation is a benchmark has not executed properly or was reexectuted halfway.",
+                          category=RuntimeWarning)
+            warned=True
+            is_ugly_duckling = graphing_df[label]!=values_kept[i]
+            graphing_df = graphing_df.drop(index=graphing_df.index.array[is_ugly_duckling],
+                             axis=1)
+    if warned and (VERBOSE or DEBUG):
+        print("Data after cleaning up filtering:")
+        print(graphing_df)
+
+    # other solution: use pd.DataFrame.to_json and then pd.json_normalize
     
 
     ############ making table of graphs ############
@@ -241,6 +283,8 @@ def make_graphs(df: pd.DataFrame,
     graphing_df = graphing_df.pivot(index=graphed_columns,
                                         columns=column_selection,
                                         values=all_data_values)
+    if DEBUG:
+        print(graphing_df)
     graphing_df = graphing_df.transpose()
 
     # TODO: another option to try: >>> index = pd.MultiIndex.from_tuples(tuples)
@@ -296,12 +340,12 @@ def make_graphs(df: pd.DataFrame,
             graphed_data_i = graphing_df.iloc[i].array
             if not secondary_graphed is None:            
                 j_slice = [t[0]==secondary_graphed_list[j] for t in multi_id]
-                graphed_data_i=graphing_df.iloc[0].array[j_slice]
+                graphed_data_i=graphing_df.iloc[i].array[j_slice]
             if DEBUG:
-                print(f"graphing_df.iloc[0].array: {graphing_df.iloc[0].array}")
+                print(f"graphing_df.iloc[0].array: {graphing_df.iloc[i].array}")
                 print(f"graphed_data_i: {graphed_data_i}")
 
-            ax.bar(range(len(column_list)),graphed_data_i)
+            ax.bar(range(len(graphed_data_i)),graphed_data_i)
 
             title = str(index_list[i][0]) if subplots_in_one_figure else f"{graphed_column} with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}"
             title_size = 10 if subplots_in_one_figure else 20
@@ -309,6 +353,7 @@ def make_graphs(df: pd.DataFrame,
             ax.set_xticks(ticks=range(len(column_list)),labels=column_list, rotation=60, ha='right', size='xx-small')
             if not subplots_in_one_figure:
                 fig.savefig(f"{dir}/{graphed_column}_{str(index_list[i][0])}.pdf")
+                plt.close()
 
     if subplots_in_one_figure:
         if not secondary_graphed is None:            
@@ -319,6 +364,7 @@ def make_graphs(df: pd.DataFrame,
         fig.suptitle(f"Graphs of {graphed_column}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'}\nFixed options: {' '.join(index_list[i][1:])}")
         fig.tight_layout()
         fig.savefig(f"{str(directory).rstrip('/')}/{graphed_column}{'' if secondary_graphed is None else '-'+secondary_graphed}_{datetime.date.today()}.pdf")
+        plt.close()
 
 def old_import_data_debug(normalise=True,
                     json_metadata_path="../preprocess/all_benchmark_parameters.json"):
@@ -598,13 +644,15 @@ def main():
                         make_graphs(df, graphed_column=columns[i],
                                     secondary_graphed=columns[isecondary],
                                     interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+                    else:
+                        pass # TODO: if args.secondary_graphed=='all'
         else:
                 if non_unique_parameters[igraphed]:
                     if args.secondary_graphed is None:
                         make_graphs(df, graphed_column=columns[igraphed], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
                     elif args.secondary_graphed=='all' :
                         for j in range(len(non_unique_parameters)):
-                            if non_unique_parameters[j]:
+                            if non_unique_parameters[j] and columns[j]!='size': # ignore size because it makes unreadable subplots
                                 if j!=igraphed :
                                     make_graphs(df, graphed_column=columns[igraphed],
                                                 secondary_graphed=columns[j],

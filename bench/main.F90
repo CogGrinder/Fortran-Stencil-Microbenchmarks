@@ -197,13 +197,14 @@ USE BENCHMARK_PARAMETERS
 
     write (*,*) 'Running bench ', bench_str, '...'
     WRITE(*,*) "**************************************"
+    WRITE(*,*) "Precision in bytes: ", dp, " bytes"
     if (     BENCH_ID == BENCH_1D              &
         .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY        &
         .or. BENCH_ID == BENCH_1D_MODULE) then
-        WRITE(*,*) "Mem size: ", array_len*0.001 ," KByte"
+        WRITE(*,*) "Mem size: ", array_len*0.001 ," Kbyte"
     else
         WRITE(*,*) "Mem size: ", ni* &
-                                nj*0.001 ," KByte"
+                                nj*0.001 ," Kbyte"
     end if
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
