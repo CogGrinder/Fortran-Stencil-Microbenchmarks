@@ -295,7 +295,7 @@ def make_graphs(df: pd.DataFrame,
             title = str(index_list[i][0]) if subplots_in_one_figure else f"{graphed_column} with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}"
             title_size = 10 if subplots_in_one_figure else 20
             ax.set_title(title, fontsize=title_size)
-            ax.set_xticks(ticks=range(len(column_list)),labels=column_list, rotation=60, ha='right')
+            ax.set_xticks(ticks=range(len(column_list)),labels=column_list, rotation=60, ha='right', size='xx-small')
             if not subplots_in_one_figure:
                 fig.savefig(f"{dir}/{graphed_column}_{str(index_list[i][0])}.pdf")
 
@@ -309,7 +309,7 @@ def make_graphs(df: pd.DataFrame,
         fig.tight_layout()
         fig.savefig(f"{str(directory).rstrip('/')}/{graphed_column}{'' if secondary_graphed is None else '-'+secondary_graphed}_{datetime.date.today()}.pdf")
 
-def import_data_old(normalise=True,
+def old_import_data_debug(normalise=True,
                     json_metadata_path="../preprocess/all_benchmark_parameters.json"):
     """Function that imports csv data as numpy array and label lists
 
@@ -398,7 +398,7 @@ def import_data_old(normalise=True,
         benchparamjsonf = open(filename, "w")
         json.dump(cache_miss_data.tolist(),benchparamjsonf, indent=4)
         
-def old_show_graph_2D(fileprefix="",is_wallclocktime_graph=False) :
+def old_show_graph_2D_debug(fileprefix="",is_wallclocktime_graph=False) :
         global labels
         global labels_no_superfluous
         global cache_miss_data
@@ -611,9 +611,9 @@ def main():
         make_graphs(df, interactive=True, directory=args.directory)
 
     elif args.MODE=="old":
-        import_data_old(normalise=True)
-        old_show_graph_2D(fileprefix="cache_misses")
-        old_show_graph_2D(fileprefix="wallclocktime",is_wallclocktime_graph=True)
+        old_import_data_debug(normalise=True)
+        old_show_graph_2D_debug(fileprefix="cache_misses")
+        old_show_graph_2D_debug(fileprefix="wallclocktime",is_wallclocktime_graph=True)
     else:
         print("Mode undefined.")
     print("Done.")

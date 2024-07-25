@@ -4,7 +4,13 @@
 F90?=gfortran
 CC:=gcc
 CXX:=g++
-FFLAGS = -cpp -O3 #-Wall -Wextra 
+FFLAGS = -cpp -O3 #-Wall -Wextra
+ifeq ($(HARDWARE),GPU)
+FFLAGS+= -Minfo=mp -mp=gpu -gpu=sm_75
+ifdef VERBOSE_OMP
+FFLAGS_VERBOSE= -Minfo=all
+endif
+endif
 
 ### nvfortran exports - used by all nvfortran compilations
 NVARCH=Linux_x86_64#`Linux_x86_64 -s`_`Linux_x86_64 -m`
@@ -24,6 +30,14 @@ export LD_LIBRARY_PATH:=/usr/local/cuda-12:/usr/local/cuda-12/lib:$(LD_LIBRARY_P
 
 ifndef DIM
 export DIM=2
+endif
+
+ifndef HARDWARE
+export HARDWARE=CPU
+endif
+
+ifndef KERNEL_MODE
+export KERNEL_MODE=DEFAULT_KERNEL
 endif
 
 ifndef ALLOC_MODE
@@ -105,7 +119,9 @@ endif
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
-CPPMACROS:=-DDIM=${DIM} -DALLOC_MODE=${ALLOC_MODE} -DMODULE_MODE=${MODULE_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ}
+CPPMACROS:= -DDIM=${DIM} -DHARDWARE=${HARDWARE} -DKERNEL_MODE=${KERNEL_MODE}
+CPPMACROS+= -DALLOC_MODE=${ALLOC_MODE} -DMODULE_MODE=${MODULE_MODE}
+CPPMACROS+= -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNI=${NI} -DNJ=${NJ}
 CFLAGS:= $(CPPMACROS) -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 ####################### main compilation #######################
@@ -118,7 +134,7 @@ $(BIN_DIR)/$(MAIN) : main.F90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(
 	@export |grep SIZE_MODE
 	@export |grep SIZE_AT_COMPILATION
 	@export |grep KERNEL_MODE
-	${F90} ${FFLAGS} -g -o $(BIN_DIR)/$(MAIN) main.F90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
+	${F90} ${FFLAGS} ${FFLAGS_VERBOSE} -g -o $(BIN_DIR)/$(MAIN) main.F90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}
 	@touch $(BIN_DIR)/$(MAIN)
 
 run_main : $(BIN_DIR)/$(MAIN)
@@ -148,7 +164,7 @@ $(BUILD_DIR) $(LIB_DIR) $(BIN_DIR) :
 	-@mkdir $@
 
 # PERF_REGIONS
+$(PERF_REGIONS_FOLDER)/build/libperf_regions.so :
+	make -C $(PERFREGION_SRC) -s
 # add MODE=debug as a trailing option for debugging
 # -$(MAKE) -C $(PERF_REGIONS_FOLDER) MODE=debug
-$(PERF_REGIONS_FOLDER)/build/libperf_regions.so :
-	make -C $(PERFREGION_SRC)

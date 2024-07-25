@@ -6,6 +6,10 @@
 ! see following file for macro definitions
 #include "src/benchmark_compilation_fixed_parameters.h"
 
+#if HARDWARE == GPU
+#define BENCH_ID BENCH_2D_GPU_OMP_BASE
+#else
+
 #if DIM == 1
 # if     MODULE_MODE == 1
 #  define BENCH_ID BENCH_1D_MODULE
@@ -19,10 +23,11 @@
 # elif   MODULE_MODE == 0
 #  define BENCH_ID BENCH_2D_CPU_JI
 # endif
-
 #else
 # define BENCH_ID 0
 #endif
+
+#endif /*HARDWARE*/
 
 PROGRAM main
     ! thank you to https://www.tutorialspoint.com/fortran/fortran_arrays.htm

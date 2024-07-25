@@ -22,7 +22,7 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
     character(len=7), intent(in) :: bench_str
     integer, intent(in) :: array_len
 
-#ifndef NO_GPU /*used for ignoring this module when compiling without nvfortran*/
+#if HARDWARE==GPU /*used for ignoring this module when compiling without nvfortran*/
 
     integer :: i,j
     integer :: sten_len = 3
@@ -80,7 +80,7 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
 
 #else
     write(*,*) "GPU BENCHMARK NOT COMPILED"
-#endif /*NO_GPU*/
+#endif /*HARDWARE*/
 
 end SUBROUTINE COMPUTATION_GPU_OMP_BASE
 

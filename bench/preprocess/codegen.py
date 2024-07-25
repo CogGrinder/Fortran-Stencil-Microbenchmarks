@@ -101,7 +101,7 @@ def codegen_bench_tree_branch(alloc_option: str,
     ni=0
     nj=0
     if size_option in size_suffixes.keys() or int(size_option) == 0:
-        iters = math.ceil(ACCURACY*32)
+        iters = math.ceil(ACCURACY*16)
     else:
         # max is used to insure there is at least 1 iteration
         iters = max(1,int(ACCURACY*100//size_option))
@@ -196,9 +196,21 @@ def codegen_bench_tree_branch(alloc_option: str,
 
     # see https://realpython.com/python-f-strings/
     f.write(f"""#! /bin/bash
-VERBOSE=$1
+# verbose options:
+# general VERBOSE
+if [[ "$1" == "-v" || "$2" == "-v" ]]
+then
+VERBOSE=true
+fi
 : ${{VERBOSE:=false}}
+# OpenMP VERBOSE
+if [[ "$1" == "-vomp" || "$2" == "-vomp" ]]
+then
+export VERBOSE_OMP="1"
+fi
+
 PURPLE="\\033[1;35m"
+LIGHT_RED="\\033[1;31m"
 NO_COLOUR="\\033[0m"
                 
 writeprogressbar() {{
@@ -221,16 +233,14 @@ export PERF_REGIONS_COUNTERS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,WALLCLOCKTIME"
 # export PERF_REGIONS_COUNTERS="WALLCLOCKTIME"
 
 export MAIN="{benchname}"
+export HARDWARE="{hardware_option}"
+export KERNEL_MODE="{kernel_mode}"
 export ALLOC_MODE="{alloc_option}"
 export MODULE_MODE="{int(is_module)}"
 export SIZE_MODE="{size_option}"
 export SIZE_AT_COMPILATION="{int(is_compilation_time_size)}"
 export NI="{ni if is_compilation_time_size else ""}"
 export NJ="{nj if is_compilation_time_size else ""}"
-export KERNEL_MODE="{kernel_mode}"
-
-# normal make
-# make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""}
 
 # pretty output for progress bar
 if $VERBOSE
@@ -238,49 +248,57 @@ then :
 else
 printf "\\r"
 writeprogressbar compile
-# printf "\\r"
 fi
-while IFS= read -r line; do
-    if $VERBOSE
-    then
-    echo -ne "                                \\r"
-    echo "$line"
+if $VERBOSE
+then
+while IFS= read line; do
+    printf "\\r                                \\r"
+    printf "$line\\n"
+    printf "\\r                                \\r"
     writeprogressbar compile
-    echo -ne "\\r"
+    printf "\\r"
+done < <( make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} 2>&1 | tee compile_output.log )
+# courtesy of https://stackoverflow.com/questions/418896/how-to-redirect-output-to-a-file-and-stdout
+# 2>&1 captures both stdout and stderr, and tee writes it to a log file while passing it to the while loop
+else
+    # make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} > compile_output.log
+    # better catching of stderr https://stackoverflow.com/questions/11087499/bash-how-do-you-capture-stderr-to-a-variable
+    ERROR_OUTPUT="$(make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} 2>&1 > compile_output.log)"
+    
+    n_lines_error=$(echo "$ERROR_OUTPUT" | wc -l)
+    if (( n_lines_error > 1 ));then
+    echo n_lines_error: $n_lines_error
+    printf "%s" "$ERROR_OUTPUT"
+    printf "$NO_COLOUR\n"
     fi
-    # echo -ne "compile [$progressbar]($progresspercent%)\\r"
-    # grep -o 'action'
-done < <( make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} )
+fi
 printf "\\r"
 
 filename=out
 
 if $VERBOSE
 then
-echo -ne "\\r                                \\r"
+printf "\\r                                \\r"
 echo "Running mode {benchname}...     "
 writeprogressbar execute
 else
-echo -ne "\\r                                \\r"
+printf "\\r                                \\r"
 writeprogressbar execute
 fi
-
-# thank you to glenn jackman"s answer on https://stackoverflow.com/questions/5853400/bash-read-output
+# thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
     if $VERBOSE
     then
-    echo -ne "\\r                                \\r"
-    echo "$line"
+    printf "\\r                                \\r"
+    printf "$line\\n"
     writeprogressbar execute
     fi
-    # echo -ne "execute [$progressbar]($progresspercent%)\\r"
     # MULE lines are those without a " " space prefix
     if [ "${{line:0:1}}" != " " ]
     then
         echo "$line" >> $filename.csv
     fi
-    # grep -o 'action'
-done < <( ./$BENCH_EXECUTABLE iters={iters} {"" if is_compilation_time_size else f"ni={ni} nj={nj}"} )
+done < <( {"" if not "GPU" in hardware_option else "OMP_TARGET_OFFLOAD=mandatory "}./$BENCH_EXECUTABLE iters={iters} {"" if is_compilation_time_size else f"ni={ni} nj={nj}"} )
 printf "\\r"
 writeprogressbar done
 printf "\\r"

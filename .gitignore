@@ -13,11 +13,12 @@ bench/src/*.mod
 bench/src/perf_regions/src/perf_regions_fortran.mod
 bench/*.csv
 bench/*/*.csv
+bench/*.json
+bench/*/*.json
 bench/preprocess/__pycache__
 bench/preprocess/bench_tree
+bench/preprocess/*/
 bench/preprocess/test_codegen_run.sh
-bench/preprocess/*.json
-bench/preprocess/array_alloc.csv
 bench/postprocess/data.*
 bench/postprocess/*.pdf
 bench/postprocess/*/
@@ -27,3 +28,4 @@ venv
 bench/testing/postprocess_testing/postprocess/data.csv
 bench/testing/out.csv
 bench/testing/tmp.txt
+compile_output.log

@@ -12,10 +12,17 @@ tree_depth=5
 
 if [[ "$1" == "" ]]
 then
-echo -e Set flag \"./run_bench_tree -v\" for verbose option, default is non verbose
+echo -ne "Use flag \"--help\" for help.\r"
+sleep 1
 fi
 
-if [[ "$1" == "-v" ]]
+if [[ "$1" == "-h" || "$1" == "--help" ]]
+then
+echo -e Set flag \"./run_bench_tree -v\" for verbose option, default is non verbose.
+echo -e Set flag \"./run_bench_tree -vomp\" for verbose OpenMP option, default is non verbose.
+fi
+
+if [[ "$1" == "-v" || "$2" == "-v" ]]
 then
 VERBOSE=true
 fi
@@ -42,7 +49,7 @@ writeprogress() {
     then
     echo -en "$PURPLE bench $((ibench+1))\n"
     else
-    echo -en "$PURPLE\033[1A$(printf "%-16s" "bench $((ibench+1))")\033[1B\033[16D"
+    echo -en "$PURPLE\033[1A$(printf "%-10s" "bench $((ibench+1))")\033[1B\033[10D"
     fi
     writeprogressbar launch
 }
@@ -51,6 +58,7 @@ cd bench_tree
 directories_1=$(ls -d -1q */)
 
 nbench=$(find -mindepth $tree_depth -maxdepth $tree_depth -type d | wc -w)
+echo -ne "\r                                \r"
 echo Total amount of benchmarks: $nbench
 echo
 if $VERBOSE
@@ -141,7 +149,7 @@ do
                     rm -f out.csv
                     writeprogress
                     printf "\r"
-                    ./run.sh $VERBOSE
+                    ./run.sh $1 $2
                     if $VERBOSE
                     then
                     echo -ne "\r                                \r"

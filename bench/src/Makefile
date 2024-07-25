@@ -6,7 +6,12 @@
 F90?=gfortran
 NV = nvfortran
 FFLAGS = -cpp -O3 #-Wall -Wextra
-
+ifeq ($(HARDWARE),GPU)
+FFLAGS+= -Minfo=mp -mp=gpu -gpu=sm_75
+ifdef VERBOSE_OMP
+FFLAGS_VERBOSE= -Minfo=all
+endif
+endif
 
 BIN_DIR := ../bin
 BUILD_DIR := ../build
@@ -31,6 +36,14 @@ ifndef DIM
 export DIM=2
 endif
 
+ifndef HARDWARE
+export HARDWARE=CPU
+endif
+
+ifndef KERNEL_MODE
+export KERNEL_MODE=DEFAULT_KERNEL
+endif
+
 ifndef ALLOC_MODE
 export ALLOC_MODE=DEFAULT_ALLOC
 endif
@@ -47,9 +60,6 @@ ifndef SIZE_AT_COMPILATION
 export SIZE_AT_COMPILATION=0
 endif
 
-ifndef KERNEL_MODE
-export KERNEL_MODE=DEFAULT_KERNEL
-endif
 
 ####################### targets #######################
 
@@ -70,7 +80,9 @@ endif
 PERFREGION_LIB:=-L$(PERF_REGIONS_FOLDER)/build -lperf_regions -I$(PERF_REGIONS_FOLDER)/build
 PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
-CPPMACROS:=-DDIM=${DIM} -DALLOC_MODE=${ALLOC_MODE} -DMODULE_MODE=${MODULE_MODE} -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DKERNEL_MODE=${KERNEL_MODE} -DNI=${NI} -DNJ=${NJ}
+CPPMACROS:= -DDIM=${DIM} -DHARDWARE=${HARDWARE} -DKERNEL_MODE=${KERNEL_MODE}
+CPPMACROS+= -DALLOC_MODE=${ALLOC_MODE} -DMODULE_MODE=${MODULE_MODE}
+CPPMACROS+= -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNI=${NI} -DNJ=${NJ}
 CFLAGS:= $(CPPMACROS) -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
@@ -89,22 +101,23 @@ $(BUILD_DIR)/%.o $(BUILD_DIR)/%.mod : $(SRC_DIR)/%.F90 | $(BUILD_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 $(BUILD_DIR)/benchmark_1d.o $(BUILD_DIR)/benchmark_1d.mod : $(SRC_DIR)/benchmark_1d.F90 | $(BUILD_DIR)
-	${F90} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_1d.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	${F90} ${FFLAGS} ${FFLAGS_VERBOSE} -c $< -o $(BUILD_DIR)/benchmark_1d.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 $(BUILD_DIR)/benchmark_2d_cpu.o $(BUILD_DIR)/benchmark_2d_cpu.mod : $(SRC_DIR)/benchmark_2d_cpu.F90 | $(BUILD_DIR)
-	${F90} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_cpu.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	${F90} ${FFLAGS} ${FFLAGS_VERBOSE} -c $< -o $(BUILD_DIR)/benchmark_2d_cpu.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 
 # GPU compilation commented when FC is not nvfortran:
+# ifeq ($(HARDWARE),GPU)
+# $(BUILD_DIR)/benchmark_2d_gpu.o $(BUILD_DIR)/benchmark_2d_gpu.mod : $(SRC_DIR)/benchmark_2d_gpu.F90 | $(BUILD_DIR)
+# 	${NV} -cpp -Minfo=all -Minfo=mp -mp=gpu -gpu=sm_75 $< -o $(BUILD_DIR)/benchmark_2d_gpu.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+# 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
+# else
 $(BUILD_DIR)/benchmark_2d_gpu.o $(BUILD_DIR)/benchmark_2d_gpu.mod : $(SRC_DIR)/benchmark_2d_gpu.F90 | $(BUILD_DIR)
-ifeq ( $(F90) , nvfortran )
-	${NV} -cpp -Minfo=mp -mp=gpu -gpu=sm_75 $< -o $(BUILD_DIR)/benchmark_2d_gpu.o ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	${F90} ${FFLAGS} ${FFLAGS_VERBOSE} -c $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DNO_GPU ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
-else
-	${F90} ${FFLAGS} -c $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DNO_GPU ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
-	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
-endif
+# endif
 
 # please note: timestamp resolution in archives is lower according to
 # documentation of make's .LOW_RESOLUTION_TIME at

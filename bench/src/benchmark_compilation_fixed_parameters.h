@@ -7,13 +7,18 @@
 ! bench names
 #define BENCH_1D 0
 #define BENCH_1D_MODULE 1
-    
+
 #define BENCH_2D_CPU_JI 3
 #define BENCH_2D_CPU_IJ 4
 #define BENCH_2D_CPU_MODULE_STATIC 5
 #define BENCH_2D_CPU_MODULE 6
     
 #define BENCH_2D_GPU_OMP_BASE 7
+
+
+! hardware type
+#define CPU 1
+#define GPU 2
 
 ! allocation type
 #define ALLOCATABLE 1

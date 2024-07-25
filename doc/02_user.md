@@ -1,4 +1,6 @@
 # Executing a benchmark
+## Warnings
+You must clean before generating code to avoid keeping compiled files made with the wrong compiler.
 
 ## Variants
 Once everything is installed, you may execute and plot benchmarks in multiple ways.
