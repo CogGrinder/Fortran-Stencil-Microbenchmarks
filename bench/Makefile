@@ -98,10 +98,9 @@ SRC_DIR := src
 LIB_DIR   := lib
 
 BENCH_LIB := -L$(LIB_DIR) -lbench
-# TODO : try .so library - you must also modify the Makefile in src
+# TODO : try .so library as a bench parameter
+# you must also modify the Makefile in src
 # BENCH_LIB := -L$(LIB_DIR) -l:library.so
-# TODO : try not using .a or .so
-# BENCH_LIB := -L$(LIB_DIR)
 
 PAPI_LIB:=-L. -lpapi
 

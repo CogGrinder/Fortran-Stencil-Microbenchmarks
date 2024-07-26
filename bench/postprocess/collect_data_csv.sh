@@ -1,6 +1,9 @@
 #!/bin/bash
+# used to show folders while exploring benchmark tree
 VERBOSE=false
+# used to preview output file as it is written
 PREVIEW=true
+
 # always contains default benchmark
 defaultfolder=bench_default/
 # UPDATE : tree_depth and fullpath() must be updated with each new added parameter
@@ -41,7 +44,7 @@ while IFS= read -r line; do
         then
             echo "$line"
         fi
-        # TODO : replace with json benchmark name or executable name
+        # replacing perf_regions naming with json benchmark name ie full path to run.sh
         echo -e "$line" >> $OUTPUT_FILE
     fi
     # grep -o 'action'
@@ -118,8 +121,8 @@ do
                         while IFS= read -r line; do
                             if [ "${line:0:7}" != "Section" ] && [ "${line:0:1}" != "-" ] && [ "${line:0:31}" != "Performance counters profiling:" ] && [ "${line:0:6}" != "Error:" ]
                             then
+                                # replacing perf_regions naming with json benchmark name ie full path to run.sh
                                 outputline=$(fullpath)\\t${line:8}
-                                # TODO : replace with json benchmark name or executable name
                                 if $PREVIEW
                                 then
                                     echo -e "$outputline"

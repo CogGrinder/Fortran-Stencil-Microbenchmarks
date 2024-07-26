@@ -571,7 +571,7 @@ def main():
             # for hardware in iterator(args,"hardware") :
                 for alloc in iterator(args,"allocation") :
                     for module in iterator(args,"module") :
-                        for size in iterator_of_selected_sizes :
+                        for size in iterator(args,"size") :
                             for compile_size in iterator(args,"compile_size") :
                                 filename, iters, ni, nj  = codegen_bench_tree_branch(
                                     kernel_mode=kernel,

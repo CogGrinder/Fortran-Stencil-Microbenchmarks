@@ -445,7 +445,6 @@ def old_import_data_debug(normalise=True,
         # import the first line of the csv as the data labels
         labels = csvfile_reader.__next__()[1:]
         # make a list of the labels we keep for graphing
-        # TODO: see if it is better to make a mask ?? I don't think so
         labels_no_superfluous = labels.copy()
         for label in ignored_counters:
             if label in labels_no_superfluous:
@@ -511,7 +510,6 @@ def old_show_graph_2D_debug(fileprefix="",is_wallclocktime_graph=False) :
 
         plt.figure(figsize=(40,20))
 
-        # TODO: replace with access to JSON bench parameters
         benchnames_mask =  [
             [ "alloc"  in benchmark_name for benchmark_name in benchnames],
             [ "static" in benchmark_name for benchmark_name in benchnames]

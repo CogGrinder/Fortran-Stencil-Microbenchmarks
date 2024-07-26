@@ -1,7 +1,7 @@
 MODULE TOOLS
+    ! TODO : WARNING : hard coded type
     integer, parameter :: dp=kind(0.d0)
     contains
-        ! TODO : warning : hard coded type, shape and allocation
         
         SUBROUTINE get_key_value(arg, value)
             character(len=*), intent(in) :: arg
