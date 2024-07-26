@@ -89,7 +89,7 @@ def import_data_pandas(json_metadata_path,
     # WARNING: may cause errors. Chooses first in case of duplicate benchmarks.
     # jsonmetadata_df.drop_duplicates('id',inplace=True)
     # removing default benchmark
-    default_key = [i for i in list(jsonmetadata_df.index) if 'bench_default' in jsonmetadata_df.iloc[i]['id'] ]
+    default_key = [i for i in list(jsonmetadata_df.index) if 'bench_default/' in jsonmetadata_df.iloc[i]['id'] ]
     if DEBUG:
         print(f"default keys: {default_key}")
     # default_key=default_key[0]
@@ -115,7 +115,7 @@ def import_data_pandas(json_metadata_path,
     joined_df = datacsvdf.join(jsonmetadata_df)
     index_list = list(joined_df.index)
     # removing default benchmark
-    default_key = [i for i in index_list if 'bench_default' in i ]
+    default_key = [i for i in index_list if 'bench_default/' in i ]
     if DEBUG:
         print(f"default keys: {default_key}")
     default_key=default_key[0]
@@ -148,7 +148,33 @@ def find_non_unique_parameters(df: pd.DataFrame,
     Returns:
         np.array[bool] containing whether the label has only one value
     """
+    if VERBOSE:
+        print([set(df[label].to_numpy()) for label in columns if len(set(df[label].to_numpy()))>1])
     return np.array([len(set(df[label].to_numpy()))>1 for label in columns])
+
+def prompt_user_to_choose_from_array(choice_list:list,message="",default=None):
+    # sets default if input is empty
+    # see https://stackoverflow.com/questions/22402548/how-to-define-default-value-if-empty-user-input-in-python
+    input_choice = input(message).strip() or default
+    if input_choice in choice_list:
+        final_choice = input_choice
+    else: # if not in 
+        try:
+            choice_index = int(input_choice)
+        except:
+            print(f"{input_choice} invalid entry.")
+            return prompt_user_to_choose_from_array(choice_list,message='Try again or press <Enter>:',default=default)
+        try:
+            final_choice = choice_list[choice_index]
+        except:
+            print("Index out of bounds.")
+            return prompt_user_to_choose_from_array(choice_list,message='Try again or press <Enter>:',default=default)
+    
+    if (final_choice==None):
+        raise TypeError("Undefined choice.")
+    else:
+        return final_choice
+    
 
 def make_graphs(df: pd.DataFrame,
                 interactive=False,
@@ -156,7 +182,7 @@ def make_graphs(df: pd.DataFrame,
                 subplots_in_one_figure=False,
                 all_data_values=all_data_values,
                 all_metadata_columns=all_metadata_columns,
-                graphed_column="size",
+                variable_to_graph="size",
                 secondary_graphed=None,
                 baseline_for_comparison=baseline_for_comparison):
     """Function that makes graphs by using data and metadata from DataFrame and setting fixed units
@@ -167,19 +193,27 @@ def make_graphs(df: pd.DataFrame,
 
     ############ selecting data ############
 
+    ### selecting graphing variable ###
+    # default is set by function call
+    
     if interactive:
+        valid_variables_to_graph=np.array(all_metadata_columns)[find_non_unique_parameters(df)]
         # input column to graph
-        int_graphed_column = int(input(f"Choose column to graph, {all_metadata_columns}\n").strip() or "0")
-        graphed_column = all_metadata_columns[int_graphed_column]
+        variable_to_graph = prompt_user_to_choose_from_array(
+            message=f"\n{valid_variables_to_graph} are valid variables to graph as non-uniquely valued.\
+                \nChoose variable to graph using index or name:",
+            choice_list=valid_variables_to_graph,
+            default=variable_to_graph)
+        print(f"\nChose {variable_to_graph}.")
+    
 
-
-    print(f"Computing {graphed_column}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'} graphing...")
+    print(f"Computing {variable_to_graph}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'} graphing...")
     
     column_selection = all_metadata_columns.copy()
     
     if VERBOSE:
         print(f"all columns:{column_selection}")
-    column_selection.remove(graphed_column)
+    column_selection.remove(variable_to_graph)
     # if their is a secondary graphed parameter, add here
     if secondary_graphed is not None:
         column_selection.remove(secondary_graphed)
@@ -210,11 +244,12 @@ def make_graphs(df: pd.DataFrame,
                 value_kept=set_of_label[0]
             # set interactively
             if interactive:
-                print(f"Label \"{label}\" has duplicates. Choose one: {set_of_label}")
-                # see https://stackoverflow.com/questions/22402548/how-to-define-default-value-if-empty-user-input-in-python
-                # default input is 0 so one can press enter for default
-                index_kept = int(input(f"Choose index\n").strip() or "0")
-                value_kept = set_of_label[index_kept]
+                value_kept = prompt_user_to_choose_from_array(
+                    choice_list=set_of_label,
+                    message=f"Label \"{label}\" has duplicates. Choices are {set_of_label}.\
+                        \nChoose index or name or press <Enter> for default:",
+                    default=value_kept
+                )
             if DEBUG:
                 print(f"{label} kept value: {value_kept}")
             fixed_columns.append(label)
@@ -259,11 +294,13 @@ def make_graphs(df: pd.DataFrame,
             # https://docs.python.org/3/tutorial/errors.html
             # raise ValueError(f"Metavariable '{label}' failed filtering: values {set_of_label}")
             warnings.warn(f"\nMetavariable '{label}' failed filtering duplicates. Values: {set_of_label}.\
-                          \n  Attempting to remove unfiltered data.\
                           \n\nLikely explanation is a benchmark has not executed properly or was reexectuted halfway.",
                           category=RuntimeWarning)
             warned=True
             is_ugly_duckling = graphing_df[label]!=values_kept[i]
+            set_of_label.remove(values_kept[i])
+            print(f"Attempting to remove unfiltered data : {set_of_label}.\
+                  \nMay remove most of data in case of a systematic error.")
             graphing_df = graphing_df.drop(index=graphing_df.index.array[is_ugly_duckling],
                              axis=1)
     if warned and (VERBOSE or DEBUG):
@@ -277,7 +314,7 @@ def make_graphs(df: pd.DataFrame,
 
     # pivot and transpose make our graph into a more readable format
     # with the index being a "MultiIndex" in the form of a tuple of parameters
-    graphed_columns = [graphed_column]
+    graphed_columns = [variable_to_graph]
     if not secondary_graphed is None:
         graphed_columns.insert(0,secondary_graphed)
     graphing_df = graphing_df.pivot(index=graphed_columns,
@@ -304,12 +341,12 @@ def make_graphs(df: pd.DataFrame,
     if secondary_graphed is None:
         if DEBUG:
             print(graphing_df.columns.array)  
-        column_list = list(map(metadata_types[graphed_column],graphing_df.columns))
+        column_list = list(map(metadata_types[variable_to_graph],graphing_df.columns))
     else:
         multi_id = graphing_df.columns.to_numpy()
         primary_graphed_list = list(set([t[1] for t in multi_id]))
         secondary_graphed_list = list(set([t[0] for t in multi_id]))
-        column_list = list(map(metadata_types[graphed_column],primary_graphed_list))
+        column_list = list(map(metadata_types[variable_to_graph],primary_graphed_list))
         n_rows = len(secondary_graphed_list)
 
     if DEBUG:
@@ -323,8 +360,11 @@ def make_graphs(df: pd.DataFrame,
     if not secondary_graphed is None:
         fig,ax_list = plt.subplots(n_rows,n_graphs)
     if not subplots_in_one_figure:
-        dir = f"{'.' if directory==None else str(directory).rstrip('/')}/{graphed_column}"
-        os.mkdir(dir)
+        dir = f"{'.' if directory==None else str(directory).rstrip('/')}/{variable_to_graph}"
+        if not pathlib.Path(dir).is_dir() :
+            os.mkdir(dir)
+        # else:
+        #     warnings.warn(f"{dir} exists. May be overwriting files.",category=RuntimeWarning)
     for j in range(n_rows):
         for i in range(n_graphs):
             if not subplots_in_one_figure:
@@ -347,13 +387,16 @@ def make_graphs(df: pd.DataFrame,
 
             ax.bar(range(len(graphed_data_i)),graphed_data_i)
 
-            title = str(index_list[i][0]) if subplots_in_one_figure else f"{graphed_column} with {str(index_list[i][0])}\nFixed options: {' '.join(index_list[i][1:])}"
-            title_size = 10 if subplots_in_one_figure else 20
+            title = str(index_list[i][0]) if subplots_in_one_figure else f"Graph of {variable_to_graph} using {str(index_list[i][0])} data\nFixed options: {' '.join(index_list[i][1:])}"
+            title_size = 10 if subplots_in_one_figure else 12
             ax.set_title(title, fontsize=title_size)
             ax.set_xticks(ticks=range(len(column_list)),labels=column_list, rotation=60, ha='right', size='xx-small')
             if not subplots_in_one_figure:
-                fig.savefig(f"{dir}/{graphed_column}_{str(index_list[i][0])}.pdf")
+                filename=f"{dir}/{variable_to_graph}_{str(index_list[i][0])}.pdf"
+                fig.savefig(filename)
                 plt.close()
+                if interactive:
+                    print(filename)
 
     if subplots_in_one_figure:
         if not secondary_graphed is None:            
@@ -361,10 +404,13 @@ def make_graphs(df: pd.DataFrame,
             rows = [f'{secondary_graphed} = {{}}'.format(row) for row in secondary_graphed_list]
             for ax, row in zip(ax_list[:,0], rows):
                 ax.set_ylabel(row, rotation=90, size='small')
-        fig.suptitle(f"Graphs of {graphed_column}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'}\nFixed options: {' '.join(index_list[i][1:])}")
+        fig.suptitle(f"Graphs of {variable_to_graph}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'}\nFixed options: {' '.join(index_list[i][1:])}")
         fig.tight_layout()
-        fig.savefig(f"{str(directory).rstrip('/')}/{graphed_column}{'' if secondary_graphed is None else '-'+secondary_graphed}_{datetime.date.today()}.pdf")
+        filename = f"{str(directory).rstrip('/')}/{variable_to_graph}{'' if secondary_graphed is None else '-'+secondary_graphed}_{datetime.date.today()}.pdf"
+        fig.savefig(filename)
         plt.close()
+        if interactive:
+            print(filename)
 
 def old_import_data_debug(normalise=True,
                     json_metadata_path="../preprocess/all_benchmark_parameters.json"):
@@ -551,25 +597,28 @@ def old_show_graph_2D_debug(fileprefix="",is_wallclocktime_graph=False) :
         plt.show() if str(input("Open figure in new window? (Y/n)\n"))=='Y' else None
 
 def argument_parsing(parser: argparse.ArgumentParser):
-    parser.add_argument('-M','--MODE', nargs='?', default='default',
-                    help='Can be default, interactive or old.')
+    parser.add_argument('-sp', '--subplots', action='store_true',
+                        help=f'Highly recommended. Makes subplot graphs instead of individual graphs. Enables showing {", ".join(all_data_values)} data on the same graph.')
+    parser.add_argument('-M','--MODE', metavar='name', nargs='?', default='default',
+                    help='Can be default, interactive or old.\nInteractive lets you choose your selected benchmark variant to test against.')
     
-    parser.add_argument('-D', '--directory',  default=f"figs_{datetime.date.today()}",
+    parser.add_argument('-D', '--directory', metavar='path',  default=f"figs_{datetime.date.today()}",
                         help='Sets .pdf directory.')
-    parser.add_argument('-G', '--graphed',
+    parser.add_argument('-G', '--graphed', metavar='name',
                         help=f'Sets a single metadata variable to graph - from {", ".join(all_metadata_columns)}.')
-    parser.add_argument('-sG', '--secondary-graphed',
-                        help=f'Sets a secondary metadata variable to graph - from {", ".join(all_metadata_columns)}, all.\
+    
+    # thank you to https://stackoverflow.com/questions/27411268/arguments-that-are-dependent-on-other-arguments-with-argparse
+    parser_subplots_specific = parser.add_argument_group(title='subplots specific options')
+    parser_subplots_specific.add_argument('-sG', '--secondary-graphed', metavar='name',
+                        help=f'Ignored if -sp is not set. Sets a secondary metadata variable to graph - from {", ".join(all_metadata_columns)}, all.\
                               Option \'all\' is useful for comparing more data at once in all variants.\
-                                  Restrictions: cannot be the same as --graphed. Ignored if -sp is not set.')
+                                  Restrictions: cannot be the same as --graphed.')
 
     # Optional flags
-    parser.add_argument('-csv',  default="data.csv",
-                        help='Sets bench data .csv path. Warning: depends on corresponding .json or may be unreadable.')
-    parser.add_argument('-json',  default="../preprocess/all_benchmark_parameters.json",
+    parser.add_argument('-csv', metavar='path',  default="data.csv",
+                        help='Sets bench data .csv path. Warning: depends on corresponding metadata .json or data may be unreadable.')
+    parser.add_argument('-json', metavar='path',  default="../preprocess/all_benchmark_parameters.json",
                         help='Sets bench metadata .json path.')
-    parser.add_argument('-sp', '--subplots', action='store_true',
-                        help='Makes subplot graphs to see all types of data at once.')
     parser.add_argument('-c', '--clean-before', action='store_true',
                         help='Cleans existing files before generating.')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -624,7 +673,7 @@ def main():
         columns = all_metadata_columns
         non_unique_parameters = find_non_unique_parameters(df,columns=columns)
         if DEBUG:
-            print(non_unique_parameters)
+            print(f"non_unique_parameters:{np.array(all_metadata_columns)[non_unique_parameters]}")
         
         # index is used to select column
         if not args.graphed is None:
@@ -639,35 +688,38 @@ def main():
             for i in range(len(non_unique_parameters)):
                 if non_unique_parameters[i]:
                     if args.secondary_graphed is None:
-                        make_graphs(df, graphed_column=columns[i], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+                        make_graphs(df, variable_to_graph=columns[i], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
                     elif args.secondary_graphed!='all' and i!=isecondary :
-                        make_graphs(df, graphed_column=columns[i],
+                        make_graphs(df, variable_to_graph=columns[i],
                                     secondary_graphed=columns[isecondary],
                                     interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
                     else:
                         pass # TODO: if args.secondary_graphed=='all'
         else:
                 if non_unique_parameters[igraphed]:
-                    if args.secondary_graphed is None:
-                        make_graphs(df, graphed_column=columns[igraphed], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+                    if args.secondary_graphed is None or (args.secondary_graphed=='all' and not args.subplots) :
+                        make_graphs(df, variable_to_graph=columns[igraphed], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
                     elif args.secondary_graphed=='all' :
                         for j in range(len(non_unique_parameters)):
                             if non_unique_parameters[j] and columns[j]!='size': # ignore size because it makes unreadable subplots
                                 if j!=igraphed :
-                                    make_graphs(df, graphed_column=columns[igraphed],
+                                    make_graphs(df, variable_to_graph=columns[igraphed],
                                                 secondary_graphed=columns[j],
                                                 interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
                     else:
-                        make_graphs(df, graphed_column=columns[igraphed],
+                        make_graphs(df, variable_to_graph=columns[igraphed],
                                     secondary_graphed=columns[isecondary],
                                     interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
 
                 else:
-                    parser.error(f"{args.graphed} cannot be graphed because it is uniquely represented.")
+                    warnings.warn(f"{args.graphed} cannot be graphed because it is uniquely represented.\nCheck if data contains failed benchmarks.",category=RuntimeWarning)
+                    return -1
 
     elif args.MODE=="interactive":
         df = import_data_pandas(args.json,args.csv,normalise=True)
-        make_graphs(df, interactive=True, directory=args.directory)
+        valid_variables_to_graph=np.array(all_metadata_columns)[find_non_unique_parameters(df)]
+        default_variable = valid_variables_to_graph[0]
+        make_graphs(df, interactive=True, directory=args.directory, variable_to_graph=default_variable)
 
     elif args.MODE=="old":
         old_import_data_debug(normalise=True)

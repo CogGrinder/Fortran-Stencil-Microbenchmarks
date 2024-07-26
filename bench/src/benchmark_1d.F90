@@ -1,7 +1,6 @@
-#include "benchmark_compilation_fixed_parameters.h"
+#include "include/compilation_fixed_parameters.h"
 
 MODULE BENCHMARK_1D
-    USE BENCHMARK_NAMES
     use perf_regions_fortran
     USE TOOLS
     implicit none

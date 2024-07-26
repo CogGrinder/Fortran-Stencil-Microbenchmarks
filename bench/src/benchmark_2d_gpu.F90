@@ -1,9 +1,6 @@
-#include "benchmark_compilation_fixed_parameters.h"
-! #define DEBUG
-! #define DEBUG_PERF
+#include "include/compilation_fixed_parameters.h"
 
 MODULE BENCHMARK_2D_GPU
-    USE BENCHMARK_NAMES
     use perf_regions_fortran
     USE TOOLS
     implicit none

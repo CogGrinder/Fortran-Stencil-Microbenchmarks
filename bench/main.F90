@@ -1,39 +1,50 @@
 ! default value macros
-#define ARRAY_LEN 1024 * 16
-#define ITERS 128
+#define DEFAULT_ARRAY_LEN 1024 * 16
+#define DEFAULT_ITERS 128
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! see following file for macro definitions
-#include "src/benchmark_compilation_fixed_parameters.h"
+#include "src/include/compilation_fixed_parameters.h"
 
+! selector for which function to call for computation
 #if HARDWARE == GPU
-#define BENCH_ID BENCH_2D_GPU_OMP_BASE
-#else
+# if DIM == 1
+#  error Not implemented
 
-#if DIM == 1
-# if     MODULE_MODE == 1
-#  define BENCH_ID BENCH_1D_MODULE
-# elif   MODULE_MODE == 0
-#  define BENCH_ID BENCH_1D
-# endif
+# elif DIM == 2
+#  if     MODULE_MODE == 1
+#   define BENCH_ID BENCH_2D_GPU_OMP_BASE
+! TODO: add non-module version of GPU bench
+#  elif   MODULE_MODE == 0
+#   error Module version not implemented
+#  endif /*MODULE_MODE*/
+# else
+#  error Dimension not implemented
+# endif /*DIM*/
+#else /*HARDWARE*/
 
-#elif DIM == 2
-# if     MODULE_MODE == 1
-#  define BENCH_ID BENCH_2D_CPU_MODULE
-# elif   MODULE_MODE == 0
-#  define BENCH_ID BENCH_2D_CPU_JI
-# endif
-#else
-# define BENCH_ID 0
-#endif
+# if DIM == 1
+#  if     MODULE_MODE == 1
+#   define BENCH_ID BENCH_1D_MODULE
+#  elif   MODULE_MODE == 0
+#   define BENCH_ID BENCH_1D
+#  endif
 
+# elif DIM == 2
+#  if     MODULE_MODE == 1
+#   define BENCH_ID BENCH_2D_CPU_MODULE
+#  elif   MODULE_MODE == 0
+#   define BENCH_ID BENCH_2D_CPU_JI
+#  endif /*MODULE_MODE*/
+# else
+#  error Dimension not implemented
+# endif /*DIM*/
 #endif /*HARDWARE*/
 
 PROGRAM main
     ! thank you to https://www.tutorialspoint.com/fortran/fortran_arrays.htm
     USE perf_regions_fortran
     USE TOOLS
-    USE BENCHMARK_NAMES
     USE BENCHMARK_1D
     USE BENCHMARK_2D_CPU
     USE BENCHMARK_2D_GPU
@@ -44,9 +55,6 @@ PROGRAM main
 
     ! integer :: iters
     integer :: k,i,iters,niinput,njinput,n1dinput
-! #if SIZE_AT_COMPILATION == 0
-    integer :: benchmark_size_mode
-! #endif
     character(len=32) :: arg
     character(len=7) :: bench_str
     character(len=32) :: kernel_name, alloc_name
@@ -80,8 +88,10 @@ PROGRAM main
     
 
     ! default values
-    iters = ITERS
-    n1dinput = ARRAY_LEN
+    iters = DEFAULT_ITERS
+    n1dinput = DEFAULT_ARRAY_LEN
+    niinput = 128
+    njinput = 128
 
     CALL set_2D_size(niinput,njinput)
     CALL set_1D_size(n1dinput)
@@ -117,7 +127,7 @@ CALL perf_regions_init()
     CALL set_2D_size(niinput,njinput)
     CALL set_1D_size(n1dinput)
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!! BENCH CALL !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!! BENCH DESCRIPTION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     CALL get_command_argument(0,binary_name)
     WRITE(*,*) "**************************************"
@@ -147,6 +157,7 @@ CALL perf_regions_init()
     write (*,*) 'Kernel type: ', kernel_name
     write (*,*) 'Allocation type: ', alloc_name
     
+    ! bench_str (str): used for describing function call to perf_regions
     ! see https://pages.mtu.edu/~shene/COURSES/cs201/NOTES/chap03/select
     select case (BENCH_ID)
         case (BENCH_1D)
@@ -160,8 +171,6 @@ CALL perf_regions_init()
             bench_str = '2D_IJ'
         case (BENCH_2D_CPU_MODULE)
             bench_str = '2D_MODU'
-        case (BENCH_2D_CPU_MODULE_STATIC)
-            bench_str = '2D_FIXD'
 
         case (BENCH_2D_GPU_OMP_BASE)
             bench_str = 'GPU'
@@ -170,6 +179,7 @@ CALL perf_regions_init()
             bench_str = 'ERROR'
             write (*,*) 'Error: no such benchmark'
     end select
+
     if ( .not. bench_str .eq. 'ERROR') then
         CALL BENCH_SKELETON(iters, bench_str, n1dinput)
     end if
@@ -183,7 +193,6 @@ END PROGRAM main
 
 SUBROUTINE BENCH_SKELETON(iters, bench_str, array_len)
 USE perf_regions_fortran
-USE BENCHMARK_NAMES
 USE BENCHMARK_PARAMETERS
 #include "perf_regions_defines.h"
     USE BENCHMARK_1D
@@ -199,7 +208,6 @@ USE BENCHMARK_PARAMETERS
     WRITE(*,*) "**************************************"
     WRITE(*,*) "Precision in bytes: ", dp, " bytes"
     if (     BENCH_ID == BENCH_1D              &
-        .or. BENCH_ID == BENCH_ALLOCATABLE_ARRAY        &
         .or. BENCH_ID == BENCH_1D_MODULE) then
         WRITE(*,*) "Mem size: ", array_len*0.001 ," Kbyte"
     else
@@ -261,55 +269,6 @@ SUBROUTINE WARMUP_COMPUTATION(sten_len, array_len)
     end do
 
 end SUBROUTINE WARMUP_COMPUTATION
-
-SUBROUTINE COMPUTATION_FIXED_ARRAY(bench_id,bench_str, array_len)
-use perf_regions_fortran
-USE TOOLS
-#include "perf_regions_defines.h"
-    
-    ! stencil must be odd length
-    integer, dimension(1:3) :: stencil
-    integer(KIND=4), intent(in) :: bench_id
-    character(len=7), intent(in) :: bench_str
-    integer, intent(in) :: array_len
-    real    :: sten_sum
-    integer :: sten_len
-    real(dp), dimension(array_len) :: array
-    real(dp), dimension(array_len) :: result
-
-    stencil = (/ 1, 0, 1/)
-
-    CALL stencil_characteristics(stencil,sten_sum,sten_len)
-
-    do i = 1, array_len
-        call RANDOM_NUMBER(array(i))
-    end do
-        !!!!!!!! start timing here
-CALL perf_region_start(bench_id, bench_str//achar(0))
-
-        
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + sten_len/2, array_len - sten_len/2
-        result(i + sten_len/2) = 0
-        do k = 1,sten_len
-            result(i) = result(i) + stencil(k) * array(i-sten_len/2 -1 + k)
-        end do
-        ! normalize by sten_sum
-        result(i) = result(i)/sten_sum
-    end do
-    ! we ignore edges in the computation which explains the shift in indexes
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    !!!!!!!! end timing here
-CALL perf_region_stop(bench_id)
-
-        
-
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,array_len)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,array_len)))
-
-end SUBROUTINE COMPUTATION_FIXED_ARRAY
 
 SUBROUTINE COMPUTATION_1D(bench_id,bench_str, array_len)
     USE TOOLS

@@ -48,10 +48,6 @@ ifndef MODULE_MODE
 export MODULE_MODE=0
 endif
 
-ifndef SIZE_MODE
-export SIZE_MODE=NONE
-endif
-
 ifndef SIZE_AT_COMPILATION
 export SIZE_AT_COMPILATION=0
 endif
@@ -121,7 +117,7 @@ PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
 CPPMACROS:= -DDIM=${DIM} -DHARDWARE=${HARDWARE} -DKERNEL_MODE=${KERNEL_MODE}
 CPPMACROS+= -DALLOC_MODE=${ALLOC_MODE} -DMODULE_MODE=${MODULE_MODE}
-CPPMACROS+= -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNI=${NI} -DNJ=${NJ}
+CPPMACROS+= -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNI=${NI} -DNJ=${NJ}
 CFLAGS:= $(CPPMACROS) -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 ####################### main compilation #######################
@@ -131,7 +127,6 @@ main : $(BIN_DIR)/$(MAIN)
 # use of | https://stackoverflow.com/questions/64036620/what-is-the-use-of-or-operator-in-dependency-list
 $(BIN_DIR)/$(MAIN) : main.F90 $(PERF_REGIONS_FOLDER)/build/libperf_regions.so $(LIB_DIR)/libbench.a | $(BIN_DIR)
 	@export |grep ALLOC_MODE
-	@export |grep SIZE_MODE
 	@export |grep SIZE_AT_COMPILATION
 	@export |grep KERNEL_MODE
 	${F90} ${FFLAGS} ${FFLAGS_VERBOSE} -g -o $(BIN_DIR)/$(MAIN) main.F90 ${CFLAGS} ${BENCH_LIB} ${PERFREGION_LINKFLAGS}

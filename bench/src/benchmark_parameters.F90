@@ -1,12 +1,11 @@
-! this value is a power of 2 between 1 and 32 - recommended is 32
-#define BENCHMARK_ACCELERATION 32
-#include "benchmark_compilation_fixed_parameters.h"
+#include "include/compilation_fixed_parameters.h"
 
 MODULE BENCHMARK_PARAMETERS
 
     ! here set your processor's L3 cache size in Mib - useful for modes 100 to 103
     integer, parameter :: l3_size_in_mib = 6
 
+! TODO: change to support loop bounds at compilation
 #if SIZE_AT_COMPILATION==1
     contains
     SUBROUTINE set_2D_size(niinput,njinput)

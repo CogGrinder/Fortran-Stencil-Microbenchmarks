@@ -291,9 +291,9 @@ export MAIN="{benchname}"
 export HARDWARE="{hardware}"
 export KERNEL_MODE="{kernel_mode}"
 export ALLOC_MODE="{allocation}"
-export MODULE_MODE="{module if type(module)==bool else ''}"
+export MODULE_MODE="{int(module) if type(module)==bool else ''}"
 export SIZE_MODE="{size}"
-export SIZE_AT_COMPILATION="{compile_size if type(compile_size)==bool else ''}"
+export SIZE_AT_COMPILATION="{int(compile_size) if type(compile_size)==bool else ''}"
 export NI="{ni if compile_size else ""}"
 export NJ="{nj if compile_size else ""}"
 
@@ -367,10 +367,12 @@ def get_parsed_parameter(parser_namespace: argparse.Namespace, param_name: str, 
     return getattr(parser_namespace, param_name, default_dic[param_name])
 
 def iterator(parsed: argparse.Namespace, param_name: str):
+    global DEBUG
     parameter = getattr(parsed, param_name)
     if param_name=='size':
         # size range
         if DEBUG:
+            print("size: " + str(parsed.size))
             print("size_range: " + str(parsed.size_range))
             print("size_range type: " + str(type(parsed.size_range)))
         # if parsed.size is None
@@ -397,9 +399,9 @@ def iterator(parsed: argparse.Namespace, param_name: str):
         return [parameter]
 
 def argument_parsing(parser: argparse.ArgumentParser):
-    parser.add_argument('-M','--MODE', nargs='?', default='all',
+    parser.add_argument('-M','--MODE', metavar='name', nargs='?', default='all',
                     help='Can be all, all_l3, single or clean. "all" generates all possible combinations with set range of sizes.')
-    parser.add_argument('-A', '--ACCURACY', metavar='multiplier', type=float,
+    parser.add_argument('-A', '--ACCURACY', metavar='float', type=float,
                         help='An optional parameter that makes the benchmark more accurate if above 1 and accelerates it if below 1')
 
     # thank you to https://stackoverflow.com/questions/27411268/arguments-that-are-dependent-on-other-arguments-with-argparse
@@ -408,24 +410,24 @@ def argument_parsing(parser: argparse.ArgumentParser):
                                    Setting an option here will fix its value in the enumeration of combinations of "all".',)
     
     # Arguments for single mode
-    parser_mode_specific.add_argument('--kernel-mode', nargs='?',
-                    help=f'A kernel_mode_option in {", ".join(list(suffixes["kernel_mode"].keys())).rstrip(", ")}')
-    parser_mode_specific.add_argument('--hardware', nargs='?',
-                    help=f'An hardware in {", ".join(list(suffixes["hardware"].keys())).rstrip(", ")}')
-    parser_mode_specific.add_argument('--allocation', nargs='?',
+    parser_mode_specific.add_argument('--kernel-mode', metavar='name', nargs='?',
+                    help=f'A kernel_mode in {", ".join(list(suffixes["kernel_mode"].keys())).rstrip(", ")}')
+    parser_mode_specific.add_argument('--hardware', metavar='name', nargs='?',
+                    help=f'A hardware in {", ".join(list(suffixes["hardware"].keys())).rstrip(", ")}')
+    parser_mode_specific.add_argument('--allocation', metavar='name', nargs='?',
                     help=f'An allocation in {", ".join(list(suffixes["allocation"].keys())).rstrip(", ")}')
-    parser_mode_specific.add_argument('--module', nargs='?', type=bool,
+    parser_mode_specific.add_argument('--module', metavar='python boolean', nargs='?', type=bool,
                 help=f'Sets if the function is in a module. Either True of False.')
-    parser_mode_specific.add_argument('--size', nargs='?',
+    parser_mode_specific.add_argument('--size', metavar='name', nargs='?',
                     help=f'A size in {", ".join(list(suffixes["size"].keys()))} or between 0 and 99.\
                         Has precedence over --range and sets single size in mode "all".')
-    parser_mode_specific.add_argument('--size-range', metavar="size", nargs='+', default=[1,17],
+    parser_mode_specific.add_argument('--size-range', metavar='float', nargs='+', default=[1,17],
                         help='Used in mode "all". Represents the scope of sizes in Mb to study.\
-                              If --size is used, flag is ignored and scope is set to single size.\
+                              If --size is used, flag is ignored and scope of sizes is only one size.\
                               If length is 2, acts as lower and upper bound.\
                               If length is 1, acts as upper bound with lower bound 1.\
                               If length is greater than 2, it is the list of sizes in Mb.')
-    parser_mode_specific.add_argument('--compile-size', nargs='?', type=bool,
+    parser_mode_specific.add_argument('--compile-size', metavar='python boolean', nargs='?', type=bool,
                 help=f'Sets if the array size is set at compilation time. Either True of False.')
     # Optional arguments
     parser.add_argument('-nv', '--nvfortran', action='store_true',
@@ -452,9 +454,6 @@ def main():
     ### argument parser ###
     parser = argparse.ArgumentParser(description="Code generator for benchmarking with various options in a tree structure")
     args = argument_parsing(parser)
-    
-    ### defaults ###
-    iterator_of_selected_sizes = range(1,16+1)
 
     ### metadata ###
     # dictionary used for exporting bench parameters as .JSON file
@@ -470,16 +469,18 @@ def main():
         print("No arguments provided.",file=sys.stderr)
         parser.print_help(sys.stderr)
         sys.exit(1)
+    
     if args.debug:
         DEBUG=True
+    if args.nvfortran:
+        IS_NVFORTRAN_COMPILER=True
+    if args.verbose:
+        VERBOSE=True
+    
     if DEBUG:
         print(args)
 
-    # setting command
-    # if args.MODE is not None:
-    #     args.MODE = args.MODE
-
-    # setting options
+    # checking for parser errors
     if args.kernel_mode is not None:
         if not args.kernel_mode in iterator(args,"kernel_mode"):
             parser.error(f"{args.kernel_mode} invalid value for kernel_mode")
@@ -502,15 +503,13 @@ def main():
                 parser.error(f"Accuracy flag set to {args.ACCURACY}: cannot be non-positive")
             else:
                 ACCURACY = args.ACCURACY
-    if args.nvfortran:
-        IS_NVFORTRAN_COMPILER=True
-    if args.verbose:
-        VERBOSE=True
+
+    
     if VERBOSE:
         print("verbose output on")
         print(args.allocation)
         print(args.size)
-        print("size_range: " + str(iterator_of_selected_sizes))
+        print("size_range: " + str(iterator(args,"size")))
         print(args.compile_size)
         print("ACCURACY="+str(ACCURACY))
 
@@ -539,12 +538,12 @@ def main():
     # for debugging new implementations
     if args.MODE == "all":
         print(f"Creating all benchmark scripts...")
-        codegen_bench_tree_branch()
+        codegen_bench_tree_branch(**{k:"" for k in metadata_names})
         for kernel in iterator(args,"kernel_mode") :
             for hardware in iterator(args,"hardware") :
                 for alloc in iterator(args,"allocation") :
                     for module in iterator(args,"module") :
-                        for size in iterator_of_selected_sizes :
+                        for size in iterator(args,"size") :
                             for compile_size in iterator(args,"compile_size") :
                                 filename, iters, ni, nj  = codegen_bench_tree_branch(
                                     kernel_mode=kernel,
@@ -567,8 +566,7 @@ def main():
                                     "iters": iters})
     elif args.MODE in ["debug","all_old"]:
         print(f"Debug: Creating all benchmark scripts...")
-        codegen_bench_tree_branch()
-        
+        codegen_bench_tree_branch(**{k:"" for k in metadata_names})
         for kernel in iterator(args,"kernel_mode") :
             # for hardware in iterator(args,"hardware") :
                 for alloc in iterator(args,"allocation") :

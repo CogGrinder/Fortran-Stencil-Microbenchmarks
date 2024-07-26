@@ -52,10 +52,6 @@ ifndef MODULE_MODE
 export MODULE_MODE=0
 endif
 
-ifndef SIZE_MODE
-export SIZE_MODE=NONE
-endif
-
 ifndef SIZE_AT_COMPILATION
 export SIZE_AT_COMPILATION=0
 endif
@@ -82,14 +78,13 @@ PERFREGION_SRC:=$(PERF_REGIONS_FOLDER)/src
 
 CPPMACROS:= -DDIM=${DIM} -DHARDWARE=${HARDWARE} -DKERNEL_MODE=${KERNEL_MODE}
 CPPMACROS+= -DALLOC_MODE=${ALLOC_MODE} -DMODULE_MODE=${MODULE_MODE}
-CPPMACROS+= -DSIZE_MODE=${SIZE_MODE} -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNI=${NI} -DNJ=${NJ}
+CPPMACROS+= -DSIZE_AT_COMPILATION=${SIZE_AT_COMPILATION} -DNI=${NI} -DNJ=${NJ}
 CFLAGS:= $(CPPMACROS) -I$(BUILD_DIR) -I$(SRC_DIR) -I$(PERFREGION_SRC)
 PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 ####################### extra dependency rules #######################
 
-$(BUILD_DIR)/benchmark_parameters.o : $(BUILD_DIR)/benchmark_names.mod
-$(BUILD_DIR)/benchmark_1d.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_names.mod
+$(BUILD_DIR)/benchmark_1d.o : $(BUILD_DIR)/tools.mod
 $(BUILD_DIR)/benchmark_2d_cpu.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 $(BUILD_DIR)/benchmark_2d_gpu.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 
