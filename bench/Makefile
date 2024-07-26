@@ -5,8 +5,10 @@ F90?=gfortran
 CC:=gcc
 CXX:=g++
 FFLAGS = -cpp -O3 #-Wall -Wextra
+FFLAGS_VERBOSE=""
 ifeq ($(HARDWARE),GPU)
-FFLAGS+= -Minfo=mp -mp=gpu -gpu=sm_75
+FFLAGS+= -mp=gpu -gpu=sm_75
+# FFLAGS+= -Minfo=mp -mp=gpu -gpu=sm_75
 ifdef VERBOSE_OMP
 FFLAGS_VERBOSE= -Minfo=all
 endif

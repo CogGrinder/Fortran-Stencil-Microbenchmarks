@@ -15,6 +15,30 @@ $ make post
 For more specific modes, check [``codegen.py --help``](../bench/preprocess/codegen.py).
 
 ### Example
+To run a streamlined GPU vs CPU comparison, run this as a bash script:
+```bash
+# replace with your installation directory
+cd ~/Fortran-Stencil-Microbenchmarks/bench/postprocess
+mkdir -p gpu_cpu_bench_test
+make -C .. clean --silent
+# if the size is too big for your machine, you will get segmentation faults or Out of memory errors
+for size in 4 16 512 1024
+do
+    cd ../preprocess
+    # this command will generate a tree of benchmarks using the specified options
+    # TODO: --module True set because non-module not yet implemented and graphing can break
+    python3 codegen.py --size $size --kernel-mode DEFAULT_KERNEL -c -nv --module True -A
+    # this command will run all your benchmarks
+    # the flag -vompgpu will output the OpenMP optimisations on the GPU benchmarks
+    ./run_bench_tree.sh -vompgpu
+    cd ../postprocess
+    ./collect_data_csv.sh -nv
+    # this command will generate graphs with hardware as their plotted data
+    python3 generate_graph.py -D gpu_cpu_bench_test/gpu_cpu_$(printf $size)Mb -sp -G hardware -sG all
+done
+```
+
+
 To run an nvfortran compiler version on 1, 2, 3 Mb sizes with allocatable arrays, compiled array size and size 5 kernels, use these commands:
 ```bash
 cd bench/preprocess

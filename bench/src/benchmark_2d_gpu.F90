@@ -47,6 +47,7 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !$omp target teams loop bind(parallel)
     do j = 1 + 2, nj - 2
         do i = 1 + 2, ni - 2
 #if KERNEL_MODE == NO_INCLUDE

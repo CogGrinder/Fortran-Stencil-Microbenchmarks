@@ -1,8 +1,37 @@
 #!/bin/bash
-# used to show folders while exploring benchmark tree
-VERBOSE=false
+if [[ "$1" == "" ]]
+then
+echo -e "Use flag \"--help\" for help."
+fi
+
+if [[ "$1" == "-h" || "$1" == "--help" ]]
+then
+echo -e Set flag \"./run_bench_tree -nv\" for non verbose option, default is verbose.
+echo Verbose gives you a preview of the file as it is written.
+echo -e Set flag \"./run_bench_tree -d\" for debug option, default is non debug.
+echo Shows you folder to explore while exploring benchmark tree.
+exit
+fi
+
 # used to preview output file as it is written
-PREVIEW=true
+# TODO: refactor as verbose
+if [[ "$1" == "-nv" || "$2" == "-nv" ]]
+then
+PREVIEW=false
+fi
+
+: ${PREVIEW:=true}
+# used to show folders while exploring benchmark tree
+# TODO: refactor as debug
+if [[ "$1" == "-d" || "$2" == "-d" ]]
+then
+VERBOSE=true
+fi
+
+: ${VERBOSE:=false}
+
+RED='\033[0;31m'
+NO_COLOUR='\033[0m'
 
 # always contains default benchmark
 defaultfolder=bench_default/
@@ -20,6 +49,11 @@ rm -f $(basename $OUTPUT_FILE)
 cd ../preprocess/bench_tree/
 
 # going down default folder in tree_depth amount of layers
+# checking if file exists
+if [ ! -d $defaultfolder ]; then
+    echo -e "${RED}Default bench not found.${NO_COLOUR} Enter columns labels in csv manually."
+else
+
 if $VERBOSE
 then echo -n $defaultfolder
 fi
@@ -53,6 +87,8 @@ for i in $(seq 1 $tree_depth)
 do
     cd ..
 done
+
+fi # if bench_default does / does not exist
 
 if $VERBOSE
 then
@@ -118,6 +154,11 @@ do
                         cd $(basename $directory_6)
                         # write to global output
                         # cat out.csv | xargs echo >> $OUTPUT_FILE
+                        if [ ! -f out.csv ]; then
+                            if $PREVIEW; then
+                            echo -e "$(fullpath)\\t${RED}out.csv not found.${NO_COLOUR}"
+                            fi
+                        else
                         while IFS= read -r line; do
                             if [ "${line:0:7}" != "Section" ] && [ "${line:0:1}" != "-" ] && [ "${line:0:31}" != "Performance counters profiling:" ] && [ "${line:0:6}" != "Error:" ]
                             then
@@ -131,6 +172,7 @@ do
                             fi
                             # grep -o 'action'
                         done < <( cat out.csv )
+                        fi # if out.csv does / does not exist
                         cd ..
                     done
                     cd ..
@@ -143,4 +185,4 @@ do
     done
     cd ..
 done
-echo done
+echo Done collecting.

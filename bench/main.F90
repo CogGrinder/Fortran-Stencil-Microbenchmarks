@@ -16,7 +16,7 @@
 #   define BENCH_ID BENCH_2D_GPU_OMP_BASE
 ! TODO: add non-module version of GPU bench
 #  elif   MODULE_MODE == 0
-#   error Module version not implemented
+#   error Non-module version not implemented
 #  endif /*MODULE_MODE*/
 # else
 #  error Dimension not implemented

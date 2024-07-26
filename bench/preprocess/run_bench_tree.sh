@@ -20,6 +20,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]
 then
 echo -e Set flag \"./run_bench_tree -v\" for verbose option, default is non verbose.
 echo -e Set flag \"./run_bench_tree -vomp\" for verbose OpenMP option, default is non verbose.
+echo -e Set flag \"./run_bench_tree -vompgpu\" for verbose OpenMP option for GPU benchmark only, default is non verbose.
 fi
 
 if [[ "$1" == "-v" || "$2" == "-v" ]]
@@ -29,6 +30,7 @@ fi
 
 : ${VERBOSE:=false}
 
+RED='\033[0;31m'
 PURPLE="\033[1;35m"
 NO_COLOUR="\033[0m"
 
@@ -47,9 +49,12 @@ writeprogress() {
     echo -ne "\r                                \r"
     if $VERBOSE
     then
-    echo -en "$PURPLE bench $((ibench+1))\n"
+    echo -en "$PURPLE bench $((ibench))\n"
     else
-    echo -en "$PURPLE\033[1A$(printf "%-10s" "bench $((ibench+1))")\033[1B\033[10D"
+        if [[ "$run_exit_status" != "0" ]] && [[ "$run_exit_status" != "" ]]; then
+            echo
+        fi
+        echo -en "$PURPLE\033[1A$(printf "%-32s" "bench $((ibench))")\033[1B\033[32D"
     fi
     writeprogressbar launch
 }
@@ -60,6 +65,7 @@ directories_1=$(ls -d -1q */)
 nbench=$(find -mindepth $tree_depth -maxdepth $tree_depth -type d | wc -w)
 echo -ne "\r                                \r"
 echo Total amount of benchmarks: $nbench
+echo
 echo
 if $VERBOSE
 then
@@ -159,7 +165,8 @@ do
                         rm -f out.csv
                         writeprogress
                         printf "\r"
-                        ./run.sh $1 $2
+                        bash -b run.sh $1 $2
+                        run_exit_status=$?
                         if $VERBOSE
                         then
                         echo -ne "\r                                \r"
@@ -168,7 +175,7 @@ do
                         # used for output of elements of the array being computed
                         # to prevent compiler from removing computations from zero-closure
                         # the choice of a file output is because it removes the verbosity from the terminal output
-                        rm tmp.txt
+                        rm -f tmp.txt
                         cd ..
                         ((ibench+=1))
                     done
@@ -185,7 +192,17 @@ done
 if $VERBOSE
 then
 echo -en "$NO_COLOUR"
-echo "done."
+printf "%-32s" "Done running tree."
 else
-echo -en "$NO_COLOUR\033[1Adone.           \033[1B\033[16D"
+    echo -ne "$NO_COLOUR$(printf "%-32s" "")\033[32D"
+    if [[ "$run_exit_status" != "0" ]]; then
+        echo
+    fi
+    if [[ "$1" == "-vomp" || "$2" == "-vomp" || "$1" == "-vompgpu" || "$2" == "-vompgpu" ]]; then
+    echo -ne "$NO_COLOUR\033[1A$(printf "%-32s" "")\033[1B\033[32D"
+    printf "%-32s\n" "Done running tree."
+    else
+    echo -ne "$NO_COLOUR\033[1A$(printf "%-32s" "Done running tree.")\033[1B\033[32D"
+    echo -e "\r                                \r"
+    fi
 fi

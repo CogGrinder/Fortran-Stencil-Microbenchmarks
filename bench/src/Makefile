@@ -6,10 +6,17 @@
 F90?=gfortran
 NV = nvfortran
 FFLAGS = -cpp -O3 #-Wall -Wextra
+
+FFLAGS_VERBOSE=""
+FFLAGS_VERBOSE_GPU_BENCH=""
 ifeq ($(HARDWARE),GPU)
-FFLAGS+= -Minfo=mp -mp=gpu -gpu=sm_75
+FFLAGS+= -mp=gpu -gpu=sm_75
+# FFLAGS+= -Minfo=mp -mp=gpu -gpu=sm_75
 ifdef VERBOSE_OMP
 FFLAGS_VERBOSE= -Minfo=all
+endif
+ifdef VERBOSE_OMP_GPU_BENCH
+FFLAGS_VERBOSE_GPU_BENCH= -Minfo=all
 endif
 endif
 
@@ -110,7 +117,7 @@ $(BUILD_DIR)/benchmark_2d_cpu.o $(BUILD_DIR)/benchmark_2d_cpu.mod : $(SRC_DIR)/b
 # 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 # else
 $(BUILD_DIR)/benchmark_2d_gpu.o $(BUILD_DIR)/benchmark_2d_gpu.mod : $(SRC_DIR)/benchmark_2d_gpu.F90 | $(BUILD_DIR)
-	${F90} ${FFLAGS} ${FFLAGS_VERBOSE} -c $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DNO_GPU ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
+	${F90} ${FFLAGS} ${FFLAGS_VERBOSE} ${FFLAGS_VERBOSE_GPU_BENCH} -c $< -o $(BUILD_DIR)/benchmark_2d_gpu.o -DNO_GPU ${CFLAGS} ${PERFREGION_LINKFLAGS} -L$(LIB_DIR)
 	@mv -f $(<:.F90=.mod) "${BUILD_DIR}"
 # endif
 

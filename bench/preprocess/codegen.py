@@ -257,10 +257,16 @@ then
 VERBOSE=true
 fi
 : ${{VERBOSE:=false}}
-# OpenMP VERBOSE
+
+# OpenMP VERBOSE (-Minfo=all)
 if [[ "$1" == "-vomp" || "$2" == "-vomp" ]]
 then
 export VERBOSE_OMP="1"
+fi
+# OpenMP VERBOSE (-Minfo=all) for GPU bench
+if [[ "$1" == "-vompgpu" || "$2" == "-vompgpu" ]]
+then
+export VERBOSE_OMP_GPU_BENCH="1"
 fi
 
 PURPLE="\\033[1;35m"
@@ -322,9 +328,9 @@ else
     
     n_lines_error=$(echo "$ERROR_OUTPUT" | wc -l)
     if (( n_lines_error > 1 ));then
-    echo n_lines_error: $n_lines_error
+    echo -ne "\r$NO_COLOUR\033[8C$(printf "%-24s" "")\033[32D\\n"
     printf "%s" "$ERROR_OUTPUT"
-    printf "$NO_COLOUR\n"
+    printf "$NO_COLOUR\\n\\n"
     fi
 fi
 printf "\\r"
@@ -339,6 +345,7 @@ writeprogressbar execute
 else
 printf "\\r                                \\r"
 writeprogressbar execute
+printf "\\r"
 fi
 # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
@@ -355,10 +362,20 @@ while IFS= read -r line; do
     fi
 done < <( {"" if not "GPU" in hardware else "OMP_TARGET_OFFLOAD=mandatory "}./$BENCH_EXECUTABLE iters={iters} {"" if compile_size else f"ni={ni} nj={nj}"} )
 printf "\\r"
-writeprogressbar done
+writeprogressbar jobdone
 printf "\\r"
-# |  grep -A100 Section | paste >> $filename.csv
-# cat $filename.csv
+
+# bash expressions https://www.pluralsight.com/resources/blog/cloud/conditions-in-bash-scripting-if-statements
+# check if output exists and check for at least 3 lines
+# double if is to not ck
+if [[ ! -f $filename.csv ]]; then exit -1
+else
+    if [[ (( "$(wc -l < $filename.csv)" < "3" )) ]]; then
+        exit -1
+    else
+        exit 0
+    fi
+fi
 """)
     f.close()
     return filename, iters, ni, nj
@@ -638,7 +655,7 @@ def main():
         f = open(json_filename, "w")
         json.dump(json_dict_all_parameters,f,sort_keys=True, indent=4)
         f.close()
-        print("done.")
+        print("Done generating.")
     
     ### clean mode ###
     if args.MODE == "clean":
