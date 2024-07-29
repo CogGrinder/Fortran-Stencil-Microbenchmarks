@@ -40,7 +40,9 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
     end do
     
         !!!!!!!! start timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_start(bench_id, bench_str//achar(0))
+#endif
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -63,7 +65,9 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!! end timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_stop(bench_id)
+#endif
 
         
 

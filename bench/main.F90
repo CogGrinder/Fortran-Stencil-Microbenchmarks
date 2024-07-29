@@ -97,7 +97,9 @@ PROGRAM main
     CALL set_1D_size(n1dinput)
 
     !!!!!!!! initialize timing here
+#ifndef NO_PERF_REGIONS
 CALL perf_regions_init()
+#endif
     
     CALL WARMUP_COMPUTATION(3,n1dinput)
 
@@ -185,7 +187,9 @@ CALL perf_regions_init()
     end if
 
     !!!!!!!! finalize timing here
+#ifndef NO_PERF_REGIONS
 CALL perf_regions_finalize()
+#endif
 
 END PROGRAM main
 
@@ -217,7 +221,9 @@ USE BENCHMARK_PARAMETERS
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters
 #ifdef DEBUG
+#ifndef NO_PERF_REGIONS
         CALL perf_region_start(99, "DEBUG"//achar(0))
+#endif
 #endif
         select case (BENCH_ID)
             case (BENCH_1D)
@@ -238,7 +244,9 @@ USE BENCHMARK_PARAMETERS
                 write (*,*) 'Error: no such benchmark'
         end select
 #ifdef DEBUG
+#ifndef NO_PERF_REGIONS
         CALL perf_region_stop(99) !DEBUG
+#endif
 #endif
     end do
   
@@ -301,7 +309,9 @@ SUBROUTINE COMPUTATION_1D(bench_id,bench_str, array_len)
     end do
 
     !!!!!!!! start timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_start(bench_id, bench_str//achar(0))
+#endif
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do i = 1 + sten_len/2, array_len - sten_len/2
@@ -316,7 +326,9 @@ SUBROUTINE COMPUTATION_1D(bench_id,bench_str, array_len)
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!!!!!!! end timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_stop(bench_id)
+#endif
 
         
 
@@ -357,7 +369,9 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     end do
 
         !!!!!!!! start timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_start(bench_id, bench_str//achar(0))
+#endif
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -380,7 +394,9 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str, array_len)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!! end timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_stop(bench_id)
+#endif
 
         
 
@@ -421,7 +437,9 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
         end do
     end do
         !!!!!!!! start timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_start(bench_id, bench_str//achar(0))
+#endif
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -444,7 +462,9 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str, array_len)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!! end timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_stop(bench_id)
+#endif
 
         
 

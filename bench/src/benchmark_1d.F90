@@ -34,7 +34,9 @@ SUBROUTINE COMPUTATION_1D_MODULE(bench_id,bench_str,array_len)
 #endif /*ALLOC_MODE*/
 
 #ifdef DEBUG_PERF
+#ifndef NO_PERF_REGIONS
     CALL perf_regions_init()
+#endif
 #endif
 
     stencil = (/ 1, 0, 1/)
@@ -46,7 +48,9 @@ SUBROUTINE COMPUTATION_1D_MODULE(bench_id,bench_str,array_len)
     end do
     
         !!!!!!!! start timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_start(bench_id, bench_str//achar(0))
+#endif
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -63,10 +67,14 @@ SUBROUTINE COMPUTATION_1D_MODULE(bench_id,bench_str,array_len)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!! end timing here
+#ifndef NO_PERF_REGIONS
     CALL perf_region_stop(bench_id)
+#endif
     
 #ifdef DEBUG_PERF
+#ifndef NO_PERF_REGIONS
     CALL perf_regions_finalize()
+#endif
 #endif
 
         
