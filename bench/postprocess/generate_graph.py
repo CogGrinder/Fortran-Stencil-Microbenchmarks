@@ -76,7 +76,9 @@ def import_data_pandas(json_metadata_path,
     if DEBUG and VERBOSE:
         print(datacsvdf.index)
     if VERBOSE or DEBUG:
-        print(datacsvdf)
+        # print(datacsvdf)
+        for i in range(len(datacsvdf.index)):
+            print(datacsvdf.iloc[i])
         print()
 
 
@@ -99,9 +101,11 @@ def import_data_pandas(json_metadata_path,
     # sorting
     jsonmetadata_df.sort_values(by=list(jsonmetadata_df.columns), inplace=True, ascending=True)
     if VERBOSE or DEBUG:
-        print(jsonmetadata_df)
+        # print(jsonmetadata_df)
+        for i in range(len(jsonmetadata_df.index)):
+            print(jsonmetadata_df.iloc[i])
         print()
-
+    
     if DEBUG:
         #multiindex test
         multiindex = pd.MultiIndex.from_arrays(arrays=[
@@ -112,14 +116,16 @@ def import_data_pandas(json_metadata_path,
 
     ### join ###
     print("Joining both DataFrames...")
-    joined_df = datacsvdf.join(jsonmetadata_df)
+    # joined_df = datacsvdf.join(jsonmetadata_df)
+    # join using json because it is normalised
+    joined_df = jsonmetadata_df.join(datacsvdf)
     index_list = list(joined_df.index)
     # removing default benchmark
-    default_key = [i for i in index_list if 'bench_default/' in i ]
-    if DEBUG:
-        print(f"default keys: {default_key}")
-    default_key=default_key[0]
-    joined_df.drop(index=default_key,inplace=True)
+    # default_key = [i for i in index_list if 'bench_default/' in i ]
+    # if DEBUG:
+    #     print(f"default keys: {default_key}")
+    # default_key=default_key[0]
+    # joined_df.drop(index=default_key,inplace=True)
 
     # len is the fastest, courtesy of https://stackoverflow.com/questions/15943769/how-do-i-get-the-row-count-of-a-pd-dataframe
     if VERBOSE or DEBUG:
@@ -286,26 +292,26 @@ def make_graphs(df: pd.DataFrame,
         print("Dropped duplicates") 
         print(graphing_df)
 
-    warned=False
-    # check for fixed columns with leftover "ugly duckling" data
-    for i, label in enumerate(fixed_columns):
-        set_of_label = list(set(graphing_df[label].to_numpy()))
-        if len(set_of_label)>1:
-            # https://docs.python.org/3/tutorial/errors.html
-            # raise ValueError(f"Metavariable '{label}' failed filtering: values {set_of_label}")
-            warnings.warn(f"\nMetavariable '{label}' failed filtering duplicates. Values: {set_of_label}.\
-                          \n\nLikely explanation is a benchmark has not executed properly or was reexectuted halfway.",
-                          category=RuntimeWarning)
-            warned=True
-            is_ugly_duckling = graphing_df[label]!=values_kept[i]
-            set_of_label.remove(values_kept[i])
-            print(f"Attempting to remove unfiltered data : {set_of_label}.\
-                  \nMay remove most of data in case of a systematic error.")
-            graphing_df = graphing_df.drop(index=graphing_df.index.array[is_ugly_duckling],
-                             axis=1)
-    if warned and (VERBOSE or DEBUG):
-        print("Data after cleaning up filtering:")
-        print(graphing_df)
+    # warned=False
+    # # check for fixed columns with leftover "ugly duckling" data
+    # for i, label in enumerate(fixed_columns):
+    #     set_of_label = list(set(graphing_df[label].to_numpy()))
+    #     if len(set_of_label)>1:
+    #         # https://docs.python.org/3/tutorial/errors.html
+    #         # raise ValueError(f"Metavariable '{label}' failed filtering: values {set_of_label}")
+    #         warnings.warn(f"\nMetavariable '{label}' failed filtering duplicates. Values: {set_of_label}.\
+    #                       \n\nLikely explanation is a benchmark has not executed properly or was reexectuted halfway.",
+    #                       category=RuntimeWarning)
+    #         warned=True
+    #         is_ugly_duckling = graphing_df[label]!=values_kept[i]
+    #         set_of_label.remove(values_kept[i])
+    #         print(f"Attempting to remove unfiltered data : {set_of_label}.\
+    #               \nMay remove most of data in case of a systematic error.")
+    #         graphing_df = graphing_df.drop(index=graphing_df.index.array[is_ugly_duckling],
+    #                          axis=1)
+    # if warned and (VERBOSE or DEBUG):
+    #     print("Data after cleaning up filtering:")
+    #     print(graphing_df)
 
     # other solution: use pd.DataFrame.to_json and then pd.json_normalize
     
@@ -408,7 +414,7 @@ def make_graphs(df: pd.DataFrame,
                 ax.set_ylabel(row, rotation=90, size='small')
         fig.suptitle(f"Graphs of {variable_to_graph}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'}\nFixed options: {' '.join(index_list[i][1:])}")
         fig.tight_layout()
-        filename = f"{str(directory).rstrip('/')}/{variable_to_graph}{'' if secondary_graphed is None else '-'+secondary_graphed}_{datetime.date.today()}.pdf"
+        filename = f"{str(directory).rstrip('/')}/{variable_to_graph}{'' if secondary_graphed is None else '-'+secondary_graphed}_{datetime.date.today()}_baseline_{'_'.join(index_list[i][1:])}.pdf"
         fig.savefig(filename)
         plt.close()
         if interactive:
@@ -694,7 +700,9 @@ def main():
                                     secondary_graphed=columns[isecondary],
                                     interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
                     else:
-                        pass # TODO: if args.secondary_graphed=='all'
+                        print("This combination of options was not implemented.")
+                        # TODO: if args.secondary_graphed=='all'
+                        exit(-1)
         else:
                 if non_unique_parameters[igraphed]:
                     if args.secondary_graphed is None or (args.secondary_graphed=='all' and not args.subplots) :
