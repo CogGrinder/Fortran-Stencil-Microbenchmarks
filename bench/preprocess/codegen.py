@@ -109,7 +109,7 @@ mainfile = pathlib.Path("../main.F90")
 makefile = pathlib.Path("../Makefile")
 
 
-def generate_2d_array_size(size_in_mb: float, bitsize_per_float=8):
+def generate_2d_array_size(size_in_mb: float, bitsize_per_float=64):
     """Calculate array dimensions to obtain a total memory cost
 
     Args:

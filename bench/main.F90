@@ -209,10 +209,10 @@ USE BENCHMARK_PARAMETERS
     WRITE(*,*) "Precision in bytes: ", dp, " bytes"
     if (     BENCH_ID == BENCH_1D              &
         .or. BENCH_ID == BENCH_1D_MODULE) then
-        WRITE(*,*) "Mem size: ", array_len*0.001 ," Kbyte"
+        WRITE(*,*) "Mem size: ", array_len*0.000001*8 ," Mbyte"
     else
         WRITE(*,*) "Mem size: ", ni* &
-                                nj*0.001 ," Kbyte"
+                                nj*0.000001*8 ," Mbyte"
     end if
     WRITE(*,*) "Iterations: ", iters
     do k = 1, iters

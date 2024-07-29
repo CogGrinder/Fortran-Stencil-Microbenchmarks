@@ -8,14 +8,22 @@
 # and https://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
 # for return carriage special options
 
+# UPDATE : tree_depth and fullpath() must be updated with each new added parameter
 tree_depth=6
+fullpath() {
+printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/run.sh"
+}
+# special color ouput
+RED='\033[0;31m'
+PURPLE="\033[1;35m"
+NO_COLOUR="\033[0m"
 
+### execution flags ###
 if [[ "$1" == "" ]]
 then
 echo -ne "Use flag \"--help\" for help.\r"
 sleep 1
 fi
-
 if [[ "$1" == "-h" || "$1" == "--help" ]]
 then
 echo -e Set flag \"./run_bench_tree -v\" for verbose option, default is non verbose.
@@ -27,18 +35,22 @@ if [[ "$1" == "-v" || "$2" == "-v" ]]
 then
 VERBOSE=true
 fi
-
 : ${VERBOSE:=false}
 
-RED='\033[0;31m'
-PURPLE="\033[1;35m"
-NO_COLOUR="\033[0m"
+# clear progress bar line in terminal
+clear_line() {
+    if $VERBOSE
+    then
+    echo -ne "\r                                \r"
+    fi
+}
 
-# function used for printing bench <number>
+# function used for progress bar
 writeprogressbar() {
     printf "$(printf "%-8s" "$1")[$progressbar]($progresspercent%%)"
 }
 
+# function for printing bench number and details when there is an error
 writeprogress() {
     progresspercent=$(printf "%3d" $((100 * ibench/nbench)))
     n=$(( 16 * ibench / nbench ))
@@ -46,12 +58,14 @@ writeprogress() {
     progressbar=${progressbar:1:16}
     export progresspercent
     export progressbar
-    echo -ne "\r                                \r"
+    clear_line
     if $VERBOSE
     then
     echo -en "$PURPLE bench $((ibench))\n"
     else
+        # check if benchmark was successful
         if [[ "$run_exit_status" != "0" ]] && [[ "$run_exit_status" != "" ]]; then
+            printf "$RED%s$NO_COLOUR %s\n" "Benchmark failed:" "$failed_bench_path"
             echo
         fi
         echo -en "$PURPLE\033[1A$(printf "%-32s" "bench $((ibench))")\033[1B\033[32D"
@@ -158,19 +172,20 @@ do
                     echo
                     fi
                     # sleep 2
-                    for directory_7 in $directories_6
+                    for directory_6 in $directories_6
                     do
-                        cd $(basename $directory_7)
+                        cd $(basename $directory_6)
                         # remove previous data
                         rm -f out.csv
                         writeprogress
                         printf "\r"
                         bash -b run.sh $1 $2
+                        # check if benchmark was successful
                         run_exit_status=$?
-                        if $VERBOSE
-                        then
-                        echo -ne "\r                                \r"
+                        if [[ "$run_exit_status" != "0" ]] && [[ "$run_exit_status" != "" ]]; then
+                        failed_bench_path=$(fullpath)
                         fi
+                        clear_line
                         # remove the anti-optimisation file
                         # used for output of elements of the array being computed
                         # to prevent compiler from removing computations from zero-closure

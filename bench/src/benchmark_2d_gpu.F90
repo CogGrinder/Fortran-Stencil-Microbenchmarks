@@ -76,6 +76,11 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
                                     modulo(42,nj)))
 
+#if ALLOC_MODE == ALLOCATABLE
+    DEALLOCATE (array)
+    DEALLOCATE (result)
+#endif /*ALLOC_MODE*/
+
 #else
     write(*,*) "GPU BENCHMARK NOT COMPILED"
 #endif /*HARDWARE*/

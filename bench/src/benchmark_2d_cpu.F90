@@ -72,6 +72,11 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str,array_len)
     CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
                                     modulo(42,nj)))
 
+#if ALLOC_MODE == ALLOCATABLE
+    DEALLOCATE (array)
+    DEALLOCATE (result)
+#endif /*ALLOC_MODE*/
+
 end SUBROUTINE COMPUTATION_2D_MODULE
 
 end MODULE BENCHMARK_2D_CPU

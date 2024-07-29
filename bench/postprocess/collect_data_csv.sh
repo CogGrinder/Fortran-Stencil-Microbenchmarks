@@ -1,9 +1,21 @@
 #!/bin/bash
+
+# UPDATE : tree_depth and fullpath() must be updated with each new added parameter
+tree_depth=6
+fullpath() {
+printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/run.sh"
+}
+# always contains default benchmark
+defaultfolder=bench_default/
+# special color ouput
+RED='\033[0;31m'
+NO_COLOUR='\033[0m'
+
+### execution flags ###
 if [[ "$1" == "" ]]
 then
 echo -e "Use flag \"--help\" for help."
 fi
-
 if [[ "$1" == "-h" || "$1" == "--help" ]]
 then
 echo -e Set flag \"./run_bench_tree -nv\" for non verbose option, default is verbose.
@@ -19,27 +31,15 @@ if [[ "$1" == "-nv" || "$2" == "-nv" ]]
 then
 PREVIEW=false
 fi
-
 : ${PREVIEW:=true}
+
 # used to show folders while exploring benchmark tree
 # TODO: refactor as debug
 if [[ "$1" == "-d" || "$2" == "-d" ]]
 then
 VERBOSE=true
 fi
-
 : ${VERBOSE:=false}
-
-RED='\033[0;31m'
-NO_COLOUR='\033[0m'
-
-# always contains default benchmark
-defaultfolder=bench_default/
-# UPDATE : tree_depth and fullpath() must be updated with each new added parameter
-tree_depth=6
-fullpath() {
-printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/run.sh"
-}
 
 # output file is found at tree_depth + 2 upwards at postprocess/data.csv
 OUTPUT_FILE=$(printf '../%.0s' $(seq 1 $((tree_depth+2))) )postprocess/data.csv
