@@ -8,10 +8,11 @@
 # and https://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
 # for return carriage special options
 
-# UPDATE : tree_depth and fullpath() must be updated with each new added parameter
+# UPDATE : tree_depth and debug_fullpath() must be updated with each new added parameter
 tree_depth=6
-fullpath() {
-printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/run.sh"
+base_directory=$(pwd)
+debug_fullpath() {
+printf "$base_directory/bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/run.sh"
 }
 # special color ouput
 RED='\033[0;31m'
@@ -50,7 +51,8 @@ writeprogressbar() {
     printf "$(printf "%-8s" "$1")[$progressbar]($progresspercent%%)"
 }
 
-# function for printing bench number and details when there is an error
+# function for printing bench number
+# will print details of previous benchmark when there is an error
 writeprogress() {
     progresspercent=$(printf "%3d" $((100 * ibench/nbench)))
     n=$(( 16 * ibench / nbench ))
@@ -101,7 +103,8 @@ recursive_run()
     # used for output of elements of the array being computed
     # to prevent compiler from removing computations from zero-closure
     # the choice of a file output is because it removes the verbosity from the terminal output
-    rm tmp.txt
+    rm -f array_tmp.txt
+    rm -f result_tmp.txt
     cd ..
     ((ibench+=1))
     else
@@ -183,7 +186,7 @@ do
                         # check if benchmark was successful
                         run_exit_status=$?
                         if [[ "$run_exit_status" != "0" ]] && [[ "$run_exit_status" != "" ]]; then
-                        failed_bench_path=$(fullpath)
+                        failed_bench_path=$(debug_fullpath)
                         fi
                         clear_line
                         # remove the anti-optimisation file
@@ -210,7 +213,9 @@ echo -en "$NO_COLOUR"
 printf "%-32s" "Done running tree."
 else
     echo -ne "$NO_COLOUR$(printf "%-32s" "")\033[32D"
-    if [[ "$run_exit_status" != "0" ]]; then
+    # check if last benchmark was successful
+    if [[ "$run_exit_status" != "0" ]] && [[ "$run_exit_status" != "" ]]; then
+        printf "$RED%s$NO_COLOUR %s\n" "Benchmark failed:" "$failed_bench_path"
         echo
     fi
     if [[ "$1" == "-vomp" || "$2" == "-vomp" || "$1" == "-vompgpu" || "$2" == "-vompgpu" ]]; then

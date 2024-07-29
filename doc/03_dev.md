@@ -1,6 +1,6 @@
 # Developer info
 ## Technical report
-Do not modify generated files.
+Do not modify generated files. Beware, VSCode tends to open copied source files when looking for function definitions.
 
 ``make`` target binary names contain all information about compilation parameters. The
 refore, if modifying generated scripts by hand, one must change the makefile call by changing the target.

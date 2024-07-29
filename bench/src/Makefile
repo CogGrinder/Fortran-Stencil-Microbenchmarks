@@ -95,7 +95,7 @@ PERFREGION_LINKFLAGS:= ${PAPI_LIB} ${PERFREGION_LIB}
 
 ####################### extra dependency rules #######################
 
-$(BUILD_DIR)/benchmark_1d.o : $(BUILD_DIR)/tools.mod
+$(BUILD_DIR)/benchmark_1d.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 $(BUILD_DIR)/benchmark_2d_cpu.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 $(BUILD_DIR)/benchmark_2d_gpu.o : $(BUILD_DIR)/tools.mod $(BUILD_DIR)/benchmark_parameters.mod
 

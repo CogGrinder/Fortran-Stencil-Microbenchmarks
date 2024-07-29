@@ -14,14 +14,12 @@ MODULE TOOLS
                 read(arg(pos+1:),*) value
             end if
         end SUBROUTINE get_key_value
-        SUBROUTINE ANTI_OPTIMISATION_WRITE(written)
+        SUBROUTINE ANTI_OPTIMISATION_WRITE(written, filename)
             implicit none
             real(kind=dp), intent(in) :: written
             integer :: id = 42
-            character(len=42) :: filename
-            
-            filename = 'tmp.txt'
-        
+            character(len=*), intent(in) :: filename
+                    
             open(unit=id, file=filename, status='unknown')
             write(id,*) written
             close(id)

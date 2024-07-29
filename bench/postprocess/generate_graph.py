@@ -370,7 +370,8 @@ def make_graphs(df: pd.DataFrame,
             if not subplots_in_one_figure:
                 fig,ax = plt.subplots()
             else:
-                if secondary_graphed is None:
+                # TODO: when missing data will be patched, update conditionals
+                if secondary_graphed is None or n_rows==1:
                     ax = ax_list[i]          
                 else:
                     ax = ax_list[j][i]
@@ -398,6 +399,7 @@ def make_graphs(df: pd.DataFrame,
                 if interactive:
                     print(filename)
 
+    # TODO: when missing data will be patched, update conditionals
     if subplots_in_one_figure:
         if not secondary_graphed is None:            
             # courtesy of https://stackoverflow.com/questions/25812255/row-and-column-headers-in-matplotlibs-subplots

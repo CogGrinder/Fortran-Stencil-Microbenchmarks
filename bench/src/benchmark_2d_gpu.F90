@@ -9,7 +9,7 @@ MODULE BENCHMARK_2D_GPU
     
     
 ! to test 2D stencils on an OpenMP offloaded GPU
-SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
+SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str)
     USE TOOLS
     use perf_regions_fortran
     USE BENCHMARK_PARAMETERS
@@ -17,7 +17,6 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
     
     integer(KIND=4), intent(in) :: bench_id
     character(len=7), intent(in) :: bench_str
-    integer, intent(in) :: array_len
 
 #if HARDWARE==GPU /*used for ignoring this module when compiling without nvfortran*/
 
@@ -31,20 +30,23 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
     allocate(result(ni,&
                     nj) , source=-1.0_dp)
 #elif ALLOC_MODE == STATIC
-    real(dp), dimension(array_len,array_len) :: array
-    real(dp), dimension(array_len,array_len) :: result
+    ! real(dp), dimension(ni,nj) :: array
+    ! real(dp), dimension(ni,nj) :: result
+    real(dp) array(ni,nj), result(ni,nj)
 #endif /*ALLOC_MODE*/
-
+    ! TODO: check initialization
     do j = 1, nj
         do i = 1, ni
             array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
     end do
-    
+    ! TODO: try setting a higher static limit ie stack size
+    ! cudaDeviceGetLimit ( size_t* pValue, cudaLimitStackSize);
+    ! cudaDeviceSetLimit (2*cudaLimitStackSize);
         !!!!!!!! start timing here
 #ifndef NO_PERF_REGIONS
-    CALL perf_region_start(bench_id, bench_str//achar(0))
+    CALL perf_region_start(bench_id, bench_str)
 #endif
 
         
@@ -75,10 +77,8 @@ SUBROUTINE COMPUTATION_GPU_OMP_BASE(bench_id,bench_str,array_len)
 
         
 
-    CALL ANTI_OPTIMISATION_WRITE(array(modulo(42,ni),&
-                                    modulo(42,nj)))
-    CALL ANTI_OPTIMISATION_WRITE(result(modulo(42,ni),&
-                                    modulo(42,nj)))
+    CALL ANTI_OPTIMISATION_WRITE(array(5,5),"array_tmp.txt")
+    CALL ANTI_OPTIMISATION_WRITE(result(5,5),"result_tmp.txt")
 
 #if ALLOC_MODE == ALLOCATABLE
     DEALLOCATE (array)

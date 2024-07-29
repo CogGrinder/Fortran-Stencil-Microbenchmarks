@@ -349,10 +349,13 @@ printf "\\r"
 fi
 # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
-    if $VERBOSE
+    # TODO: add VERBOSE output option
+    if $VERBOSE # || true
     then
+    # clear progress bar line
     printf "\\r                                \\r"
-    printf "$line\\n"
+    # print output
+    printf "%s\\n" "$line"
     writeprogressbar execute
     fi
     # MULE lines are those without a " " space prefix

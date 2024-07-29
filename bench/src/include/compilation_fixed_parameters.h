@@ -17,8 +17,9 @@ kernel_mode KERNEL_MODE
 #endif
 #if SIZE_AT_COMPILATION==1
 ! use NI and NJ determined at compile time
-# define ni (NI)
-# define nj (NJ)
+# define n1d (NI * NJ)
+# define ni NI
+# define nj NJ
 ! TODO: support 3D and 1D
 #endif /*SIZE_AT_COMPILATION*/
 
