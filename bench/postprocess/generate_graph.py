@@ -185,7 +185,7 @@ def prompt_user_to_choose_from_array(choice_list:list,message="",default=None):
 def make_graphs(df: pd.DataFrame,
                 interactive=False,
                 directory=None,
-                subplots_in_one_figure=False,
+                subplots=False,
                 all_data_values=all_data_values,
                 all_metadata_columns=all_metadata_columns,
                 variable_to_graph="size",
@@ -343,29 +343,33 @@ def make_graphs(df: pd.DataFrame,
     
     index_list = list(list(str(i) for i in tuple_i) for tuple_i in graphing_df.index)
     column_list = []
-    n_rows = 1
+
+    
     if secondary_graphed is None:
-        if DEBUG:
-            print(graphing_df.columns.array)  
         column_list = list(map(metadata_types[variable_to_graph],graphing_df.columns))
+        n_rows = 1
     else:
         multi_id = graphing_df.columns.to_numpy()
-        primary_graphed_list = list(set([t[1] for t in multi_id]))
-        secondary_graphed_list = list(set([t[0] for t in multi_id]))
+        # dict from list for ordered set
+        # courtesy of jrc on https://stackoverflow.com/questions/1653970/does-python-have-an-ordered-set
+        primary_graphed_list = list(dict.fromkeys([t[1] for t in multi_id]))
+        secondary_graphed_list = list(dict.fromkeys([t[0] for t in multi_id]))
+        
         column_list = list(map(metadata_types[variable_to_graph],primary_graphed_list))
         n_rows = len(secondary_graphed_list)
 
     if DEBUG:
+        print(graphing_df.columns.to_numpy())  
         print(f"columns: {graphing_df.columns}")
         print(f"column_list: {column_list}")
+
     n_graphs = len(graphing_df.index)
     
-    # declaring matplotlib ax and fig, and ax_list
-    ax = None
-    fig,ax_list = plt.subplots(1,n_graphs)
-    if not secondary_graphed is None:
-        fig,ax_list = plt.subplots(n_rows,n_graphs)
-    if not subplots_in_one_figure:
+    # declaring matplotlib ax and fig, and iterable ax_
+    ax = None # TODO: check if necessary
+    fig,ax_ = plt.subplots(n_rows,n_graphs)
+    if not subplots:
+        # if not grouped
         dir = f"{'.' if directory==None else str(directory).rstrip('/')}/{variable_to_graph}"
         if not pathlib.Path(dir).is_dir() :
             os.mkdir(dir)
@@ -373,44 +377,53 @@ def make_graphs(df: pd.DataFrame,
         #     warnings.warn(f"{dir} exists. May be overwriting files.",category=RuntimeWarning)
     for j in range(n_rows):
         for i in range(n_graphs):
-            if not subplots_in_one_figure:
-                fig,ax = plt.subplots()
-            else:
+            if subplots:
                 # TODO: when missing data will be patched, update conditionals
-                if secondary_graphed is None or n_rows==1:
-                    ax = ax_list[i]          
+                if n_rows==1:
+                    ax = ax_[i]          
                 else:
-                    ax = ax_list[j][i]
+                    ax = ax_[j][i]
+            else:
+                fig,ax = plt.subplots()
             if VERBOSE:
                 print(f"Graphing {index_list[i]}...")
             
-            graphed_data_i = graphing_df.iloc[i].array
-            if not secondary_graphed is None:            
+            if secondary_graphed is None:            
+                graphed_data_i = graphing_df.iloc[i].array
+            else:
                 j_slice = [t[0]==secondary_graphed_list[j] for t in multi_id]
                 graphed_data_i=graphing_df.iloc[i].array[j_slice]
+            
             if DEBUG:
-                print(f"graphing_df.iloc[0].array: {graphing_df.iloc[i].array}")
+                print(f"graphing_df.iloc[i].array: {graphing_df.iloc[i].array}")
                 print(f"graphed_data_i: {graphed_data_i}")
 
+            # graph a bar chart in the corresponding plt.axes.Axes or plt.axis.Axis
             ax.bar(range(len(graphed_data_i)),graphed_data_i)
-
-            title = str(index_list[i][0]) if subplots_in_one_figure else f"Graph of {variable_to_graph} using {str(index_list[i][0])} data\nFixed options: {' '.join(index_list[i][1:])}"
-            title_size = 10 if subplots_in_one_figure else 12
+            # set title
+            title = str(index_list[i][0]) if subplots else f"Graph of {variable_to_graph} using {str(index_list[i][0])} data\nFixed options: {' '.join(index_list[i][1:])}"
+            title_size = 10 if subplots else 12
             ax.set_title(title, fontsize=title_size)
+            # set labels
             ax.set_xticks(ticks=range(len(column_list)),labels=column_list, rotation=60, ha='right', size='xx-small')
-            if not subplots_in_one_figure:
+            
+            if subplots:
+                # save at the end
+                pass
+            else:
+                # save figure if not in subplots
                 filename=f"{dir}/{variable_to_graph}_{str(index_list[i][0])}.pdf"
-                fig.savefig(filename)
-                plt.close()
                 if interactive:
                     print(filename)
+                fig.savefig(filename)
+                plt.close()
 
     # TODO: when missing data will be patched, update conditionals
-    if subplots_in_one_figure:
+    if subplots:
         if not secondary_graphed is None:            
             # courtesy of https://stackoverflow.com/questions/25812255/row-and-column-headers-in-matplotlibs-subplots
             rows = [f'{secondary_graphed} = {{}}'.format(row) for row in secondary_graphed_list]
-            for ax, row in zip(ax_list[:,0], rows):
+            for ax, row in zip(ax_[:,0], rows):
                 ax.set_ylabel(row, rotation=90, size='small')
         fig.suptitle(f"Graphs of {variable_to_graph}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'}\nFixed options: {' '.join(index_list[i][1:])}")
         fig.tight_layout()
@@ -694,11 +707,11 @@ def main():
             for i in range(len(non_unique_parameters)):
                 if non_unique_parameters[i]:
                     if args.secondary_graphed is None:
-                        make_graphs(df, variable_to_graph=columns[i], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+                        make_graphs(df, variable_to_graph=columns[i], interactive=False, subplots=args.subplots, directory=args.directory)
                     elif args.secondary_graphed!='all' and i!=isecondary :
                         make_graphs(df, variable_to_graph=columns[i],
                                     secondary_graphed=columns[isecondary],
-                                    interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+                                    interactive=False, subplots=args.subplots, directory=args.directory)
                     else:
                         print("This combination of options was not implemented.")
                         # TODO: if args.secondary_graphed=='all'
@@ -706,18 +719,18 @@ def main():
         else:
                 if non_unique_parameters[igraphed]:
                     if args.secondary_graphed is None or (args.secondary_graphed=='all' and not args.subplots) :
-                        make_graphs(df, variable_to_graph=columns[igraphed], interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+                        make_graphs(df, variable_to_graph=columns[igraphed], interactive=False, subplots=args.subplots, directory=args.directory)
                     elif args.secondary_graphed=='all' :
                         for j in range(len(non_unique_parameters)):
                             if non_unique_parameters[j] and columns[j]!='size': # ignore size because it makes unreadable subplots
                                 if j!=igraphed :
                                     make_graphs(df, variable_to_graph=columns[igraphed],
                                                 secondary_graphed=columns[j],
-                                                interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+                                                interactive=False, subplots=args.subplots, directory=args.directory)
                     else:
                         make_graphs(df, variable_to_graph=columns[igraphed],
                                     secondary_graphed=columns[isecondary],
-                                    interactive=False, subplots_in_one_figure=args.subplots, directory=args.directory)
+                                    interactive=False, subplots=args.subplots, directory=args.directory)
 
                 else:
                     warnings.warn(f"{args.graphed} cannot be graphed because it is uniquely represented.\nCheck if data contains failed benchmarks.",category=RuntimeWarning)
