@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # UPDATE : tree_depth and fullpath() must be updated with each new added parameter
-tree_depth=6
+tree_depth=7
 fullpath() {
-printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/run.sh"
+printf "bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/$(basename $directory_7)/run.sh"
 }
 # always contains default benchmark
 defaultfolder=bench_default/
@@ -152,27 +152,39 @@ do
                     for directory_6 in $directories_6
                     do
                         cd $(basename $directory_6)
-                        # write to global output
-                        # cat out.csv | xargs echo >> $OUTPUT_FILE
-                        if [ ! -f out.csv ]; then
-                            if $PREVIEW; then
-                            echo -e "$(fullpath)\\t${RED}out.csv not found.${NO_COLOUR}"
-                            fi
-                        else
-                        while IFS= read -r line; do
-                            if [ "${line:0:7}" != "Section" ] && [ "${line:0:1}" != "-" ] && [ "${line:0:31}" != "Performance counters profiling:" ] && [ "${line:0:6}" != "Error:" ]
+                        directories_7=$(ls -d */)
+                        if $VERBOSE
                             then
-                                # replacing perf_regions naming with json benchmark name ie full path to run.sh
-                                outputline=$(fullpath)\\t${line:8}
-                                if $PREVIEW
-                                then
-                                    echo -e "$outputline"
-                                fi
-                                echo -e "$outputline" >> $OUTPUT_FILE
+                                echo $directories_7
+                                echo
                             fi
-                            # grep -o 'action'
-                        done < <( cat out.csv )
-                        fi # if out.csv does / does not exist
+                        # sleep 2
+                        for directory_7 in $directories_7
+                        do
+                            cd $(basename $directory_7)
+                            # write to global output
+                            # cat out.csv | xargs echo >> $OUTPUT_FILE
+                            if [ ! -f out.csv ]; then
+                                if $PREVIEW; then
+                                echo -e "$(fullpath)\\t${RED}out.csv not found.${NO_COLOUR}"
+                                fi
+                            else
+                            while IFS= read -r line; do
+                                if [ "${line:0:7}" != "Section" ] && [ "${line:0:1}" != "-" ] && [ "${line:0:31}" != "Performance counters profiling:" ] && [ "${line:0:6}" != "Error:" ]
+                                then
+                                    # replacing perf_regions naming with json benchmark name ie full path to run.sh
+                                    outputline=$(fullpath)\\t${line:8}
+                                    if $PREVIEW
+                                    then
+                                        echo -e "$outputline"
+                                    fi
+                                    echo -e "$outputline" >> $OUTPUT_FILE
+                                fi
+                                # grep -o 'action'
+                            done < <( cat out.csv )
+                            fi # if out.csv does / does not exist
+                            cd ..
+                        done
                         cd ..
                     done
                     cd ..

@@ -18,7 +18,7 @@
 #   error Non-module version not implemented
 #  endif /*MODULE_MODE*/
 # else
-#  error Dimension not implemented
+#  error This dimension is not implemented
 # endif /*DIM*/
 #else /*HARDWARE*/
 
@@ -36,7 +36,7 @@
 #   define BENCH_ID BENCH_2D_CPU_JI
 #  endif /*MODULE_MODE*/
 # else
-#  error Dimension not implemented
+#  error This dimension not implemented
 # endif /*DIM*/
 #endif /*HARDWARE*/
 
@@ -89,10 +89,6 @@ PROGRAM main
     niinput = 128
     njinput = 128
 
-    CALL set_2D_size(niinput,njinput)
-    CALL set_1D_size(n1dinput)
-
-    
     i = 1
     ! see https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html
     do
@@ -116,8 +112,13 @@ PROGRAM main
         i = i + 1
     end do
 
-    CALL set_2D_size(niinput,njinput)
-    CALL set_1D_size(n1dinput)
+#if DIM == 1
+    CALL set_1D_size_and_loop_bounds(n1dinput)
+#elif DIM == 2
+    CALL set_2D_size_and_loop_bounds(niinput,njinput)
+#else
+# error This dimension does not have size and loop bounds implemented
+#endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!! BENCH DESCRIPTION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
@@ -263,8 +264,9 @@ USE BENCHMARK_PARAMETERS
     USE BENCHMARK_2D_GPU
 
     integer, intent(in) :: iters
-    ! '-' is used as character for ignoring line in output
-    character(len=7) :: warmup_str = '-WARMUP'
+    ! ' ' is used as character for ignoring line in output
+    ! used in scripts for collecting relevant output
+    character(len=7) :: warmup_str = ' WARMUP'
     integer :: warmup_id = 100
     
     
@@ -329,7 +331,7 @@ SUBROUTINE COMPUTATION_1D(bench_id,bench_str)
 
     CALL stencil_characteristics(stencil,sten_sum,sten_len)
 
-    do i = 1, n1d
+    do i = 1, loop_bound_n1d
         call RANDOM_NUMBER(array(i))
     end do
 
@@ -339,7 +341,7 @@ SUBROUTINE COMPUTATION_1D(bench_id,bench_str)
 #endif
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + sten_len/2, n1d - sten_len/2
+    do i = 1 + 2, loop_bound_n1d - 2
         result(i + sten_len/2) = 0
         do k = -sten_len/2,sten_len/2
             result(i) = result(i) + stencil(k) * array(i + k)
@@ -386,8 +388,8 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
 #endif /*ALLOC_MODE*/
 
 
-    do j = 1, nj
-        do i = 1, ni
+    do j = 1, loop_bound_nj
+        do i = 1, loop_bound_ni
             array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
@@ -400,8 +402,8 @@ SUBROUTINE COMPUTATION_2D_JI(bench_id,bench_str)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 1 + 2, nj - 2
-        do i = 1 + 2, ni - 2
+    do j = 1 + 2, loop_bound_nj - 2
+        do i = 1 + 2, loop_bound_ni - 2
 #if KERNEL_MODE == NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
@@ -453,8 +455,8 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
     real(dp) array(ni,nj), result(ni,nj)
 #endif /*ALLOC_MODE*/
 
-    do i = 1, ni
-        do j = 1, nj
+    do i = 1, loop_bound_ni
+        do j = 1, loop_bound_nj
             array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
@@ -466,8 +468,8 @@ SUBROUTINE COMPUTATION_2D_IJ(bench_id,bench_str)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + 2, ni - 2
-        do j = 1 + 2, nj - 2
+    do i = 1 + 2, loop_bound_ni - 2
+        do j = 1 + 2, loop_bound_nj - 2
 #if KERNEL_MODE == NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &

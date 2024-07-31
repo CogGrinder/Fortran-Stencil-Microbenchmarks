@@ -9,10 +9,10 @@
 # for return carriage special options
 
 # UPDATE : tree_depth and debug_fullpath() must be updated with each new added parameter
-tree_depth=6
+tree_depth=7
 base_directory=$(pwd)
 debug_fullpath() {
-printf "$base_directory/bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/run.sh"
+printf "$base_directory/bench_tree/$(basename $directory_1)/$(basename $directory_2)/$(basename $directory_3)/$(basename $directory_4)/$(basename $directory_5)/$(basename $directory_6)/$(basename $directory_7)/run.sh"
 }
 # special color ouput
 RED='\033[0;31m'
@@ -20,19 +20,21 @@ PURPLE="\033[1;35m"
 NO_COLOUR="\033[0m"
 
 ### execution flags ###
-if [[ "$1" == "" ]]
+if [[ "$1" == "" || "$1" == "-h" ]]
 then
 echo -ne "Use flag \"--help\" for help.\r"
 sleep 1
 fi
-if [[ "$1" == "-h" || "$1" == "--help" ]]
+if [[ "$1" == "--help" || "$2" == "--help" || "$3" == "--help" || "$4" == "--help" ]]
 then
 echo -e Set flag \"./run_bench_tree -v\" for verbose option, default is non verbose.
+echo -e Set flag \"./run_bench_tree -vout\" for showing output of the benchmark.
+echo -e Set flag \"./run_bench_tree -vcompile\" for showing compilation of the benchmark.
 echo -e Set flag \"./run_bench_tree -vomp\" for verbose OpenMP option, default is non verbose.
 echo -e Set flag \"./run_bench_tree -vompgpu\" for verbose OpenMP option for GPU benchmark only, default is non verbose.
 fi
 
-if [[ "$1" == "-v" || "$2" == "-v" ]]
+if [[ "$1" == "-v" || "$2" == "-v" || "$3" == "-v" || "$4" == "-v" ]]
 then
 VERBOSE=true
 fi
@@ -178,24 +180,36 @@ do
                     for directory_6 in $directories_6
                     do
                         cd $(basename $directory_6)
-                        # remove previous data
-                        rm -f out.csv
-                        writeprogress
-                        printf "\r"
-                        bash -b run.sh $1 $2
-                        # check if benchmark was successful
-                        run_exit_status=$?
-                        if [[ "$run_exit_status" != "0" ]] && [[ "$run_exit_status" != "" ]]; then
-                        failed_bench_path=$(debug_fullpath)
+                        directories_7=$(ls -d -1q */)
+                        if $VERBOSE
+                        then
+                        echo $directories_7
+                        echo
                         fi
-                        clear_line
-                        # remove the anti-optimisation file
-                        # used for output of elements of the array being computed
-                        # to prevent compiler from removing computations from zero-closure
-                        # the choice of a file output is because it removes the verbosity from the terminal output
-                        rm -f tmp.txt
+                        # sleep 2
+                        for directory_7 in $directories_7
+                        do
+                            cd $(basename $directory_7)
+                            # remove previous data
+                            rm -f out.csv
+                            writeprogress
+                            printf "\r"
+                            bash -b run.sh $1 $2 $3 $4
+                            # check if benchmark was successful
+                            run_exit_status=$?
+                            if [[ "$run_exit_status" != "0" ]] && [[ "$run_exit_status" != "" ]]; then
+                            failed_bench_path=$(debug_fullpath)
+                            fi
+                            clear_line
+                            # remove the anti-optimisation file
+                            # used for output of elements of the array being computed
+                            # to prevent compiler from removing computations from zero-closure
+                            # the choice of a file output is because it removes the verbosity from the terminal output
+                            rm -f tmp.txt
+                            cd ..
+                            ((ibench+=1))
+                        done
                         cd ..
-                        ((ibench+=1))
                     done
                     cd ..
                 done

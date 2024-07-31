@@ -41,7 +41,7 @@ SUBROUTINE COMPUTATION_1D_MODULE(bench_id,bench_str)
 
     CALL stencil_characteristics(stencil,sten_sum,sten_len)
 
-    do i = 1, n1d
+    do i = 1, loop_bound_n1d
         call RANDOM_NUMBER(array(i))
     end do
     
@@ -52,7 +52,7 @@ SUBROUTINE COMPUTATION_1D_MODULE(bench_id,bench_str)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1 + sten_len/2, n1d - sten_len/2
+    do i = 1 + 2, loop_bound_n1d - 2
         result(i + sten_len/2) = 0
         do k = -sten_len/2,sten_len/2
             result(i) = result(i) + stencil(k) * array(i + k)

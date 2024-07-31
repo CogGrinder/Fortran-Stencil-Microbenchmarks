@@ -34,26 +34,27 @@ TODO : add a further check to assert that the target in the makefile made from t
 ### Preprocessing update
 - [``codegen.py``](../bench/preprocess/codegen.py), [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh) and [``collect_data_csv.sh``](../bench/postprocess/collect_data_csv.sh):
     - update the ``TREE_DEPTH`` parameter in   by adding 1 (one)
-    - [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh) and [``collect_data_csv.sh``](../bench/postprocess/): add loop depth and shift all parameter indexes
-    - TODO: make this easier
+    - [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh) and [``collect_data_csv.sh``](../bench/postprocess/): add nested loop depth ( copy code, indent and shift all parameter indexes)
+        - TODO: make this easier
 - [``codegen.py``](../bench/preprocess/codegen.py):
+    - update dictionaries at the top of the file
     - ``codegen_bench_tree_branch``:
         - [preliminary] add parameter to signature, setting a default value
+            - add new export line in bash fstring
         - add a layer of folder creation
             - translate the new parameter's values to a suffix using a global dictionary or string manipulation
             - add this suffix to the ``directory`` string and create a corresponding directory on the chosen depth, as was done for other parameters
-        - add new export line in fstring
-    - add new parameter as a loop, adding an iterable in main function (such as ``all_<parameter name>``)
+    - add new parameter as a loop in ``main``, using ``iterator(..)`` function
     - [interface] update the passing of the new parameter by creating an argparse entry and passing the parameter to the newly created parameter of ``codegen_bench_tree_branch`` in [``codegen.py``](../bench/preprocess/codegen.py) in all execution modes.
         - modify the iterator you created above using the argparse entry
     - in the main function, add it to the benchmark metadata .JSON file in the for loops
 ### Postprocessing update
 - increment tree depth in [``collect_data_csv.sh``](../bench/postprocess/collect_data_csv.sh)
-- [``collect_data_csv.sh``](../bench/postprocess/): add loop depth and shift all parameter indexes
-- [``collect_data_csv.sh``](../bench/postprocess/): add directory to ``fullpath()`` function
-- same as [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh)
-TODO
-- in [``generate_graph.py``](../bench/postprocess/generate_graph.py), add the new parameter in ``all_metadata_columns``, ``metadata_types``, and ``baseline_for_comparison`` at the top of the file. Pay attention to having the same name as in the .JSON file
+- [``collect_data_csv.sh``](../bench/postprocess/):
+    - add loop depth and shift all parameter indexes
+    - add directory to ``fullpath()`` function
+    - process is similar to [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh)
+- in [``generate_graph.py``](../bench/postprocess/generate_graph.py), add the new parameter in the dictionaries ``all_metadata_columns``, ``metadata_types``, ``baseline_for_comparison`` and ``format_string`` at the top of the file. Pay attention to having the same naming convention as in [``codegen.py``](../bench/preprocess/codegen.py) (used in .JSON file)
 
 ## Checklist for adding new stencil to benchmark
 ### ``src/`` update

@@ -22,6 +22,13 @@ kernel_mode KERNEL_MODE
 # define nj NJ
 ! TODO: support 3D and 1D
 #endif /*SIZE_AT_COMPILATION*/
+#if LOOP_BOUND_AT_COMPILATION==1
+! use NI and NJ determined at compile time
+# define loop_bound_n1d (NI * NJ)
+# define loop_bound_ni NI
+# define loop_bound_nj NJ
+! TODO: support 3D and 1D
+#endif /*LOOP_BOUND_AT_COMPILATION*/
 
 !!!!!! preprocessor option names !!!!!!
 #define NONE 0 /* acts as default */

@@ -13,9 +13,11 @@ import math
 import time
 import subprocess
 
+import warnings
+
 # UPDATE: when implementing new parameter, increment TREE_DEPTH
 # this parameter is used for setting relative directories, with repeated "../" prefixes
-TREE_DEPTH = 6
+TREE_DEPTH = 7
 
 # global variables set later by user
 global ACCURACY
@@ -34,35 +36,38 @@ L3_SIZE = 16
 ###### metadata for developers #######
 # all_metadata_variables (dict) : names of parameters. Used for filtering arguments when executing in 'single' mode.
 # UPDATE: add new parameter here
-metadata_names = ["kernel_mode",
-                      "hardware",
-                      "allocation",
-                      "module",
-                      "size",
-                      "compile_size"]
+metadata_names = [
+    "kernel_mode",
+    "hardware",
+    "allocation",
+    "module",
+    "size",
+    "compile_size",
+    "compile_loop_bound"
+    ]
 
 # metadata_types (dict) : types of parameters. Currently not used, may be used to simplify maintainability.
 # UPDATE: add new parameter type here
-metadata_types =\
-    {
+metadata_types = {
     "kernel_mode" : str,
-    "hardware_option" : str,
-    "alloc_option" : str,
-    "is_module" : bool,
-    "size_option" : float,
-    "is_compilation_time_size" : bool
+    "hardware" : str,
+    "allocation" : str,
+    "module" : bool,
+    "size" : float,
+    "compile_size" : bool,
+    "compile_loop_bound" : bool
     }
 
 # metadata_defaults (dict) : values of parameters. Used for replacing missing parameters when omitted.
 # UPDATE: add new parameter default here
-metadata_defaults =\
-    {
+metadata_defaults = {
     "kernel_mode" : "DEFAULT_KERNEL",
     "hardware" : "CPU",
     "allocation" : "ALLOCATABLE",
     "module" : True,
     "size" : 16.0,
-    "compile_size" : True
+    "compile_size" : True,
+    "compile_loop_bound" : True
     }
 
 # suffixes (dict of dict) : used for naming folders, naming binaries and iterating over all possible values for each parameter.
@@ -93,6 +98,10 @@ suffixes['size'] =    { "SMALLER_THAN_L3"           : "_smallerl3",
 
 suffixes['compile_size'] = { False     : "_sizenotcompiled",
                         True                    : "_sizecompiled",
+                        ""                      : "_default"}
+
+suffixes['compile_loop_bound'] = { False     : "_loopboundnotcompiled",
+                        True                    : "_loopboundcompiled",
                         ""                      : "_default"}
 
 suffixes['kernel_mode'] = { "X_KERNEL"              : "_xkernel",
@@ -130,7 +139,9 @@ def codegen_bench_tree_branch(
         size =          metadata_defaults["size"],
         hardware =      metadata_defaults["hardware"],
         module =        metadata_defaults["module"],
-        compile_size =  metadata_defaults["compile_size"]):
+        compile_size =  metadata_defaults["compile_size"],
+        compile_loop_bound = metadata_defaults["compile_loop_bound"]
+        ):
     """Function for generating script that compiles and execute benchmark
 
     Codegen generates a branch in a folder tree of root 'bench_tree'
@@ -163,7 +174,7 @@ def codegen_bench_tree_branch(
     # directory is represented as an str
     directory = "bench_tree"
 
-    # first depth is kernel_mode_suffix
+    # first depth is kernel_mode suffix
     directory += f"/bench{suffixes['kernel_mode'][kernel_mode]}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
@@ -185,16 +196,20 @@ def codegen_bench_tree_branch(
     
     # size_suffix in the _01Mb format or _{option suffix} format
     size_suffix = suffixes['size'][size] if (size in suffixes['size'].keys())\
-            else "_"+"%05.2f"%size+"Mb"
+            else "_"+"%07.2f"%size+"Mb"
     directory += f"/{size_suffix}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
     
-    # adding compilation_size_suffix
+    # adding compile_size suffix
     directory += f"/{suffixes['compile_size'][compile_size]}"
     if not pathlib.Path(directory).is_dir() :
         os.mkdir(directory)
 
+    # adding compile_loop_bound suffix
+    directory += f"/{suffixes['compile_loop_bound'][compile_loop_bound]}"
+    if not pathlib.Path(directory).is_dir() :
+        os.mkdir(directory)
 
     # the last depth joined directory is the full directory
     fulldirectory = directory
@@ -252,19 +267,37 @@ def codegen_bench_tree_branch(
     f.write(f"""#! /bin/bash
 # verbose options:
 # general VERBOSE
-if [[ "$1" == "-v" || "$2" == "-v" ]]
+if [[ "$1" == "-v" || "$2" == "-v" || "$3" == "-v" || "$4" == "-v" || "$5" == "-v" ]]
 then
 VERBOSE=true
+# if verbose output, also show benchmark output and compilation
+SHOW_OUT=true
+SHOW_COMPILE=true    
 fi
 : ${{VERBOSE:=false}}
 
+# Show output
+if [[ "$1" == "-vout" || "$2" == "-vout" || "$3" == "-vout" || "$4" == "-vout" ]]
+then
+SHOW_OUT=true
+fi            
+: ${{SHOW_OUT:=false}}
+
+# Show compilation
+if [[ "$1" == "-vcompile" || "$2" == "-vcompile" || "$3" == "-vcompile" || "$4" == "-vcompile" ]]
+then
+SHOW_COMPILE=true
+fi            
+: ${{SHOW_COMPILE:=false}}           
+            
 # OpenMP VERBOSE (-Minfo=all)
-if [[ "$1" == "-vomp" || "$2" == "-vomp" ]]
+if [[ "$1" == "-vomp" || "$2" == "-vomp" || "$3" == "-vomp" || "$4" == "-vomp" ]]
 then
 export VERBOSE_OMP="1"
 fi
+
 # OpenMP VERBOSE (-Minfo=all) for GPU bench
-if [[ "$1" == "-vompgpu" || "$2" == "-vompgpu" ]]
+if [[ "$1" == "-vompgpu" || "$2" == "-vompgpu" || "$3" == "-vompgpu" || "$4" == "-vompgpu" ]]
 then
 export VERBOSE_OMP_GPU_BENCH="1"
 fi
@@ -300,8 +333,9 @@ export ALLOC_MODE="{allocation}"
 export MODULE_MODE="{int(module) if type(module)==bool else ''}"
 export SIZE_MODE="{size}"
 export SIZE_AT_COMPILATION="{int(compile_size) if type(compile_size)==bool else ''}"
-export NI="{ni if compile_size else ""}"
-export NJ="{nj if compile_size else ""}"
+export LOOP_BOUND_AT_COMPILATION="{int(compile_loop_bound) if type(compile_loop_bound)==bool else ''}"
+export NI="{ni if compile_size or compile_loop_bound else ""}"
+export NJ="{nj if compile_size or compile_loop_bound else ""}"
 
 # pretty output for progress bar
 if $VERBOSE
@@ -310,10 +344,13 @@ else
 printf "\\r"
 writeprogressbar compile
 fi
-if $VERBOSE
+if $SHOW_COMPILE
 then
+# thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read line; do
+    # clear progress bar line
     printf "\\r                                \\r"
+    # print compilation output
     printf "$line\\n"
     printf "\\r                                \\r"
     writeprogressbar compile
@@ -322,13 +359,14 @@ done < <( make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER
 # courtesy of https://stackoverflow.com/questions/418896/how-to-redirect-output-to-a-file-and-stdout
 # 2>&1 captures both stdout and stderr, and tee writes it to a log file while passing it to the while loop
 else
-    # make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} > compile_output.log
     # better catching of stderr https://stackoverflow.com/questions/11087499/bash-how-do-you-capture-stderr-to-a-variable
     ERROR_OUTPUT="$(make -C $BENCH_MAKE_DIR main {"F90=nvfortran" if IS_NVFORTRAN_COMPILER else ""} 2>&1 > compile_output.log)"
     
     n_lines_error=$(echo "$ERROR_OUTPUT" | wc -l)
     if (( n_lines_error > 1 ));then
+    # mask the progress bar (located after 8 characters)
     echo -ne "\r$NO_COLOUR\033[8C$(printf "%-24s" "")\033[32D\\n"
+    # print error
     printf "%s" "$ERROR_OUTPUT"
     printf "$NO_COLOUR\\n\\n"
     fi
@@ -349,8 +387,7 @@ printf "\\r"
 fi
 # thank you to glenn jackman's answer on https://stackoverflow.com/questions/5853400/bash-read-output
 while IFS= read -r line; do
-    # TODO: add VERBOSE output option
-    if $VERBOSE # || true
+    if $SHOW_OUT
     then
     # clear progress bar line
     printf "\\r                                \\r"
@@ -365,6 +402,11 @@ while IFS= read -r line; do
     fi
 done < <( {"" if not "GPU" in hardware else "OMP_TARGET_OFFLOAD=mandatory "}./$BENCH_EXECUTABLE iters={iters} {"" if compile_size else f"ni={ni} nj={nj}"} )
 printf "\\r"
+if $SHOW_OUT
+then
+# make sure last line is not overwritten
+echo
+fi
 writeprogressbar jobdone
 printf "\\r"
 
@@ -449,6 +491,8 @@ def argument_parsing(parser: argparse.ArgumentParser):
                               If length is greater than 2, it is the list of sizes in Mb.')
     parser_mode_specific.add_argument('--compile-size', metavar='python boolean', nargs='?', type=bool,
                 help=f'Sets if the array size is set at compilation time. Either True of False.')
+    parser_mode_specific.add_argument('--compile-loop-bound', metavar='python boolean', nargs='?', type=bool,
+                help=f'Sets if the loop bound is set at compilation time. Either True of False.')
     # Optional arguments
     parser.add_argument('-nv', '--nvfortran', action='store_true',
                         help='Uses nvfortran compiler and enables GPU benchmarking.')
@@ -565,70 +609,66 @@ def main():
                     for module in iterator(args,"module") :
                         for size in iterator(args,"size") :
                             for compile_size in iterator(args,"compile_size") :
-                                filename, iters, ni, nj  = codegen_bench_tree_branch(
-                                    kernel_mode=kernel,
-                                    hardware=hardware,
-                                    allocation=alloc,
-                                    module=module,
-                                    size=size,
-                                    compile_size=compile_size,
-                                    )
-                                json_dict_all_parameters["data"].append(
-                                    {"id":filename,
-                                    "kernel_mode": kernel,
-                                    "hardware" : hardware,
-                                    "allocation": alloc,
-                                    "module": module,
-                                    "size": size,
-                                    "compile_size": compile_size,
-                                    "ni": ni,
-                                    "nj": nj,
-                                    "iters": iters})
+                                for compile_loop_bound in iterator(args,"compile_loop_bound") :
+                                    filename, iters, ni, nj  = codegen_bench_tree_branch(
+                                        kernel_mode=kernel,
+                                        hardware=hardware,
+                                        allocation=alloc,
+                                        module=module,
+                                        size=size,
+                                        compile_size=compile_size,
+                                        compile_loop_bound=compile_loop_bound
+                                        )
+                                    json_dict_all_parameters["data"].append(
+                                        {"id":filename,
+                                        "kernel_mode": kernel,
+                                        "hardware" : hardware,
+                                        "allocation": alloc,
+                                        "module": module,
+                                        "size": size,
+                                        "compile_size": compile_size,
+                                        "compile_loop_bound": compile_loop_bound,
+                                        "ni": ni,
+                                        "nj": nj,
+                                        "iters": iters
+                                        })
     elif args.MODE in ["debug","all_old"]:
-        print(f"Debug: Creating all benchmark scripts...")
-        codegen_bench_tree_branch(**{k:"" for k in metadata_names})
-        for kernel in iterator(args,"kernel_mode") :
-            # for hardware in iterator(args,"hardware") :
-                for alloc in iterator(args,"allocation") :
-                    for module in iterator(args,"module") :
-                        for size in iterator(args,"size") :
-                            for compile_size in iterator(args,"compile_size") :
-                                filename, iters, ni, nj  = codegen_bench_tree_branch(
-                                    kernel_mode=kernel,
-                                    # hardware=hardware,
-                                    allocation=alloc,
-                                    module=module,
-                                    size=size,
-                                    compile_size=compile_size,
-                                    )
-                                json_dict_all_parameters["data"].append(
-                                    {"id":filename,
-                                    "kernel_mode": kernel,
-                                    # "hardware" : hardware,
-                                    "allocation": alloc,
-                                    "module": module,
-                                    "size": size,
-                                    "compile_size": compile_size,
-                                    "ni": ni,
-                                    "nj": nj,
-                                    "iters": iters})
+        # use this function for debugging new parameter implementations
+        warnings.warn("Insert test code here.",category=UserWarning)
+        exit(-1)
+        # print(f"Debug: Creating all benchmark scripts...")
+        # codegen_bench_tree_branch(**{k:"" for k in metadata_names})
     elif args.MODE == "all_l3":
         all_l3_relative_sizes = list(suffixes['size'].keys())
         all_l3_relative_sizes.remove("")
         # TODO : pass L3 size as compilation/execution time parameter - using grep and command
         print(f"Creating all L3-relative benchmark scripts...")
-        for alloc in iterator(args,"allocation") :
-            for size in all_l3_relative_sizes :
-                for compile_size in [False,True] :
-                    filename, iters, ni, nj = codegen_bench_tree_branch(alloc,size,\
-                                                compile_size=compile_size)
-                    json_dict_all_parameters["data"].append({"id":filename,
-                                                "size": size,
-                                                "ni": ni,
-                                                "nj": nj,
-                                                "allocation": alloc,
-                                                "iters": iters,
-                                                "compile_size": compile_size})
+        for size in all_l3_relative_sizes :
+            for kernel in iterator(args,"kernel_mode") :
+                for hardware in iterator(args,"hardware") :
+                    for alloc in iterator(args,"allocation") :
+                        for module in iterator(args,"module") :
+                            for compile_size in iterator(args,"compile_size") :
+                                for compile_loop_bound in iterator(args,"compile_loop_bound") :
+                                    filename, iters, ni, nj = codegen_bench_tree_branch(
+                                        kernel_mode=kernel,
+                                        hardware=hardware,
+                                        allocation=alloc,
+                                        module=module,
+                                        size=size,
+                                        compile_size=compile_size,
+                                        compile_loop_bound=compile_loop_bound
+                                        )
+                                    json_dict_all_parameters["data"].append(
+                                        {"id":filename,
+                                        "size": size,
+                                        "ni": ni,
+                                        "nj": nj,
+                                        "allocation": alloc,
+                                        "iters": iters,
+                                        "compile_size": compile_size,
+                                        "compile_loop_bound": compile_loop_bound
+                                        })
     elif args.MODE == "single" :
         description = 'default' if (args.allocation is None and args.size is None and args.compile_size is None and args.kernel_mode is None)\
             else str(args.allocation) + str(args.size) + "compile_size: " + str(args.compile_size) + str(args.kernel_mode)

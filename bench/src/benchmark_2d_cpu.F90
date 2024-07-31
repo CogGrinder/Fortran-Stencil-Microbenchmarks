@@ -32,8 +32,8 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str)
     real(dp) array(ni,nj), result(ni,nj)
 #endif /*ALLOC_MODE*/
 
-    do j = 1, nj
-        do i = 1, ni
+    do j = 1, loop_bound_nj
+        do i = 1, loop_bound_ni
             array(i,j) = (i-1)*nj + j
             ! call RANDOM_NUMBER(array(i,j))
         end do
@@ -46,8 +46,8 @@ SUBROUTINE COMPUTATION_2D_MODULE(bench_id,bench_str)
 
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 1 + 2, nj - 2
-        do i = 1 + 2, ni - 2
+    do j = 1 + 2, loop_bound_nj - 2
+        do i = 1 + 2, loop_bound_ni - 2
 #if KERNEL_MODE == NO_INCLUDE
             result(i,j) = 1.0_dp * array(i - 1, j - 1) &
                         + 2.0_dp * array(i - 1, j + 1) &
