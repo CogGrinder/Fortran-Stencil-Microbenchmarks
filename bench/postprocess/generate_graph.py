@@ -426,7 +426,8 @@ def make_graphs(df: pd.DataFrame,
             # graph a bar chart in the corresponding plt.axes.Axes or plt.axis.Axis
             ax.bar(range(len(graphed_data_i)),graphed_data_i)
             for index in range(len(graphed_data_i)):
-                ax.text(index,graphed_data_i[index]/2,"{:.2e}".format(graphed_data_i[index]),ha ='center',rotation=90,size=5)
+                if np.isfinite(graphed_data_i[index]):
+                    ax.text(index,graphed_data_i[index]/2,"{:.2e}".format(graphed_data_i[index]),ha ='center',rotation=90,size=5)
             # set title
             title = str(index_list[i][0]) if subplots else f"""Graph of {variable_to_graph} using {str(index_list[i][0])} data\nFixed options:\n{
                 ', '.join([apply_format_string(variable,value) for variable,value in zip(fixed_columns_in_graphing,index_list[i][1:]) ])
@@ -649,6 +650,37 @@ def old_show_graph_2D_debug(fileprefix="",is_wallclocktime_graph=False) :
         plt.savefig(fileprefix+"fig" + str(now) + ".pdf")
         plt.show() if str(input("Open figure in new window? (Y/n)\n"))=='Y' else None
 
+def parseListToDict(input:str):
+    global baseline_for_comparison
+    debugReturn = {}
+    for dictEntry in input:
+        key,value = str(dictEntry).split(':',2)
+        if value=='None':
+            value=None
+        try:
+            value_type = metadata_types[key]
+        except:
+            raise ValueError('Parsed dictionary key is not a valid metadata type.')
+        if value_type==bool:
+            if value=='True':
+                value=True
+            elif value=='False':
+                value=False
+            else:
+                warnings.warn(f'{value} is invalid boolean, defaulting to True.')
+                value=True
+        else:
+            value = metadata_types[key](value)
+        baseline_for_comparison[key]=value
+        debugReturn[key]=value
+    return debugReturn
+    # if len(input)%2!=0:
+    #     raise ValueError("Missing key or value in baseline.")
+    # for key, value in zip(input[0::2],input[1::2]):
+    #     print(f"key:{key}:value:{value}")
+    # # return json.loads(str(input))
+    # return {key:value for key, value in zip(input[0::2],input[1::2])}
+
 def argument_parsing(parser: argparse.ArgumentParser):
     parser.add_argument('-sp', '--subplots', action='store_true',
                         help=f'Highly recommended. Makes subplot graphs instead of individual graphs. Enables showing {", ".join(all_data_values)} data on the same graph.')
@@ -660,6 +692,9 @@ def argument_parsing(parser: argparse.ArgumentParser):
     parser.add_argument('-G', '--graphed', metavar='name',
                         help=f'Sets a single metadata variable to graph or iterates over all - from {", ".join(all_metadata_columns)}, all.\
                             Note: not setting the flag is equivalent to setting to "all".')
+    
+    parser.add_argument('-B', '--baseline', metavar='dict', nargs='+', type=str,
+                        help=f'Overwrites baseline for comparison. Change any of these settings: {baseline_for_comparison}. Refer to code base for valid options.')
     
     # thank you to https://stackoverflow.com/questions/27411268/arguments-that-are-dependent-on-other-arguments-with-argparse
     parser_subplots_specific = parser.add_argument_group(title='subplots specific options')
@@ -704,6 +739,15 @@ def main():
 
     if args.verbose:
         VERBOSE=True
+    
+    # parse baseline
+    if not args.baseline is None:
+        if DEBUG:
+            print(baseline_for_comparison)
+        debugDict = parseListToDict(args.baseline)
+        if DEBUG:
+            print(debugDict)
+            print(baseline_for_comparison)
 
     # check that not args.graphed and args.secondary_graphed are well defined.
     if not args.graphed is None and not args.graphed in all_metadata_columns\
