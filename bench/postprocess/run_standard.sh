@@ -4,8 +4,8 @@ mkdir -p $folder_name
 make -C .. clean --silent
 cd ../preprocess
 # TODO: --module True set because non-module not yet implemented and graphing can break
-python3 codegen.py --size-range 2048 1024 512 128 -c -nv #--module True #--size-range 128 4096 1024 # --hardware CPU --allocation STATIC
+python3 codegen.py -c -nv --module True --size 1 -A 1 --compile-size False --compile-loop-bound True --hardware CPU
 ./run_bench_tree.sh #-vcompile #-vout #-vompgpu
 cd ../postprocess
 ./collect_data_csv.sh -nv
-python3 generate_graph.py -D $folder_name/gpu_cpu_$(printf $size)Mb -sp -G hardware -sG all
+python3 generate_graph.py -sp -D test_compile_loop_bound_3 -G compile_size -sG hardware -B compile_loop_bound:False

@@ -465,6 +465,17 @@ def iterator(parsed: argparse.Namespace, param_name: str):
     else:
         return [parameter]
 
+# thank you to https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+def strToBool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'True', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'False', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def argument_parsing(parser: argparse.ArgumentParser):
     parser.add_argument('-M','--MODE', metavar='name', nargs='?', default='all',
                     help='Can be all, all_l3, single or clean. "all" generates all possible combinations with set range of sizes.')
@@ -494,9 +505,9 @@ def argument_parsing(parser: argparse.ArgumentParser):
                               If length is 2, acts as lower and upper bound.\
                               If length is 1, acts as upper bound with lower bound 1.\
                               If length is greater than 2, it is the list of sizes in Mb.')
-    parser_mode_specific.add_argument('--compile-size', metavar='python boolean', nargs='?', type=bool,
+    parser_mode_specific.add_argument('--compile-size', metavar='python boolean', nargs='?', type=strToBool,
                 help=f'Sets if the array size is set at compilation time. Either True of False.')
-    parser_mode_specific.add_argument('--compile-loop-bound', metavar='python boolean', nargs='?', type=bool,
+    parser_mode_specific.add_argument('--compile-loop-bound', metavar='python boolean', nargs='?', type=strToBool,
                 help=f'Sets if the loop bound is set at compilation time. Either True of False.')
     # Optional arguments
     parser.add_argument('-nv', '--nvfortran', action='store_true',
@@ -546,7 +557,7 @@ def main():
     if args.verbose:
         VERBOSE=True
     
-    if DEBUG:
+    if VERBOSE or DEBUG:
         print(args)
 
     # checking for parser errors
