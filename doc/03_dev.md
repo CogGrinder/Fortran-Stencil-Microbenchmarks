@@ -41,6 +41,7 @@ TODO : add a further check to assert that the target in the makefile made from t
     - ``codegen_bench_tree_branch``:
         - [preliminary] add parameter to signature, setting a default value
             - add new export line in bash fstring
+            - if the new parameter involves using calculated values like array dimensions, make sure these values are exported or passed to the executable when needed
         - add a layer of folder creation
             - translate the new parameter's values to a suffix using a global dictionary or string manipulation
             - add this suffix to the ``directory`` string and create a corresponding directory on the chosen depth, as was done for other parameters

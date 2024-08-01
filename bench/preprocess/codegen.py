@@ -218,10 +218,10 @@ def codegen_bench_tree_branch(
     if (VERBOSE):
         print(f"benchname:{benchname} directory:{fulldirectory}")
 
-    ######### compile_size and kernel_mode #########
+    ######### copying sources #########
     # if we compile array sizes then we need to copy all source files and compile them with special preprocessing
     # see in the f.write() conditionals to change the make directory and BENCH_EXECUTABLE bin directory
-    is_copy_bench_files = compile_size or kernel_mode!=""
+    is_copy_bench_files = compile_size or compile_loop_bound or kernel_mode!=""
     if  is_copy_bench_files:
         fulldirectory_absolute = pathlib.Path(fulldirectory).resolve()
         if DEBUG and VERBOSE:
@@ -245,7 +245,7 @@ def codegen_bench_tree_branch(
     os.chmod(filename,0b111111111)
     
     ####### pre-compilation bench parameters #######
-    # here compute the bench parameters for using at compile time if compile_size
+    # here compute the bench parameters for using at compile time if compile_size or compile_loop_bound
     if type(size)==int or type(size)==float:
         ni, nj = generate_2d_array_size(size)
     else:
@@ -262,6 +262,11 @@ def codegen_bench_tree_branch(
             case _:
                 pass
         ni, nj = generate_2d_array_size(L3_SIZE*percentage_of_l3/100.0)
+
+    call_to_binary = ("" if not "GPU" in hardware else "OMP_TARGET_OFFLOAD=mandatory ")\
+        + f"./$BENCH_EXECUTABLE iters={iters} "\
+        + ("" if compile_size and compile_loop_bound else f"ni={ni} nj={nj}")
+
 
     # see https://realpython.com/python-f-strings/
     f.write(f"""#! /bin/bash
@@ -400,7 +405,7 @@ while IFS= read -r line; do
     then
         echo "$line" >> $filename.csv
     fi
-done < <( {"" if not "GPU" in hardware else "OMP_TARGET_OFFLOAD=mandatory "}./$BENCH_EXECUTABLE iters={iters} {"" if compile_size else f"ni={ni} nj={nj}"} )
+done < <( {call_to_binary} )
 printf "\\r"
 if $SHOW_OUT
 then
