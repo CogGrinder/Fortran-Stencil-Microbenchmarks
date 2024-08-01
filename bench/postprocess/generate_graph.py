@@ -397,6 +397,7 @@ def make_graphs(df: pd.DataFrame,
     if not subplots:
         # if not grouped
         dir = f"{'.' if directory==None else str(directory).rstrip('/')}/{variable_to_graph}"
+        dir+='_'+('_'.join([apply_format_string(variable,value) for variable,value in zip(fixed_columns_in_graphing,index_list[0][1:]) ])).replace(':','-')
         if not pathlib.Path(dir).is_dir() :
             os.mkdir(dir)
         # else:
@@ -411,7 +412,8 @@ def make_graphs(df: pd.DataFrame,
                 else:
                     ax = ax_[j][i]
             else:
-                fig,ax = plt.subplots()
+                plt.close()
+                fig,ax = plt.subplots(figsize=(1.6 + max(0,len(column_list)-2)/3.5, 2.2 + max(0,len(column_list)-2)/6 + 0.3) )
             
             if secondary_graphed is None:            
                 graphed_data_i = graphing_df.iloc[i].array
@@ -429,10 +431,8 @@ def make_graphs(df: pd.DataFrame,
                 if np.isfinite(graphed_data_i[index]):
                     ax.text(index,graphed_data_i[index]/2,"{:.2e}".format(graphed_data_i[index]),ha ='center',rotation=90,size=5)
             # set title
-            title = str(index_list[i][0]) if subplots else f"""Graph of {variable_to_graph} using {str(index_list[i][0])} data\nFixed options:\n{
-                ', '.join([apply_format_string(variable,value) for variable,value in zip(fixed_columns_in_graphing,index_list[i][1:]) ])
-                }"""
-            title_size = 10 if subplots else 12
+            title = str(index_list[i][0]) if subplots else f"""{variable_to_graph}\n{str(index_list[i][0])}"""
+            title_size = 10 if subplots else 10
             ax.set_title(title, fontsize=title_size)
             # set labels
             ax.set_xticks(ticks=range(len(column_list)),labels=column_list, rotation=60, ha='right', size='xx-small')
@@ -445,6 +445,7 @@ def make_graphs(df: pd.DataFrame,
                 filename=f"{dir}/{variable_to_graph}_{str(index_list[i][0])}.pdf"
                 if interactive:
                     print(filename)
+                fig.tight_layout()
                 fig.savefig(filename)
                 plt.close()
 
@@ -459,9 +460,11 @@ def make_graphs(df: pd.DataFrame,
             print("Fixed options:")
             print(fixed_columns_in_graphing)
             print(index_list[i][1:])
-        fig.suptitle(f"""Graph of {variable_to_graph}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'}\nFixed options:\n{
-                ', '.join([apply_format_string(variable,value) for variable,value in zip(fixed_columns_in_graphing,index_list[i][1:]) ])
-                }""",size=10)
+        # plt.rcParams.update({"font.size":5.0})
+        latex_compatible_fixed_params =(', '.join([apply_format_string(variable,value) for variable,value in zip(fixed_columns_in_graphing,index_list[i][1:]) ])).replace('_','\_')
+        fig.suptitle(f"""Graph of {variable_to_graph}{'' if secondary_graphed is None else ' ('+secondary_graphed+' as rows)'}\n$_\\mathtt{{{
+                latex_compatible_fixed_params
+                }}}$""",size=10)
         fig.tight_layout()
         filename = f"{str(directory).rstrip('/')}/{variable_to_graph}{'' if secondary_graphed is None else '-'+secondary_graphed}_{datetime.date.today()}_baseline_{'_'.join(index_list[i][1:])}.pdf"
         if interactive:
@@ -688,13 +691,13 @@ def argument_parsing(parser: argparse.ArgumentParser):
                     help='Can be default, interactive or old.\nInteractive lets you choose your selected benchmark variant to test against.')
     
     parser.add_argument('-D', '--directory', metavar='path',  default=f"figs_{datetime.date.today()}",
-                        help='Sets .pdf directory.')
+                        help=f'Sets .pdf directory. Default: "./figs_{datetime.date.today()}"')
     parser.add_argument('-G', '--graphed', metavar='name',
                         help=f'Sets a single metadata variable to graph or iterates over all - from {", ".join(all_metadata_columns)}, all.\
                             Note: not setting the flag is equivalent to setting to "all".')
     
-    parser.add_argument('-B', '--baseline', metavar='dict', nargs='+', type=str,
-                        help=f'Overwrites baseline for comparison. Change any of these settings: {baseline_for_comparison}. Refer to code base for valid options.')
+    parser.add_argument('-B', '--baseline', metavar='key:value', nargs='+', type=str,
+                        help=f'Overwrites baseline for comparison. Format: multiple items of the forms: <variable>:<value>. Example: "-B compile_size:False" .Change any of these settings: {baseline_for_comparison}. Refer to code base for valid options.')
     
     # thank you to https://stackoverflow.com/questions/27411268/arguments-that-are-dependent-on-other-arguments-with-argparse
     parser_subplots_specific = parser.add_argument_group(title='subplots specific options')
@@ -710,7 +713,7 @@ def argument_parsing(parser: argparse.ArgumentParser):
     parser.add_argument('-json', metavar='path',  default="../preprocess/all_benchmark_parameters.json",
                         help='Sets bench metadata .json path.')
     parser.add_argument('-c', '--clean-before', action='store_true',
-                        help='Cleans existing files before generating.')
+                        help='Clean all existing files in set --directory before generating.')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Displays more output')
     parser.add_argument('-d', '--debug', action='store_true',
@@ -833,7 +836,7 @@ def main():
         default_variable = valid_variables_to_graph[0]
         make_graphs(df, interactive=True, directory=args.directory, variable_to_graph=default_variable)
 
-    elif args.MODE=="old":
+    elif args.MODE in ["old", "debug"]:
         old_import_data_debug(normalise=True)
         old_show_graph_2D_debug(fileprefix="cache_misses")
         old_show_graph_2D_debug(fileprefix="wallclocktime",is_wallclocktime_graph=True)
