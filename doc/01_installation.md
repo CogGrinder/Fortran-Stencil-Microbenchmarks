@@ -7,6 +7,9 @@ $ pip install -r requirements.txt
 ```
 warning: will install numpy and matplotlib in your current python environment
 
+## Other requirements
+For nvfortran and GPU benchmarks, one must configure exports TODO: explain export handling once done
+
 ## For performance counters ``perf_regions`` dependency
 - [sudo] For quick activation of papi, temporarily add access to performance events with this line:  
 ```bash

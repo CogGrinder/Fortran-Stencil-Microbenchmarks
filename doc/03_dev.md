@@ -26,7 +26,7 @@ TODO : add a further check to assert that the target in the makefile made from t
 - [preliminary] if compilation parameter
     - in source files: add preprocessor option in targets if at compilation
     - in both [``Makefile``](../bench/Makefile) and [``src/Makefile``](../bench/src/Makefile)
-        - update CFLAGS with new preprocessor directive
+        - update CPPMACROS in CFLAGS with new preprocessor directive
         - add default value as export
 - [preliminary] if execution time parameter
     - add parsing in main function of [``main.F90``](../bench/main.F90)
