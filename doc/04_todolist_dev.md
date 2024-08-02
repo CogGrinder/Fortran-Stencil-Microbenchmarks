@@ -9,6 +9,7 @@ VM: This todolist is structured to help prioritize reliability > high relevance 
 # New relevant features
 ## High value
 ### Low cost
+- [ ] show all compiler optimisations To check compiler optimisations, there is ``-vomp`` or ``-vompgpu`` in [run_bench_tree.sh](../bench/preprocess/run_bench_tree.sh).
 - [ ] Steps to check for benchmarks:
     - [ ] Pinning?
         - For single-core executions, you can use, e.g., `taskset -c 0`.
