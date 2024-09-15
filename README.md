@@ -1,11 +1,11 @@
 # A stencil microbenchmarks library in Fortran
-___
 
 ``Fortran Stencil Microbenchmarks`` assesses the performance of different memory-bound finite difference kernels within Fortran. Compares the results using different hardware and software variables for use as machine-specific best practices.
 
+___
 For a more detailed explanation of methodology, see [0 - Introduction to Fortran Microbenchmarks](doc/00_introduction.md)
 
-Result of a Fortran microbenchmarks internship at LJK, Grenoble
+Initial work is a result of a HPC Fortran microbenchmarks internship at LJK, Grenoble
 
 ## Documentation
 See [documentation markdown file](doc/main.md) for further details.
