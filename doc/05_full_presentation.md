@@ -45,7 +45,7 @@ In Fortran computation functions and modules, all performance sensitive sections
 
 Performance metrics scope only encompasses single instances of benchmarks. Benchmarks are repeated a certain amount of iterations and summed to output total metrics on the amount of iterations chosen in program parameters.
 
-TODO: see pseudocode
+(see pseudocode below)
 
 To ensure our compiler does not remove zero-closure computations, values from the input and output are written to a temporary file.
 
@@ -146,16 +146,6 @@ def computation_function("<identifier>")
   output result(42,42)
   return # performance metrics accumulated in perf_regions using <identifier>
 ```
-### ? VM: should I remove this : Relevant code details
-- Codegen
-- Job tree
-- Scripts (do not modify)
-- Libraries
 
 ## Further developments
-Will be extracted from current [todolist](04_todolist_dev.md)
-
-## (Remove this)
-### (For devs)
-- (for devs: ``' '`` in output used for ignoring - Fortran already adds spaces everywhere in standard output)
-- (compilation uses exports for selecting options. Compiling without any options will use default exports set by Makefiles)
+Current [todolist](04_todolist_dev.md)

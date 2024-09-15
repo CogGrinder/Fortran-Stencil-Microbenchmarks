@@ -1,7 +1,7 @@
 *[HB]: Hugo Brunie
 *[MS]: Martin Schreiber
 *[VM]: Vincent Meduski
-# TODO list preface
+## TODO list Preface
 VM: This todolist is structured to help prioritize reliability > high relevance value > low opportunity cost. The current author perceived this as the order of the most desirable features. The tradeoff between high value and low cost determines how prioritised a feature is in practice.
 # Reliability
 - [ ] No more than couple hours, only on one bench. Check memory with memory checker of valgrind
@@ -9,7 +9,8 @@ VM: This todolist is structured to help prioritize reliability > high relevance 
 # New relevant features
 ## High value
 ### Low cost
-- [ ] show all compiler optimisations To check compiler optimisations, there is ``-vomp`` or ``-vompgpu`` in [run_bench_tree.sh](../bench/preprocess/run_bench_tree.sh).
+- [ ] add clear documentation to change the NVRELEASE line as well as the NVARCH as needed in the relevant files for nvfortran compilation - an option would be to export these in the codegen file (using default releases and platforms and then changing manually in a file or lauch parameters to codegen)
+- [ ] show all compiler optimisations. To check compiler optimisations, there is ``-vomp`` or ``-vompgpu`` in [run_bench_tree.sh](../bench/preprocess/run_bench_tree.sh).
 - [ ] Steps to check for benchmarks:
     - [ ] Pinning?
         - For single-core executions, you can use, e.g., `taskset -c 0`.
@@ -47,11 +48,15 @@ VM: This todolist is structured to help prioritize reliability > high relevance 
 - [ ] Add non-module version for GPU
 - [ ] Figure improvements
     - [ ] debug sorting bars reliably eg: size in increasing order
+
 ### Medium cost
 - [ ] pointers to arrays : add as functionality
 ### High cost
 - [ ] Make a web view (https://plotly.com/python/) do not use Dash
     - reason for high cost: translating code, learning curve of plotly, debugging responsiveness and ease of use of UI
+
+### Unknown cost
+- [ ] use ``call cpu_time(e)`` to make alternative timing code for non-PAPI systems
 
 ## Low value
 - [ ] rename kernels from ``.h`` to ``.f90`` files to signify that they are Fortran code without preprocessing
