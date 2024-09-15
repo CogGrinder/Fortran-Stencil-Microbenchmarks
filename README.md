@@ -1,5 +1,12 @@
-# Fortran microbenchmarks internship at LJK
-The goal is to develop microbenchmarks in Fortran to assess the performance of different finite difference kernels within Fortran
+# A stencil microbenchmarks library in Fortran
+___
+
+``Fortran Stencil Microbenchmarks`` assesses the performance of different memory-bound finite difference kernels within Fortran. Compares the results using different hardware and software variables for use as machine-specific best practices.
+
+For a more detailed explanation of methodology, see [0 - Introduction to Fortran Microbenchmarks](doc/00_introduction.md)
+
+Result of a Fortran microbenchmarks internship at LJK, Grenoble
+
 ## Documentation
 See [documentation markdown file](doc/main.md) for further details.
 
@@ -65,3 +72,7 @@ export PATH:=/usr/local/cuda:/usr/local/cuda/bin:$(PATH)
 export LD_LIBRARY_PATH:=/usr/local/cuda:/usr/local/cuda/lib:$(LD_LIBRARY_PATH)
 ```
 Change the NVRELEASE line as well as the NVARCH as needed.
+
+### Credits
+Thank you to Hugo Brunie (hbrunie) and Martin Schreiber (schreiberx) for all the irreplaceable guidance.
+[perf_regions](https://github.com/schreiberx/perf_regions) is a work of Martin Schreiber included here as a source folder for ease of use and copying source in code generation to ensure correct type of Fortran Modules are compiled each time.

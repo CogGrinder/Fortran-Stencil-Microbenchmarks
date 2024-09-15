@@ -40,7 +40,6 @@ TODO : add a further check to assert that the target in the makefile made from t
 - [``codegen.py``](../bench/preprocess/codegen.py), [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh) and [``collect_data_csv.sh``](../bench/postprocess/collect_data_csv.sh):
     - update the ``TREE_DEPTH`` parameter in   by adding 1 (one)
     - [``run_bench_tree.sh``](../bench/preprocess/run_bench_tree.sh) and [``collect_data_csv.sh``](../bench/postprocess/): add nested loop depth ( copy code, indent and shift all parameter indexes)
-        - TODO: make this easier
 - [``codegen.py``](../bench/preprocess/codegen.py):
     - update dictionaries at the top of the file
     - ``codegen_bench_tree_branch``:

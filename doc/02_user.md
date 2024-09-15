@@ -60,7 +60,7 @@ Or maybe alloc_option with is_module rows:
 ```bash
 python3 generate_graph.py -sp -c -G alloc_option -sG is_module
 ```
-TODO : examples and instructions eg -G size_option -sG all 
+TODO: explain this
 python3 generate_graph.py -sp -sG alloc_option
 
 ## Normalisation of data
