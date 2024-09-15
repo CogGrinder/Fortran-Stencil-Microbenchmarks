@@ -347,6 +347,7 @@ def make_graphs(df: pd.DataFrame,
     # with the index being a "MultiIndex" in the form of a tuple of parameters
     graphed_columns = [variable_to_graph]
     if not secondary_graphed is None:
+        # add secondary_graphed to graphed_columns list - needs to be first for grouping by first
         graphed_columns.insert(0,secondary_graphed)
     graphing_df = graphing_df.pivot(index=graphed_columns,
                                         columns=fixed_columns_in_graphing,
@@ -654,6 +655,17 @@ def old_show_graph_2D_debug(fileprefix="",is_wallclocktime_graph=False) :
         plt.show() if str(input("Open figure in new window? (Y/n)\n"))=='Y' else None
 
 def parseListToDict(input:str):
+    """Function used as type-like parser for argparse to convert
+
+    Args:
+        input (str): argument string parsed from user 
+
+    Raises:
+        ValueError: stops program if argument contains unknown metadata type
+
+    Returns:
+        dict: metadata key with value
+    """
     global baseline_for_comparison
     debugReturn = {}
     for dictEntry in input:
@@ -663,7 +675,9 @@ def parseListToDict(input:str):
         try:
             value_type = metadata_types[key]
         except:
-            raise ValueError('Parsed dictionary key is not a valid metadata type.')
+            # detect when key is not in a metadata dictionary
+            # ie when it is not a valid metadata type
+            raise ValueError('Parsed dictionary key is not a known metadata type.')
         if value_type==bool:
             if value=='True':
                 value=True
@@ -802,7 +816,7 @@ def main():
                                     interactive=False, subplots=args.subplots, directory=dir)
                     else:
                         for j in range(len(is_non_unique_parameter)):
-                            if is_non_unique_parameter[j] :#and columns[j]!='size': # TODO: fix size because it makes unreadable subplots
+                            if is_non_unique_parameter[j] :
                                 if j!=i :
                                     make_graphs(df, variable_to_graph=columns[i],
                                                 secondary_graphed=columns[j],
@@ -816,7 +830,7 @@ def main():
                         make_graphs(df, variable_to_graph=columns[igraphed], interactive=False, subplots=args.subplots, directory=dir)
                     elif args.secondary_graphed=='all' :
                         for j in range(len(is_non_unique_parameter)):
-                            if is_non_unique_parameter[j] :#and columns[j]!='size': # TODO: fix size because it makes unreadable subplots
+                            if is_non_unique_parameter[j] :
                                 if j!=igraphed :
                                     make_graphs(df, variable_to_graph=columns[igraphed],
                                                 secondary_graphed=columns[j],
